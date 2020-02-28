@@ -1,0 +1,8 @@
+
+add_executable(test_vector_util test_vector_util.cpp)
+target_link_libraries(test_vector_util PUBLIC emerald_util)
+add_test(TEST_emerald_util_vector_util test_vector_util)
+
+add_executable(test_functions test_functions.cpp)
+target_link_libraries(test_functions PUBLIC emerald_util)
+add_test(TEST_emerald_util_functions test_functions)

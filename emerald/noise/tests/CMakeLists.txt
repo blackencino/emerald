@@ -1,0 +1,7 @@
+add_executable(test_noise test_noise.cpp)
+target_link_libraries(test_noise PUBLIC emerald_noise)
+add_test(TEST_emerald_noise_test_noise test_noise)
+
+add_executable(test_cell_noise test_cell_noise.cpp)
+target_link_libraries(test_cell_noise PUBLIC emerald_noise)
+add_test(TEST_emerald_noise_test_cell_noise test_cell_noise)
