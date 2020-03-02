@@ -86,7 +86,7 @@ void Simulation_old::EnforceHeightBoundaryConditions(int io_h) {
     EnforceNeumannBoundaryConditions(io_h);
 
     if (InputActive) {
-        constexpr int radius_pixels = 5;
+        const int radius_pixels = std::max(1, (5 * NX) / 512);
         int const minX = std::clamp(InputIndexX - radius_pixels, 0, NX - 1);
         int const maxX = std::clamp(InputIndexX + radius_pixels, 0, NX - 1);
         int const minY = std::clamp(InputIndexY - radius_pixels, 0, NY - 1);
