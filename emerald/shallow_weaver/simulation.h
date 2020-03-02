@@ -19,6 +19,7 @@ public:
         int resolution = 512;
         float wave_speed = 1.0f;
         float frames_per_second = 24.0f;
+        float damping = 1.0e-6f;
         int num_batch_frames = 100;
         Time_integration time_integration = Time_integration::RUNGE_KUTTA_4;
     };

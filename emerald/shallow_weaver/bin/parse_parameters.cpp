@@ -20,6 +20,8 @@ Simulation::Parameters parse_parameters(int argc, char* argv[]) {
             ("f,frames_per_second", "Frames per second.", cxxopts::value<float>(params.frames_per_second))
             ("n,num_frames", "Num frames to simulate", cxxopts::value<int>(params.num_batch_frames))
             ("wave_speed", "Wave speed (meters per second)", cxxopts::value<float>(params.wave_speed))
+            ("damping", "Damping (per second)", cxxopts::value<float>(params.damping)
+             ->default_value(std::to_string(params.damping)))
             ("rk2", "Use Runge-Kutta-2 time integration")
             ("rk4", "Use Runge-Kutta-4 time integration")
             ("help", "Print help")

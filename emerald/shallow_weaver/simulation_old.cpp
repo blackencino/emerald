@@ -18,7 +18,8 @@ Simulation_old::Simulation_old(Simulation::Parameters const& params,
   , NX(params.resolution)
   , NY(params.resolution)
   , ArraySize(params.resolution * params.resolution)
-  , DXY(WorldSize / NX) {
+  , DXY(WorldSize / NX)
+  , DAMPING(params.damping) {
 }
 
 Float_slab& Simulation_old::AState(int index) {
@@ -272,6 +273,21 @@ void Simulation_old::AccumulateEstimate(float i_dt) {
 #endif
 }
 
+static void gain_in_place(Float_slab& into,
+                          float const gain) {
+    do_slab_op_1d(into, [gain](auto& into, auto const i) {
+        into[i] *= gain;
+    });
+}
+
+void Simulation_old::ApplyDamping(float i_dt) {
+    // compute gain
+    float const gain = std::pow((1.0f - DAMPING), i_dt);
+    //std::cout << "Damping = " << DAMPING << ", gain = " << gain << std::endl;
+    gain_in_place(AState(StateHeight), gain);
+    gain_in_place(AState(StateVel), gain);
+}
+
 // First-Order Symplectic Time Step function.
 void Simulation_old::TimeStepFirstOrder(float i_dt) {
     // Swap state
@@ -291,6 +307,8 @@ void Simulation_old::TimeStepFirstOrder(float i_dt) {
     // Final boundary conditions on height and vel
     EnforceHeightBoundaryConditions(StateHeight);
     EnforceNeumannBoundaryConditions(StateVel);
+
+    ApplyDamping(i_dt);
 }
 
 // Second-Order Runge-Kutta Time Step function.
@@ -318,6 +336,9 @@ void Simulation_old::TimeStepRK2(float i_dt) {
     // Final boundary conditions on height and vel
     EnforceHeightBoundaryConditions(StateHeight);
     EnforceNeumannBoundaryConditions(StateVel);
+
+
+    ApplyDamping(i_dt);
 }
 
 // Fourth-Order Runge-Kutta Time Step function.
@@ -357,6 +378,8 @@ void Simulation_old::TimeStepRK4(float i_dt) {
     // Final boundary conditions on height and vel
     EnforceHeightBoundaryConditions(StateHeight);
     EnforceNeumannBoundaryConditions(StateVel);
+
+    ApplyDamping(i_dt);
 }
 
 }  // namespace emerald::shallow_weaver

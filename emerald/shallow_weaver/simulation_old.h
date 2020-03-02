@@ -21,6 +21,7 @@ public:
     int NY = 64;
     int ArraySize = 64 * 64;
     float DXY = 10.0 / 64;
+    float DAMPING = 1.0e-6f;
 
     static constexpr int StateHeight = 0;
     static constexpr int StateVel = 1;
@@ -65,6 +66,7 @@ public:
     void JacobiSolveAccel(int i_hStar, float i_dt);
     void EstimateAccelStar(float i_dt);
     void AccumulateEstimate(float i_dt);
+    void ApplyDamping(float i_dt);
     void TimeStepFirstOrder(float i_dt);
     void TimeStepRK2(float i_dt);
     void TimeStepRK4(float i_dt);
