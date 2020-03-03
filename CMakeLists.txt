@@ -13,7 +13,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_definitions( "-DGL_SILENCE_DEPRECATION=1" )
+option(EMERALD_BUILD_GUIS "Build Emerald Graphical UIs" ON)
+
+if (${EMERALD_BUILD_GUIS})
+    add_definitions( "-DGL_SILENCE_DEPRECATION=1" )
+endif()
 
 # Platform
 set( WINDOWS FALSE )
@@ -36,10 +40,13 @@ find_package(openexr REQUIRED)
 find_package(fmt REQUIRED)
 find_package(TBB REQUIRED)
 find_package(boost REQUIRED)
-find_package(glfw REQUIRED)
 find_package(fftw REQUIRED)
 find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
+
+if (${EMERALD_BUILD_GUIS})
+    find_package(glfw REQUIRED)
+endif()
 #find_package(glm REQUIRED)
 
 add_subdirectory(emerald)

@@ -13,11 +13,11 @@ namespace util_gl {
 void Init(bool const experimental) {
     CheckErrors("GeepGLFW::init before anything");
 
-// On Mac, GLEW stuff is not necessary.
-#ifndef PLATFORM_DARWIN
-    glewExperimental = experimental ? GL_TRUE : GL_FALSE;
-    glewInit();
-#endif
+    // On Mac, GLEW stuff is not necessary.
+    //#ifndef PLATFORM_DARWIN
+    //    glewExperimental = experimental ? GL_TRUE : GL_FALSE;
+    //    glewInit();
+    //#endif
     // Reset errors.
     glGetError();
 
