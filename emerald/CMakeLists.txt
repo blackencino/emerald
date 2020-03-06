@@ -5,4 +5,5 @@ if (${EMERALD_BUILD_GUIS})
     add_subdirectory(simple_sim_viewer)
 endif()
 add_subdirectory(shallow_weaver)
+add_subdirectory(wisp)
 

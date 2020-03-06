@@ -1,5 +1,6 @@
 #pragma once
 
+#include <emerald/shallow_weaver/foundation.h>
 #include <emerald/shallow_weaver/slab.h>
 
 namespace emerald::shallow_weaver {
