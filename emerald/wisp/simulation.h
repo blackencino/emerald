@@ -1,11 +1,12 @@
 #pragma once
 
-#include <emerald/wisp/foundation.h>
 #include <emerald/shallow_weaver/slab_ops.h>
+#include <emerald/wisp/foundation.h>
 #include <emerald/wisp/state.h>
 
 #include <memory>
 #include <optional>
+#include <tuple>
 #include <utility>
 
 namespace emerald::wisp {
@@ -33,7 +34,9 @@ public:
     Simulation(Parameters const& params);
     ~Simulation();
 
-    void set_input(V2f const ndc_point, V3f const rgb);
+    void set_input(V2f const prev_ndc_point,
+                   V2f const ndc_point,
+                   V3f const rgb);
     void set_input() {
         m_input = std::nullopt;
     }
@@ -54,7 +57,7 @@ private:
 
     State m_state;
 
-    std::optional<std::pair<int2, float3>> m_input = std::nullopt;
+    std::optional<std::tuple<int2, int2, float3>> m_input = std::nullopt;
 
     std::unique_ptr<Simulation_old> m_old;
 };

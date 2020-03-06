@@ -14,4 +14,4 @@ target_link_libraries(emerald_wisp PUBLIC
                       gsl-lite::gsl-lite
                       TBB::TBB)
 
-#add_subdirectory(bin)
+add_subdirectory(bin)

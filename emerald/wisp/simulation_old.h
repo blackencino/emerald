@@ -19,7 +19,7 @@ public:
     int NY = 126;
 
     // The size of the sim, in "world" units.
-    float LX = 100.0;
+    float LX = 100.0f;
 
     // Size, in "world" units, of a grid cell.
     // Our cells are uniform (square) so DX & DY are the same.
@@ -31,29 +31,29 @@ public:
     // The rate at which we inject density
     // into the grid by painting with the
     // mouse.
-    float EmissionRate = 2.0;
-    float DenEmissionRadius = 15.0;
-    float VelEmissionRadius = 20.0;
+    float EmissionRate = 2.0f;
+    float DenEmissionRadius = 15.0f;
+    float VelEmissionRadius = 20.0f;
 
     // The rate at which density
     // diffuses (dissipates)
-    float D_viscosity = 0.00001;
+    float D_viscosity = 0.00001f;
 
     // The rate at which velocity
     // dissipates
-    float V_viscosity = 0.00001;
+    float V_viscosity = 0.00001f;
 
     // The rate at which density decays.
-    float D_damp = 0.01;
+    float D_damp = 0.01f;
 
     // The rate at which velocity decays.
-    float V_damp = 0.0001;
+    float V_damp = 0.0001f;
 
     // Our time step
-    float DT = 1.0;
+    float DT = 1.0f;
 
     // A scale on input velocity
-    float Vscale = 0.75;
+    float Vscale = 0.75f;
 
     // Our simulation grids (Our State) will be one cell larger in each
     // dimension to accomodate boundary conditions.
@@ -65,20 +65,28 @@ public:
     // mostly for efficiency reasons.
     int GridArraySize;
 
-    static constexpr int GridPrevU = 0;
-    static constexpr int GridU = 1;
-    static constexpr int GridPrevV = 2;
-    static constexpr int GridV = 3;
-    static constexpr int GridPrevDensity = 4;
-    static constexpr int GridDensity = 5;
-    static constexpr int GridInputU = 6;
-    static constexpr int GridInputV = 7;
-    static constexpr int GridInputDensity = 8;
-    static constexpr int GridTemp0 = 9;
-    static constexpr int GridTemp1 = 10;
-    static constexpr int GridTemp2 = 11;
+    enum GridSpecifiers : int {
+        GridPrevU,
+        GridU,
+        GridPrevV,
+        GridV,
+        GridPrevDensityR,
+        GridPrevDensityG,
+        GridPrevDensityB,
+        GridDensityR,
+        GridDensityG,
+        GridDensityB,
+        GridInputU,
+        GridInputV,
+        GridInputDensityR,
+        GridInputDensityG,
+        GridInputDensityB,
+        GridTemp0,
+        GridTemp1,
+        GridTemp2
+    };
 
-    static constexpr float VstrokeAlpha = 0.5f;
+    float VstrokeAlpha = 0.5f;
 
     //-*****************************************************************************
     // The boundary conditions are enforced on the I selector of the arrays.
@@ -93,9 +101,13 @@ public:
     Float_slab const& AState(int index) const;
 
     bool InputActive = false;
+    int PrevInputIndexX = 0;
+    int PrevInputIndexY = 0;
     int InputIndexX = 0;
     int InputIndexY = 0;
-    float InputHeight = 0;
+    float InputColorR = 0.0f;
+    float InputColorG = 0.0f;
+    float InputColorB = 0.0f;
 
     // Index an element of a grid in the state array
     int IX(int i, int j) const;

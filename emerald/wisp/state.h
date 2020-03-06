@@ -11,11 +11,17 @@ struct State {
       , U(size)
       , PrevV(size)
       , V(size)
-      , PrevDensityRGB(size)
-      , DensityRGB(size)
+      , PrevDensityR(size)
+      , PrevDensityG(size)
+      , PrevDensityB(size)
+      , DensityR(size)
+      , DensityG(size)
+      , DensityB(size)
       , InputU(size)
       , InputV(size)
-      , InputDensityRGB(size)
+      , InputDensityR(size)
+      , InputDensityG(size)
+      , InputDensityB(size)
       , Temp0(size)
       , Temp1(size)
       , Temp2(size) {
@@ -32,11 +38,17 @@ struct State {
     Float_slab U;
     Float_slab PrevV;
     Float_slab V;
-    Float3_slab PrevDensityRGB;
-    Float3_slab DensityRGB;
+    Float_slab PrevDensityR;
+    Float_slab PrevDensityG;
+    Float_slab PrevDensityB;
+    Float_slab DensityR;
+    Float_slab DensityG;
+    Float_slab DensityB;
     Float_slab InputU;
     Float_slab InputV;
-    Float3_slab InputDensityRGB;
+    Float_slab InputDensityR;
+    Float_slab InputDensityG;
+    Float_slab InputDensityB;
     Float_slab Temp0;
     Float_slab Temp1;
     Float_slab Temp2;

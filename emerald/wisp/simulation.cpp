@@ -46,8 +46,15 @@ Simulation::Simulation(Parameters const& params)
 Simulation::~Simulation() {
 }
 
-void Simulation::set_input(V2f const ndc_point, V3f const rgb) {
-    m_input = {{std::clamp(static_cast<int>(ndc_point.x * m_params.resolution),
+void Simulation::set_input(V2f const prev_ndc_point,
+                           V2f const ndc_point, V3f const rgb) {
+    m_input = {{std::clamp(static_cast<int>(prev_ndc_point.x * m_params.resolution),
+                           0,
+                           m_params.resolution - 1),
+                std::clamp(static_cast<int>(prev_ndc_point.y * m_params.resolution),
+                           0,
+                           m_params.resolution - 1)},
+                {std::clamp(static_cast<int>(ndc_point.x * m_params.resolution),
                            0,
                            m_params.resolution - 1),
                 std::clamp(static_cast<int>(ndc_point.y * m_params.resolution),
@@ -57,20 +64,23 @@ void Simulation::set_input(V2f const ndc_point, V3f const rgb) {
 }
 
 void Simulation::step() {
-    auto const dt = 1.0f / m_params.frames_per_second;
-    // // Caliper caliper{"full step"};
-    // if (m_input) {
-    //     m_old->InputActive = true;
-    //     auto const ij = m_input.value().first;
-    //     auto const h = m_input.value().second;
-    //     m_old->InputIndexX = ij[0];
-    //     m_old->InputIndexY = ij[1];
-    //     m_old->InputHeight = h;
-    // } else {
-    //     m_old->InputActive = false;
-    // }
-    // m_old->FluidTimeStep(dt);
-    // m_old->InputActive = false;
+    //auto const dt = 1.0f / m_params.frames_per_second;
+    // Caliper caliper{"full step"};
+    if (m_input) {
+        m_old->InputActive = true;
+        auto const [prev_ij, ij, rgb] = m_input.value();
+        m_old->PrevInputIndexX = prev_ij[0];
+        m_old->PrevInputIndexY = prev_ij[1];
+        m_old->InputIndexX = ij[0];
+        m_old->InputIndexY = ij[1];
+        m_old->InputColorR = rgb[0];
+        m_old->InputColorG = rgb[1];
+        m_old->InputColorB = rgb[2];
+    } else {
+        m_old->InputActive = false;
+    }
+    m_old->FluidTimeStep();
+    m_old->InputActive = false;
 }
 
 }  // namespace emerald::wisp
