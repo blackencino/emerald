@@ -49,6 +49,21 @@ Simulation::Simulation(Parameters const& params)
 
     m_old = std::make_unique<Simulation_old>(params, m_state);
 
+    // Let's make some default terrain.
+    emerald::noise::StdFbmf fbm2{6, 1.67f, 0.57f};
+    constexpr float terrain_noise_scale = 43.3f;
+    constexpr float terrain_amp = 7.1f;
+    for (int j = 0; j < NY; ++j) {
+        auto const worldY = 17133.77f + DXY * static_cast<float>(j);
+        for (int i = 0; i < NX; ++i) {
+            auto const worldX = -9932.31f + DXY * static_cast<float>(i);
+
+            auto const n =
+                fbm(worldX / terrain_noise_scale, worldY / terrain_noise_scale);
+            m_state.terrain_height.value(i, j) = terrain_amp * n;
+        }
+    }
+
     for (int i = 0; i < 50; ++i) { step(); }
 }
 

@@ -9,6 +9,7 @@ struct State {
     State() noexcept = default;
     State(int2 const size)
       : height(size)
+      , terrain_height(size)
       , velocity(size)
       , height_prev(size)
       , velocity_prev(size)
@@ -27,6 +28,7 @@ struct State {
     State& operator=(State&&) noexcept = default;
 
     Float_slab height;
+    Float_slab terrain_height;
     Float_slab velocity;
     Float_slab height_prev;
     Float_slab velocity_prev;

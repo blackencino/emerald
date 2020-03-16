@@ -16,6 +16,7 @@ if (${EMERALD_BUILD_GUIS})
                           PUBLIC
                           emerald_shallow_weaver
                           emerald_simple_sim_viewer
+                          emerald_geep_glfw
                           cxxopts::cxxopts)
 endif()
 
