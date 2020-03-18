@@ -366,8 +366,7 @@ public:
     }
 
     V2i preferred_window_size() const override {
-        return V2i{m_simulation.parameters().resolution,
-                   m_simulation.parameters().resolution};
+        return V2i{512, 512};
     }
 
     void init_draw(int w, int h) override {

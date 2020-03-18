@@ -64,7 +64,7 @@ Simulation::Simulation(Parameters const& params)
         }
     }
 
-    for (int i = 0; i < 50; ++i) { step(); }
+    //for (int i = 0; i < 50; ++i) { step(); }
 }
 
 Simulation::~Simulation() {

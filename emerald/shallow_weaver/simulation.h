@@ -17,7 +17,7 @@ public:
     struct Parameters {
         float world_size = 37.175f;
         int resolution = 512;
-        float wave_speed = 1.0f;
+        float wave_speed = 0.3f;
         float frames_per_second = 24.0f;
         float damping = 1.0e-6f;
         int num_batch_frames = 100;

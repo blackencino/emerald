@@ -17,7 +17,13 @@ struct State {
       , acceleration_star(size)
       , height_star(size)
       , jacobi_tmp(size)
-      , jacobi_tmp_2(size) {
+      , jacobi_tmp_2(size)
+      , jacobi_tmp_3(size)
+      , jacobi_tmp_4(size)
+      , jacobi_tmp_5(size)
+      , jacobi_tmp_6(size)
+      , jacobi_tmp_7(size)
+      , jacobi_tmp_8(size) {
     }
     ~State() noexcept = default;
 
@@ -37,6 +43,12 @@ struct State {
     Float_slab height_star;
     Float_slab jacobi_tmp;
     Float_slab jacobi_tmp_2;
+    Float_slab jacobi_tmp_3;
+    Float_slab jacobi_tmp_4;
+    Float_slab jacobi_tmp_5;
+    Float_slab jacobi_tmp_6;
+    Float_slab jacobi_tmp_7;
+    Float_slab jacobi_tmp_8;
 };
 
 }  // namespace emerald::shallow_weaver
