@@ -40,15 +40,15 @@ public:
     explicit Viewer(SimPtr i_sim, bool i_anim = false);
     ~Viewer();
 
-    void init();
-    void tick(bool i_force);
-    void display();
-    void reshape(int i_width, int i_height);
-    void keyboard(int i_key, int i_scancode, int i_action, int i_mods);
-    void character(unsigned int i_char);
-    void mouse(int i_button, int i_action, int i_mods);
-    void mouse_drag(double x, double y);
-    GLFWwindow* window() {
+    virtual void init();
+    virtual void tick(bool i_force);
+    virtual void display();
+    virtual void reshape(int i_width, int i_height);
+    virtual void keyboard(int i_key, int i_scancode, int i_action, int i_mods);
+    virtual void character(unsigned int i_char);
+    virtual void mouse(int i_button, int i_action, int i_mods);
+    virtual void mouse_drag(double x, double y);
+    virtual GLFWwindow* window() {
         return m_window;
     }
 
