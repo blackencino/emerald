@@ -582,22 +582,24 @@ Program::Program(const std::string& i_name,
                         << ", but wanted: " << (*biter).first);
     }
 
-    GLint validate = 0;
-    glValidateProgram(m_progId);
-    glGetProgramiv(m_progId, GL_VALIDATE_STATUS, &validate);
-    if (validate != GL_TRUE) {
-        GLint length = 0;
-        glGetProgramiv(m_progId, GL_INFO_LOG_LENGTH, &length);
+    if (i_vertexArrayObject > 0) {
+        GLint validate = 0;
+        glValidateProgram(m_progId);
+        glGetProgramiv(m_progId, GL_VALIDATE_STATUS, &validate);
+        if (validate != GL_TRUE) {
+            GLint length = 0;
+            glGetProgramiv(m_progId, GL_INFO_LOG_LENGTH, &length);
 
-        std::vector<GLchar> log(length + 1);
-        glGetProgramInfoLog(m_progId, length, &length, &(log[0]));
-        std::string logStr = (const std::string&)&(log[0]);
+            std::vector<GLchar> log(length + 1);
+            glGetProgramInfoLog(m_progId, length, &length, &(log[0]));
+            std::string logStr = (const std::string&)&(log[0]);
 
-        EMLD_FAIL("Given vertex/fragment program: "
-                  << m_name << " won't run on this hardware" << std::endl
-                  << logStr);
+            EMLD_FAIL("Given vertex/fragment program: "
+                      << m_name << " won't run on this hardware" << std::endl
+                      << logStr);
+        }
+        std::cout << "Validated GLSL program." << std::endl;
     }
-    std::cout << "Validated GLSL program." << std::endl;
 
     // Bind the vertex array object
     if (i_vertexArrayObject > 0) {
