@@ -204,9 +204,11 @@ Viewer::Viewer(SimPtr i_simPtr, bool i_anim)
     // Main loop.
     while (!glfwWindowShouldClose(m_window)) {
         tick(false);
-        display();
-        glFlush();
-        glfwSwapBuffers(m_window);
+        if (m_sim->needs_redraw()) {
+            display();
+            glFlush();
+            glfwSwapBuffers(m_window);
+        }
         glfwPollEvents();
 
         glfwSetWindowTitle(m_window, m_sim->name().c_str());
@@ -266,7 +268,6 @@ void Viewer::tick(bool i_force) {
 //-*****************************************************************************
 void Viewer::display() {
     m_sim->outer_draw();
-    glFlush();
     util_gl::CheckErrors("Viewer::display() glFlush");
 }
 

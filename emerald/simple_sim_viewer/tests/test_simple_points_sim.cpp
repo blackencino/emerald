@@ -18,6 +18,7 @@ protected:
         m_objectToWorld.setAxisAngle(m_axisOfRotation, m_angleOfRotation);
         m_worldSpaceBounds =
             Imath::transform(m_objectSpaceBounds, m_objectToWorld);
+        m_updated = true;
     }
 
     void init_draw(int w, int h) override {
@@ -68,6 +69,8 @@ protected:
 
         // Materials.
         SetStdMaterial(*m_program, V3f(0.18f), 0.0f, V3f(0.1f), 25.0f);
+
+        m_updated = true;
     }
 
 public:
@@ -128,21 +131,29 @@ public:
         return m_worldSpaceBounds;
     }
 
+    bool needs_redraw() override {
+        return m_camera_changed_since_last_draw || m_updated;
+    }
+
     //! This draws, assuming a camera matrix has already been set.
     //! ...
     void draw() override {
-        glEnable(GL_PROGRAM_POINT_SIZE);
+        if (m_program && m_pointsDrawHelper) {
+            glEnable(GL_PROGRAM_POINT_SIZE);
 
-        SetStdMatrices(*m_program, m_camera, m_objectToWorld);
-        m_program->use();
+            SetStdMatrices(*m_program, m_camera, m_objectToWorld);
+            m_program->use();
 
-        (*m_program)(Uniform("g_pointSize",
-                             (float)25.0,
-                             (Uniform::Requirement)Uniform::kRequireOptional));
-        m_program->setUniforms();
+            (*m_program)(
+                Uniform("g_pointSize",
+                        (float)25.0,
+                        (Uniform::Requirement)Uniform::kRequireOptional));
+            m_program->setUniforms();
 
-        m_pointsDrawHelper->draw(m_camera);
-        m_program->unuse();
+            m_pointsDrawHelper->draw(m_camera);
+            m_program->unuse();
+            m_updated = false;
+        }
     }
 
 protected:
@@ -155,6 +166,8 @@ protected:
     double m_time;
     Box3d m_objectSpaceBounds;
     Box3d m_worldSpaceBounds;
+
+    bool m_updated = false;
 
     std::unique_ptr<PointsDrawHelper> m_pointsDrawHelper;
     std::unique_ptr<Program> m_program;

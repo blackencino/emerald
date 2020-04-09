@@ -474,10 +474,16 @@ Program::Program(const std::string& i_name,
                  const Bindings& i_frgBindingsOut,
                  GLuint i_vertexArrayObject)
   : m_name(i_name) {
+    util_gl::CheckErrors("Beginning of Program ctor");
+
     // Bind the vertex array object
     if (i_vertexArrayObject > 0) {
+
+        auto const is_vao = glIsVertexArray(i_vertexArrayObject);
+        std::cout << "So... is it one? " << static_cast<int>(is_vao) << std::endl;
+
         glBindVertexArray(i_vertexArrayObject);
-        util_gl::CheckErrors("glBindVertexArray");
+        util_gl::CheckErrors("glBindVertexArray in beginning of Program ctor");
     }
 
     // Do the program creation.
@@ -604,7 +610,7 @@ Program::Program(const std::string& i_name,
     // Bind the vertex array object
     if (i_vertexArrayObject > 0) {
         glBindVertexArray(0);
-        util_gl::CheckErrors("glBindVertexArray");
+        util_gl::CheckErrors("glBindVertexArray unbind at end of Program ctor");
     }
 }
 

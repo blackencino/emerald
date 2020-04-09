@@ -27,27 +27,33 @@ void Sim3D::init_draw(int w, int h) {
     m_camera.size.x = w;
     m_camera.size.y = h;
     m_camera = frame(look_at(m_camera, V3d{24, 18, 24}, V3d{0.0}), bounds());
+    m_camera_changed_since_last_draw = true;
 }
 
 void Sim3D::reshape(int w, int h) {
     m_camera.size.x = w;
     m_camera.size.y = h;
+    m_camera_changed_since_last_draw = true;
 }
 
 void Sim3D::frame_camera() {
     m_camera = frame(m_camera, bounds());
+    m_camera_changed_since_last_draw = true;
 }
 
 void Sim3D::dolly_camera(float dx, float dy) {
     m_camera = dolly(m_camera, V2d{dx, dy});
+    m_camera_changed_since_last_draw = true;
 }
 
 void Sim3D::track_camera(float dx, float dy) {
     m_camera = track(m_camera, V2d{dx, dy});
+    m_camera_changed_since_last_draw = true;
 }
 
 void Sim3D::rotate_camera(float dx, float dy) {
     m_camera = rotate(m_camera, V2d{dx, dy});
+    m_camera_changed_since_last_draw = true;
 }
 
 void Sim3D::outer_draw() {
@@ -72,6 +78,8 @@ void Sim3D::outer_draw() {
     util_gl::CheckErrors("outerDraw glClear");
 
     draw();
+
+    m_camera_changed_since_last_draw = false;
 }
 
 //-*****************************************************************************

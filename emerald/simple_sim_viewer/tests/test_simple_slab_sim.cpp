@@ -1,8 +1,8 @@
 #include <emerald/simple_sim_viewer/slab_draw_helper.h>
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/util/assert.h>
-#include <emerald/util/functions.h>
 #include <emerald/util/format.h>
+#include <emerald/util/functions.h>
 
 using namespace emerald::simple_sim_viewer;
 using namespace emerald::util;
@@ -26,8 +26,6 @@ public:
                 if (parity_i == parity_j) {
                     m_image[i + (j * m_image_width)] = V3f{1.0f};
                 }
-
-                //fmt::print("{}: {}\n", V2i{i, j}, m_image[i + (j * m_image_width)]);
             }
         }
     }
@@ -45,16 +43,26 @@ public:
 
         m_slabDrawHelper = std::make_unique<SlabDrawHelper>(
             m_image.data(), m_image_width, m_image_height);
+
+        m_updated = true;
+    }
+
+    bool needs_redraw() override {
+        return m_updated;
     }
 
     void draw() override {
-        if (m_slabDrawHelper) { m_slabDrawHelper->draw(); }
+        if (m_slabDrawHelper) {
+            m_slabDrawHelper->draw();
+            m_updated = false;
+        }
     }
 
 private:
     std::vector<V3f> m_image;
     int m_image_width = 0;
     int m_image_height = 0;
+    bool m_updated = false;
 
     std::unique_ptr<SlabDrawHelper> m_slabDrawHelper;
 };

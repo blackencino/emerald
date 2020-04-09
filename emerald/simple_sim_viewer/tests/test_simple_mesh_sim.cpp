@@ -18,6 +18,8 @@ protected:
         m_objectToWorld.setAxisAngle(m_axisOfRotation, m_angleOfRotation);
         m_worldSpaceBounds =
             Imath::transform(m_objectSpaceBounds, m_objectToWorld);
+
+        m_updated = true;
     }
 
     void pushBackQuad(const V3f& i_c00,
@@ -107,6 +109,8 @@ protected:
 
         // Materials.
         SetStdMaterial(*m_program, V3f(0.18f), 0.0f, V3f(0.1f), 25.0f);
+
+        m_updated = true;
     }
 
 public:
@@ -157,6 +161,10 @@ public:
         return m_worldSpaceBounds;
     }
 
+    bool needs_redraw() override {
+        return m_camera_changed_since_last_draw || m_updated;
+    }
+
     //! This draws, assuming a camera matrix has already been set.
     //! ...
     virtual void draw() override {
@@ -164,6 +172,7 @@ public:
         m_program->use();
         m_meshDrawHelper->draw(m_camera);
         m_program->unuse();
+        m_updated = false;
     }
 
 protected:
@@ -177,6 +186,8 @@ protected:
     double m_time;
     Box3d m_objectSpaceBounds;
     Box3d m_worldSpaceBounds;
+
+    bool m_updated = false;
 
     std::unique_ptr<MeshDrawHelper> m_meshDrawHelper;
     std::unique_ptr<Program> m_program;

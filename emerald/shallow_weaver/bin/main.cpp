@@ -353,7 +353,6 @@ public:
         float const trange = std::max(tmax - tmin, 1.0f);
         m_terrain_min = tcen - 0.5f * trange;
         m_terrain_max = tcen + 0.5f * trange;
-        fmt::print("Terrain range: {} to {}\n", m_terrain_min, m_terrain_max);
         for (int i = 0; i < terrain_array_size; ++i) {
             auto const d =
                 linstep(m_terrain_min, m_terrain_max, terrain_data_span[i]);
@@ -381,10 +380,19 @@ public:
             m_terrain_max,
             m_simulation.parameters().resolution,
             m_simulation.parameters().resolution);
+
+        m_updated = true;
+    }
+
+    bool needs_redraw() override {
+        return m_updated;
     }
 
     void draw() override {
-        if (m_slab_draw) { m_slab_draw->draw(); }
+        if (m_slab_draw) {
+            m_slab_draw->draw();
+            m_updated = false;
+        }
     }
 
     void step() override {
@@ -395,6 +403,7 @@ public:
                 m_water_image.data(), m_water_min, m_water_max);
             m_slab_draw->update_terrain(
                 m_terrain_image.data(), m_terrain_min, m_terrain_max);
+            m_updated = true;
         }
     }
 
@@ -451,6 +460,8 @@ private:
     std::vector<uint8_t> m_terrain_image;
     float m_terrain_min = -10.0f;
     float m_terrain_max = 10.0f;
+
+    bool m_updated = false;
 
     std::unique_ptr<Shallow_weaver_slab_draw> m_slab_draw;
     bool m_mouse_down = false;

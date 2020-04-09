@@ -33,6 +33,7 @@ void CheckErrors(std::string const& label) {
     EMLD_ASSERT(errCode == GL_NO_ERROR,
                 "OpenGL Error: "
                     << "Code = " << static_cast<int>(errCode)
+                    << std::endl
                     << " ( Label: " << label << " )");
 }
 

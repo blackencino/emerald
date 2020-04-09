@@ -44,6 +44,10 @@ public:
     virtual void rotate_camera(float dx, float dy) {
     }
 
+    virtual bool needs_redraw() {
+        return true;
+    }
+
     //! This draws, assuming a camera matrix has already been set.
     //! ...
     virtual void draw() {
@@ -109,6 +113,7 @@ public:
 
 protected:
     GLCamera m_camera;
+    bool m_camera_changed_since_last_draw = false;
 };
 
 //-*****************************************************************************

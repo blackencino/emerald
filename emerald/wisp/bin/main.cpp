@@ -59,16 +59,28 @@ public:
             m_image.data(),
             m_simulation.parameters().resolution,
             m_simulation.parameters().resolution);
+
+        m_updated = true;
+    }
+
+    bool needs_redraw() override {
+        return m_updated;
     }
 
     void draw() override {
-        if (m_slab_draw_helper) { m_slab_draw_helper->draw(); }
+        if (m_slab_draw_helper) {
+            m_slab_draw_helper->draw();
+            m_updated = false;
+        }
     }
 
     void step() override {
         m_simulation.step();
         copy_state_to_image();
-        if (m_slab_draw_helper) { m_slab_draw_helper->update(m_image.data()); }
+        if (m_slab_draw_helper) {
+            m_slab_draw_helper->update(m_image.data());
+            m_updated = true;
+        }
     }
 
     void mouse(int i_button,
@@ -146,6 +158,7 @@ private:
     int m_data_height = 0;
     std::unique_ptr<SlabDrawHelper> m_slab_draw_helper;
     bool m_mouse_down = false;
+    bool m_updated = false;
 };
 
 //-*****************************************************************************
