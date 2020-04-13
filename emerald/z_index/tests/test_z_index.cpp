@@ -107,6 +107,14 @@ TEST(Z_index_test, Z_index_3_encode) {
         0b0101'1011'0110'1101'1011'0110'1101'1011'0110'1101'1011'0110'1101'1011'0110'1101ull;
     auto const index_3 = z_index(x_3, y_3, z_3);
     EXPECT_EQ(expected_index_3, index_3);
+
+    constexpr uint32_t x_4 = 0b111'1111'1111'1111'1111'1111ul;
+    constexpr uint32_t y_4 = 0b1'1111'1111'1111'1111'1111ul;
+    constexpr uint32_t z_4 = 0b1'1111'1111'1111'1111'1111ul;
+    constexpr uint64_t expected_index_4 =
+        0b0111'1111'1111'1111'1111'1111'1111'1111'1111'1111'1111'1111'1111'1111'1111'1111ull;
+    auto const index_4 = z_index(x_4, y_4, z_4);
+    EXPECT_EQ(expected_index_4, index_4);
 }
 
 }  // namespace emerald::z_index
