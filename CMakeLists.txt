@@ -43,6 +43,7 @@ find_package(boost REQUIRED)
 find_package(fftw REQUIRED)
 find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
+find_package(GTest REQUIRED)
 
 if (${EMERALD_BUILD_GUIS})
     find_package(glfw REQUIRED)
