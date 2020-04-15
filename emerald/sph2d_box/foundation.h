@@ -13,6 +13,7 @@ namespace emerald::sph2d_box {
 //------------------------------------------------------------------------------
 using C3f = Imath::Color3<float>;
 using C4f = Imath::Color4<float>;
+using C4uc = Imath::Color4<uint8_t>;
 
 using V3f = Imath::Vec3<float>;
 using V3i = Imath::Vec3<int32_t>;

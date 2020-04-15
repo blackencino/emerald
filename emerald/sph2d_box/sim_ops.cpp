@@ -1,5 +1,7 @@
 #include <emerald/sph2d_box/sim_ops.h>
 
+#include <emerald/sph2d_box/kernels.h>
+#include <emerald/util/functions.h>
 #include <emerald/z_index/z_index.h>
 
 #include <fmt/format.h>
@@ -12,6 +14,8 @@
 #include <cmath>
 
 namespace emerald::sph2d_box {
+
+using namespace emerald::util;
 
 Box2f compute_bounds(size_t const size, V2f const* const positions) {
     if (size < 1) { return Box2f{}; }
@@ -209,112 +213,221 @@ void create_neighborhoods(
     });
 }
 
-// Block_map create_blocks(size_t const size,
-//                         Block_map&& into,
-//                         Index_pair const* const index_pairs) {
-//     into.clear();
-//     into.rehash(size / 2);
-//     do_parts_work(
-//         size, [size, block_map = std::move(into), index_pairs](auto const i)
-//         {
-//             auto const [z_index, part_index] = index_pairs[i];
-//             auto& block = block_map[z_index];
-//             block = extend_by(block, static_cast<uint32_t>(part_index));
-//         });
-//     return std::move(into);
-// }
+void compute_external_forces(size_t const size,
+                             float const mass_per_particle,
+                             float const gravity,
+                             V2f* const forces) {
+    fill_array(size, V2f{0.0f, -mass_per_particle * gravity}, forces);
+}
 
-// struct Neighborhood {
-//     std::array<uint32_t, 63> neighbor_indices;
-//     uint32_t count = 0;
-// };
+void init_pressure(size_t const size, float* const pressures) {
+    fill_array(size, 0.0f, pressures);
+}
 
-// void find_neighborhoods(size_t const size,
-//                         Neighborhood* const neighborhoods,
-//                         Block_map const& block_map,
+void predict_velocities(size_t const size,
+                        float const mass_per_particle,
+                        float const dt,
+                        V2f* const velocity_stars,
+                        V2f const* const velocities,
+                        V2f const* const pressure_forces,
+                        V2f const* const forces) {
+    copy_array(size, velocity_stars, velocities);
+    accumulate(size, dt / mass_per_particle, velocity_stars, pressure_forces);
+    accumulate(size, dt / mass_per_particle, velocity_stars, forces);
+}
 
-//                         ) {
+void predict_positions(size_t const size,
+                       float const dt,
+                       V2f* const position_stars,
+                       V2f const* const positions,
+                       V2f const* const velocities) {
+    copy_array(size, position_stars, positions);
+    accumulate(size, dt, position_stars, velocities);
+}
 
-//     do_parts_work(size, [&](auto const p) {
-//         auto const [grid_i, grid_j] = grid_coords[p];
-//         for (uint32_t j = _decr(grid_j); j < grid_j+1; ++j) {
-//             for (uint32_t i = _decr(grid_i); i < grid_i+1; ++i) {
-//                 auto const z_index_ij = z_index(i, j);
+void enforce_solid_boundaries(size_t const size,
+                              float const support,
+                              float const world_length,
+                              V2f* const positions,
+                              V2f* const velocities) {
+    float const border = 0.0f;
+    V2f const bmin{border, border};
+    V2f const bmax{world_length - border, world_length - border};
+    do_parts_work(size, [=](auto const i) {
+        V2f& p = positions[i];
+        V2f& v = velocities[i];
 
-//                 auto const found_iter = block_map.find(z_index_ij);
-//                 if (found_iter == block_map.end()) {
-//                     continue;
-//                 }
+        for (int dim = 0; dim < 2; ++dim) {
+            if (p[dim] < bmin[dim]) {
+                p[dim] = bmin[dim];
+                v[dim] = std::max(0.0f, v[dim]);
+            } else if (p[dim] > bmax[dim]) {
+                p[dim] = bmax[dim];
+                v[dim] = std::min(0.0f, v[dim]);
+            }
+        }
+    });
+}
 
-//                 auto const block = (*found_iter);
+void predict_densities(size_t const size,
+                       float const mass_per_particle,
+                       float const support,
+                       float* const densities,
+                       Neighborhood const* const neighborhoods,
+                       V2f const* const positions) {
+    do_parts_work(size, [=](auto const i) {
+        auto const pos_i = positions[i];
+        float muchness_predict = kernels::W(0.0f, support);
+        auto const& nbhd = neighborhoods[i];
+        for (uint32_t nbhd_i = 0; nbhd_i < nbhd.count; ++nbhd_i) {
+            auto const j = nbhd.indices[nbhd_i];
+            auto const pos_j = positions[j];
+            auto const len = (pos_j - pos_i).length();
+            if (len >= 2.0f * support) {
+                continue;
+            }
+            muchness_predict += kernels::W(len, support);
+        }
+        densities[i] = mass_per_particle * muchness_predict;
+    });
+}
 
-//                 for (int sorted_
+void update_pressures(size_t const size,
+                      float const target_density,
+                      float const pressure_correction_denom,
+                      float* const pressures,
+                      float const* const densities) {
+    do_parts_work(size, [=](auto const i) {
+        auto const density_error =
+            std::max(densities[i] - target_density, 0.0f);
+        auto const pressure_tilda = density_error / pressure_correction_denom;
+        pressures[i] += pressure_tilda;
+    });
+}
 
-//             }
-//         }
-//     for ( IntT p = i_begin; p < i_end; ++p )
-//     {
-//         // Get the grid location.
-//         const V2UIT &grid = m_particles.grid[p];
-//         const V2T &Pself = m_particles.positionStar[p];
-//         FloatT &densityStar = m_particles.densityStar[p];
+void compute_pressure_forces(size_t const size,
+                             float const mass_per_particle,
+                             float const support,
+                             float const viscosity,
+                             V2f* const pressure_forces,
+                             Neighborhood const* const neighborhoods,
+                             V2f const* const positions,
+                             V2f const* const velocities,
+                             float const* const pressures,
+                             float const* const densities) {
+    auto const H = support;
+    auto const M = mass_per_particle;
+    auto const N2 = 0.01f * H * H;
+    constexpr float alpha = 1.0f;
+    constexpr float beta = 2.0f;
 
-//         FloatT muchnessPredict = 0.0;
+    do_parts_work(size, [=](auto const i) {
+        auto const pos_i = positions[i];
+        auto const vel_i = velocities[i];
+        auto const pressure_i = pressures[i];
+        auto const density_i = densities[i];
+        float muchness_predict = 0.0f;
+        V2f pressure_force{0.0f, 0.0f};
+        auto const& nbhd = neighborhoods[i];
+        for (uint32_t nbhd_i = 0; nbhd_i < nbhd.count; ++nbhd_i) {
+            auto const j = nbhd.indices[nbhd_i];
+            auto const pos_j = positions[j];
 
-//         // Loop over 9 cells.
-//         for ( UintT j = _decr( grid.y ); j <= grid.y+1; ++j )
-//         {
-//             for ( UintT i = _decr( grid.x ); i <= grid.x+1; ++i )
-//             {
-//                 // Get the z-index of this block.
-//                 UintT zIndex = m_zIndex[ V2UIT( i, j ) ];
+            auto delta_pos = pos_i - pos_j;
+            auto delta_pos_len = delta_pos.length();
+            if (delta_pos_len > 2.0f * H) { continue; }
 
-//                 // Try to find this block.
-//                 // If we can't find it, continue!
-//                 BlockHashMap::const_accessor a;
-//                 if ( !m_blocks->find( a, zIndex ) )
-//                 {
-//                     a.release();
-//                     continue;
-//                 }
+            auto const vel_j = velocities[j];
+            auto const pressure_j = pressures[j];
+            auto const density_j = densities[j];
 
-//                 // Get the block out the accessor and release it.
-//                 Block b = a->second;
-//                 a.release();
+            // Separate couplets
+            auto const tiny_h = 0.001f * H;
+            if (delta_pos_len < tiny_h) {
+                if (j < i) {
+                    delta_pos = V2f{0.0f, tiny_h};
+                } else {
+                    delta_pos = V2f{0.0f, -tiny_h};
+                }
+                delta_pos_len = tiny_h;
+            }
 
-//                 // Block has a range of particle indices
-//                 // in it. They refer to the sorted indices.
-//                 for ( IntT indexPairsI = b.indexPairsBegin;
-//                       indexPairsI != b.indexPairsEnd; ++indexPairsI )
-//                 {
-//                     IntT otherP =
-//                         m_particles.indexPairs[indexPairsI].index;
+            auto const grad_w = kernels::GradW(delta_pos, H);
+            pressure_force += -(M * M) *
+                              ((pressure_i / sqr(density_i)) +
+                               (pressure_j / sqr(density_j))) *
+                              grad_w;
 
-//                     // We don't skip self here.
-//                     if ( otherP == p )
-//                     {
-//                         muchnessPredict += Kernels::W( 0.0, H );
-//                     }
-//                     else
-//                     {
-//                         const V2T &Pother =
-//                             m_particles.positionStar[otherP];
+            // Add viscosity.
+            // This is a very non-linear force, so it is done in
+            // the predictor
+            auto const delta_vel = vel_i - vel_j;
+            auto const dot_vab_rab = delta_pos.dot(delta_vel);
+            if (dot_vab_rab < 0) {
+                auto const mu_ab = H * dot_vab_rab / (delta_pos_len + N2);
+                auto const den_avg = (density_i + density_j) / 2;
 
-//                         V2T dP = Pself - Pother;
-//                         FloatT dpL = dP.length();
-//                         if ( dpL >= 2.0*H )
-//                         {
-//                             continue;
-//                         }
-//                         else
-//                         {
-//                             muchnessPredict += Kernels::W( dpL, H );
-//                         }
-//                     }
-//                 }
-//             }
-//         }
+                pressure_force +=
+                    -(M * M) *
+                    (((-alpha * viscosity * mu_ab) + (beta * sqr(mu_ab))) /
+                     den_avg) *
+                    grad_w;
+            }
+        }
 
-// }
+        pressure_forces[i] = pressure_force;
+    });
+}
+
+void update_velocities(size_t const size,
+                       float const mass_per_particle,
+                       float const dt,
+                       V2f* const velocities,
+                       V2f const* const pressure_forces,
+                       V2f const* const forces) {
+    accumulate(size, dt / mass_per_particle, velocities, pressure_forces);
+    accumulate(size, dt / mass_per_particle, velocities, forces);
+}
+
+void update_positions(size_t const size,
+                      float const dt,
+                      V2f* const positions,
+                      V2f const* const velocities) {
+    accumulate(size, dt, positions, velocities);
+}
+
+float max_density_error(size_t const size,
+                        float const target_density,
+                        float const* const densities) {
+    return tbb::parallel_reduce(
+        tbb::blocked_range<float const*>{densities, densities + size},
+        0.0f,
+        [target_density](tbb::blocked_range<float const*> const& range,
+                         float const value) -> float {
+            float max_value = value;
+            for (auto const density : range) {
+                float const error = std::max(0.0f, density - target_density);
+                max_value = std::max(max_value, error);
+            }
+            return max_value;
+        },
+        [](float const a, float const b) -> float { return std::max(a, b); });
+}
+
+void compute_colors(size_t const size,
+                    float const target_density,
+                    C4uc* const colors,
+                    float const* const densities) {
+    do_parts_work(size, [=](auto const i) {
+        auto const norm_d = densities[i] / (1.1f * target_density);
+
+        colors[i] = {static_cast<uint8_t>(
+                         255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
+                     static_cast<uint8_t>(
+                         255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
+                     255,
+                     255};
+    });
+}
 
 }  // namespace emerald::sph2d_box
