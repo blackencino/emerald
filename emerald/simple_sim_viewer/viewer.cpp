@@ -148,7 +148,7 @@ void g_mouse_drag(GLFWwindow* i_window, double i_fx, double i_fy) {
 //-*****************************************************************************
 
 //-*****************************************************************************
-Viewer::Viewer(SimPtr i_simPtr, bool i_anim)
+Viewer::Viewer(SimPtr i_simPtr, bool i_anim, bool i_run_in_constructor)
   : m_sim(i_simPtr)
   , m_window(nullptr)
   , m_buttonMask(0)
@@ -160,6 +160,21 @@ Viewer::Viewer(SimPtr i_simPtr, bool i_anim)
   , m_animating(i_anim)
   //, m_camera()
   , m_playbackTimer() {
+    if (i_run_in_constructor) { run(); }
+}
+
+//-*****************************************************************************
+Viewer::~Viewer() {
+    if (m_window) {
+        glfwDestroyWindow(m_window);
+        if (g_glfwGlobal) {
+            g_glfwGlobal->unregisterWindowAndAllViewers(m_window);
+        }
+        m_window = nullptr;
+    }
+}
+
+void Viewer::run() {
     // Initialize the global, if needed. This is so that the global doesn't
     // get created unless a viewer is requested.
     if (!g_glfwGlobal) { g_glfwGlobal.reset(new GLFWGlobal); }
@@ -217,17 +232,6 @@ Viewer::Viewer(SimPtr i_simPtr, bool i_anim)
     glfwDestroyWindow(m_window);
     g_glfwGlobal->unregisterWindowAndAllViewers(m_window);
     m_window = nullptr;
-}
-
-//-*****************************************************************************
-Viewer::~Viewer() {
-    if (m_window) {
-        glfwDestroyWindow(m_window);
-        if (g_glfwGlobal) {
-            g_glfwGlobal->unregisterWindowAndAllViewers(m_window);
-        }
-        m_window = nullptr;
-    }
 }
 
 //-*****************************************************************************

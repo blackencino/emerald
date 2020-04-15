@@ -37,10 +37,13 @@ public:
     static const int BMASK_MIDDLE = 0x1 << 1;  // binary 010
     static const int BMASK_RIGHT = 0x1 << 2;   // binary 100
 
-    explicit Viewer(SimPtr i_sim, bool i_anim = false);
+    explicit Viewer(SimPtr i_sim,
+                    bool i_anim = false,
+                    bool i_run_in_constructor = true);
     ~Viewer();
 
     virtual void init();
+    virtual void run();
     virtual void tick(bool i_force);
     virtual void display();
     virtual void reshape(int i_width, int i_height);
