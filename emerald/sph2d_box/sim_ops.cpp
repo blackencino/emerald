@@ -245,6 +245,69 @@ void predict_positions(size_t const size,
     accumulate(size, dt, position_stars, velocities);
 }
 
+void reset_tags(size_t const size, Tag* const tags) {
+    constexpr Tag empty_tag;
+    fill_array(size, empty_tag, tags);
+}
+
+void identify_solid_boundaries_and_correct_pressure_forces(
+    size_t const size,
+    float const support,
+    float const world_length,
+    float const mass_per_particle,
+    Tag* const tags,
+    V2f* const pressure_forces,
+    V2f const* const positions) {
+    float const H = support;
+    float const Hp25 = 0.51f * H;
+    float const L = world_length;
+    float const M = mass_per_particle;
+    constexpr float K = 100.0f;
+
+    do_parts_work(size, [=](auto const i) {
+        auto tag = tags[i];
+        auto pressure_force = pressure_forces[i];
+        auto const pos_i = positions[i];
+
+        tag.reset(NEAR_SOLID_TAG);
+        tag.reset(NEAR_SOLID_VALLEY_TAG);
+        tag.reset(NEAR_SOLID_CORNER_TAG);
+
+        for (int dim = 0; dim < 2; ++dim) {
+            // Min wall.
+            auto const x_min = Hp25 - pos_i[dim];
+            if (x_min > 0.0f) {
+                pressure_force[dim] += x_min * M * K / H;
+
+                if (tag.test(NEAR_SOLID_VALLEY_TAG)) {
+                    tag.set(NEAR_SOLID_CORNER_TAG);
+                } else if (tag.test(NEAR_SOLID_TAG)) {
+                    tag.set(NEAR_SOLID_VALLEY_TAG);
+                } else {
+                    tag.set(NEAR_SOLID_TAG);
+                }
+            }
+
+            // Max wall.
+            auto const x_max = (L - Hp25) - pos_i[dim];
+            if (x_max < 0.0f) {
+                pressure_force[dim] += x_max * M * K / H;
+
+                if (tag.test(NEAR_SOLID_VALLEY_TAG)) {
+                    tag.set(NEAR_SOLID_CORNER_TAG);
+                } else if (tag.test(NEAR_SOLID_TAG)) {
+                    tag.set(NEAR_SOLID_VALLEY_TAG);
+                } else {
+                    tag.set(NEAR_SOLID_TAG);
+                }
+            }
+        }
+
+        tags[i] = tag;
+        pressure_forces[i] = pressure_force;
+    });
+}
+
 void enforce_solid_boundaries(size_t const size,
                               float const support,
                               float const world_length,
@@ -283,9 +346,7 @@ void predict_densities(size_t const size,
             auto const j = nbhd.indices[nbhd_i];
             auto const pos_j = positions[j];
             auto const len = (pos_j - pos_i).length();
-            if (len >= 2.0f * support) {
-                continue;
-            }
+            if (len >= 2.0f * support) { continue; }
             muchness_predict += kernels::W(len, support);
         }
         densities[i] = mass_per_particle * muchness_predict;
@@ -327,7 +388,7 @@ void compute_pressure_forces(size_t const size,
         auto const pressure_i = pressures[i];
         auto const density_i = densities[i];
         float muchness_predict = 0.0f;
-        V2f pressure_force{0.0f, 0.0f};
+        V2f pressure_force = pressure_forces[i];
         auto const& nbhd = neighborhoods[i];
         for (uint32_t nbhd_i = 0; nbhd_i < nbhd.count; ++nbhd_i) {
             auto const j = nbhd.indices[nbhd_i];

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <emerald/sph2d_box/foundation.h>
+#include <emerald/sph2d_box/tag.h>
 
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/parallel_for.h>
@@ -138,6 +139,17 @@ void predict_positions(size_t const size,
                        V2f* const position_stars,
                        V2f const* const positions,
                        V2f const* const velocities);
+
+void reset_tags(size_t const size, Tag* const tags);
+
+void identify_solid_boundaries_and_correct_pressure_forces(
+    size_t const size,
+    float const support,
+    float const world_length,
+    float const mass_per_particle,
+    Tag* const tags,
+    V2f* const pressure_forces,
+    V2f const* const positions);
 
 void enforce_solid_boundaries(size_t const size,
                               float const support,

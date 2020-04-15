@@ -212,6 +212,7 @@ static void sub_step(Simulation_config const& config,
     temp.pressures.resize(count, 0.0f);
     init_pressure(count, temp.pressures.data());
 
+    temp.tags.resize(count);
     temp.pressure_forces.resize(count);
     temp.densities.resize(count);
     temp.position_stars.resize(count);
@@ -230,6 +231,18 @@ static void sub_step(Simulation_config const& config,
                           temp.position_stars.data(),
                           state.positions.data(),
                           temp.velocity_stars.data());
+
+        reset_tags(count, temp.tags.data());
+        fill_array(count, {0.0f, 0.0f}, temp.pressure_forces.data());
+
+        identify_solid_boundaries_and_correct_pressure_forces(
+            count,
+            config.params.support,
+            config.params.length,
+            config.mass_per_particle,
+            temp.tags.data(),
+            temp.pressure_forces.data(),
+            temp.position_stars.data());
 
         enforce_solid_boundaries(count,
                                  config.params.support,
@@ -281,6 +294,12 @@ static void sub_step(Simulation_config const& config,
                      config.seconds_per_sub_step,
                      state.positions.data(),
                      state.velocities.data());
+
+    enforce_solid_boundaries(count,
+                             config.params.support,
+                             config.params.length,
+                             state.positions.data(),
+                             state.velocities.data());
 }
 
 State simulation_step(Simulation_config const& config,

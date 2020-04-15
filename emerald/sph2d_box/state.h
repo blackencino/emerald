@@ -2,6 +2,7 @@
 
 #include <emerald/sph2d_box/foundation.h>
 #include <emerald/sph2d_box/sim_ops.h>
+#include <emerald/sph2d_box/tag.h>
 
 #include <vector>
 
@@ -21,6 +22,7 @@ struct Temp_data {
     std::vector<std::pair<size_t, size_t>> blocks;
     Block_map block_map;
     std::vector<Neighborhood> neighborhoods;
+    std::vector<Tag> tags;
 
     std::vector<V2f> forces;
     std::vector<float> pressures;
