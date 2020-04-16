@@ -95,8 +95,8 @@ TEST_F(Sim_ops_test, Compute_z_indices) {
     std::vector<V2i> grid_coords;
     grid_coords.resize(positions.size());
     compute_grid_coords(positions.size(),
-                        2.1f,
-                        V2f{0.0f, 0.0f},
+                        cell_size,
+                        bounds_min,
                         grid_coords.data(),
                         positions.data());
 
@@ -129,8 +129,8 @@ TEST_F(Sim_ops_test, Compute_index_pairs) {
     std::vector<V2i> grid_coords;
     grid_coords.resize(positions.size());
     compute_grid_coords(positions.size(),
-                        2.1f,
-                        V2f{0.0f, 0.0f},
+                        cell_size,
+                        bounds_min,
                         grid_coords.data(),
                         positions.data());
 
@@ -158,8 +158,8 @@ TEST_F(Sim_ops_test, Sort_index_pairs) {
     std::vector<V2i> grid_coords;
     grid_coords.resize(positions.size());
     compute_grid_coords(positions.size(),
-                        2.1f,
-                        V2f{0.0f, 0.0f},
+                        cell_size,
+                        bounds_min,
                         grid_coords.data(),
                         positions.data());
 
@@ -187,7 +187,7 @@ TEST_F(Sim_ops_test, Compute_block_indices) {
     std::vector<V2i> grid_coords;
     grid_coords.resize(count);
     compute_grid_coords(
-        count, 2.1f, V2f{0.0f, 0.0f}, grid_coords.data(), positions.data());
+        count, cell_size, bounds_min, grid_coords.data(), positions.data());
 
     std::vector<uint64_t> z_indices;
     z_indices.resize(count);
@@ -230,7 +230,7 @@ TEST_F(Sim_ops_test, Fill_blocks) {
     std::vector<V2i> grid_coords;
     grid_coords.resize(count);
     compute_grid_coords(
-        count, 2.1f, V2f{0.0f, 0.0f}, grid_coords.data(), positions.data());
+        count, cell_size, bounds_min, grid_coords.data(), positions.data());
 
     std::vector<uint64_t> z_indices;
     z_indices.resize(count);
@@ -275,7 +275,7 @@ TEST_F(Sim_ops_test, Create_neighborhoods) {
     std::vector<V2i> grid_coords;
     grid_coords.resize(count);
     compute_grid_coords(
-        count, 2.1f, V2f{0.0f, 0.0f}, grid_coords.data(), positions.data());
+        count, cell_size, bounds_min, grid_coords.data(), positions.data());
 
     std::vector<uint64_t> z_indices;
     z_indices.resize(count);
@@ -360,6 +360,47 @@ TEST_F(Sim_ops_test, Create_neighborhoods) {
             auto const pos_j = positions[j];
             auto const len = (pos_j - pos_i).length();
             ASSERT_LT(len, cell_size);
+        }
+    }
+}
+
+TEST_F(Sim_ops_test, Neighborhood_equality) {
+    size_t const count = 7;
+    std::vector<Neighborhood> neighborhoods;
+    neighborhoods.resize(count);
+
+    auto make_neighborhood = [](std::initializer_list<int> indices) {
+        Neighborhood nbhd;
+        nbhd.count = static_cast<uint32_t>(indices.size());
+        std::copy(indices.begin(), indices.end(), nbhd.indices.begin());
+        return nbhd;
+    };
+
+    neighborhoods[0] = make_neighborhood({1, 2, 3, 4, 5});
+    ASSERT_EQ(5, neighborhoods[0].count);
+    ASSERT_EQ(4, neighborhoods[0].indices[3]);
+
+    neighborhoods[1] = make_neighborhood({1, 2, 3, 4, 5});
+    ASSERT_EQ(neighborhoods[0], neighborhoods[1]);
+
+    neighborhoods[2] = make_neighborhood({5, 4, 3, 2, 1});
+
+    neighborhoods[3] = make_neighborhood({1, 2, 3, 4, 5, 6});
+
+    neighborhoods[4] = make_neighborhood(
+        {151, 160, 137, 91,  90,  15,  131, 13,  201, 95,  96, 53,  194, 233,
+         7,   225, 140, 36,  103, 30,  69,  142, 8,   99,  37, 240, 21,  10,
+         174, 20,  125, 136, 171, 168, 68,  175, 74,  165, 71, 134});
+
+    neighborhoods[5] = make_neighborhood({5,  202, 38,  147, 118, 126, 255, 82,
+                                          85, 212, 207, 206, 59,  227, 47,  16,
+                                          58, 17,  182, 189, 28,  42});
+
+    neighborhoods[6] = make_neighborhood({1, 2, 3, 4, 6});
+
+    for (size_t i = 1; i < count; ++i) {
+        for (size_t j = i + 1; j < count; ++j) {
+            ASSERT_NE(neighborhoods[i], neighborhoods[j]);
         }
     }
 }

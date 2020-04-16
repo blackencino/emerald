@@ -17,24 +17,43 @@ namespace emerald::sph2d_box {
 
 using namespace emerald::util;
 
+bool operator==(Neighborhood const& a, Neighborhood const& b) {
+    if (a.count != b.count) { return false; }
+    for (uint32_t i = 0; i < a.count; ++i) {
+        if (a.indices[i] != b.indices[i]) { return false; }
+    }
+    return true;
+}
+
+bool operator!=(Neighborhood const& a, Neighborhood const& b) {
+    return !(a == b);
+}
+
 Box2f compute_bounds(size_t const size, V2f const* const positions) {
     if (size < 1) { return Box2f{}; }
 
-    return tbb::parallel_reduce(
-        // Range for reduction
-        tbb::blocked_range<V2f const*>{positions, positions + size},
-        // Identity element
-        Box2f{},
-        // Reduce a subrange and partial bounds
-        [](tbb::blocked_range<V2f const*> const& range, Box2f partial_bounds) {
-            for (auto const& p : range) { partial_bounds.extendBy(p); }
-            return partial_bounds;
-        },
-        // Reduce two partial bounds
-        [](Box2f bounds_a, Box2f const& bounds_b) {
-            bounds_a.extendBy(bounds_b);
-            return bounds_a;
-        });
+    if constexpr (DO_PARALLEL) {
+        return tbb::parallel_reduce(
+            // Range for reduction
+            tbb::blocked_range<V2f const*>{positions, positions + size},
+            // Identity element
+            Box2f{},
+            // Reduce a subrange and partial bounds
+            [](tbb::blocked_range<V2f const*> const& range,
+               Box2f partial_bounds) {
+                for (auto const& p : range) { partial_bounds.extendBy(p); }
+                return partial_bounds;
+            },
+            // Reduce two partial bounds
+            [](Box2f bounds_a, Box2f const& bounds_b) {
+                bounds_a.extendBy(bounds_b);
+                return bounds_a;
+            });
+    } else {
+        Box2f bounds;
+        for (size_t i = 0; i < size; ++i) { bounds.extendBy(positions[i]); }
+        return bounds;
+    }
 }
 
 V2i compute_grid_coord(V2f const p) {
@@ -83,7 +102,11 @@ void compute_index_pairs(size_t const size,
 void sort_index_pairs(size_t const size,
                       std::pair<uint64_t, size_t>* const index_pairs) {
     if (size < 1) { return; }
-    tbb::parallel_sort(index_pairs, index_pairs + size);
+    if constexpr (DO_PARALLEL) {
+        tbb::parallel_sort(index_pairs, index_pairs + size);
+    } else {
+        std::sort(index_pairs, index_pairs + size);
+    }
 }
 
 // This is a weird one. It produces an array where each value is the
@@ -100,25 +123,38 @@ void compute_block_indices(
     // Iterate starting from position 1, init the 0th entry to 0.
     block_indices[0] = 0;
 
-    // Note that we start the range at 1, so we can do i-1.
-    tbb::parallel_scan(
-        tbb::blocked_range<size_t>{size_t{1}, size},
-        0,
-        [block_indices, sorted_index_pairs](
-            tbb::blocked_range<size_t> const& range,
-            uint32_t const sum,
-            bool const is_final_scan) {
-            uint32_t temp = sum;
-            for (auto i = range.begin(); i != range.end(); ++i) {
-                if (sorted_index_pairs[i - 1].first !=
-                    sorted_index_pairs[i].first) {
-                    ++temp;
+    if constexpr (DO_PARALLEL) {
+        // Note that we start the range at 1, so we can do i-1.
+        tbb::parallel_scan(
+            tbb::blocked_range<size_t>{size_t{1}, size},
+            0,
+            [block_indices, sorted_index_pairs](
+                tbb::blocked_range<size_t> const& range,
+                uint32_t const sum,
+                bool const is_final_scan) {
+                uint32_t temp = sum;
+                for (auto i = range.begin(); i != range.end(); ++i) {
+                    if (sorted_index_pairs[i - 1].first !=
+                        sorted_index_pairs[i].first) {
+                        ++temp;
+                    }
+                    if (is_final_scan) { block_indices[i] = temp; }
                 }
-                if (is_final_scan) { block_indices[i] = temp; }
+                return temp;
+            },
+            [](uint32_t const left, uint32_t const right) {
+                return left + right;
+            });
+    } else {
+        uint32_t sum = 0;
+        for (size_t i = 1; i < size; ++i) {
+            if (sorted_index_pairs[i - 1].first !=
+                sorted_index_pairs[i].first) {
+                ++sum;
             }
-            return temp;
-        },
-        [](uint32_t const left, uint32_t const right) { return left + right; });
+            block_indices[i] = sum;
+        }
+    }
 }
 
 void fill_blocks(size_t const size,
@@ -202,8 +238,12 @@ void create_neighborhoods(
                         static_cast<uint32_t>(other_particle_index);
                     ++nbhd.count;
                     if (nbhd.count == Neighborhood::MAX_COUNT) {
+                        // fmt::print("EVER HERE?\n");
                         std::sort(nbhd.indices.data(),
                                   nbhd.indices.data() + nbhd.count);
+                        // for (auto const nbr: nbhd.indices) {
+                        //    fmt::print("nbr: {}\n", nbr);
+                        //}
                         return;
                     }
                 }
@@ -216,8 +256,17 @@ void create_neighborhoods(
 void compute_external_forces(size_t const size,
                              float const mass_per_particle,
                              float const gravity,
-                             V2f* const forces) {
-    fill_array(size, V2f{0.0f, -mass_per_particle * gravity}, forces);
+                             V2f* const forces,
+                             V2f const* const positions,
+                             V2f const* const velocities) {
+    //fill_array(size, V2f{0.0f, -mass_per_particle * gravity}, forces);
+    V2f const center{0.5f, 0.5f};
+    do_parts_work(size, [=](auto const i) {
+        auto const grav_dir = (positions[i] - center).normalized();
+        forces[i] = -mass_per_particle * gravity * grav_dir;
+
+        forces[i] += -0.025f * velocities[i] * std::sqrt(mass_per_particle);
+    });
 }
 
 void init_pressure(size_t const size, float* const pressures) {
@@ -460,19 +509,31 @@ void update_positions(size_t const size,
 float max_density_error(size_t const size,
                         float const target_density,
                         float const* const densities) {
-    return tbb::parallel_reduce(
-        tbb::blocked_range<float const*>{densities, densities + size},
-        0.0f,
-        [target_density](tbb::blocked_range<float const*> const& range,
-                         float const value) -> float {
-            float max_value = value;
-            for (auto const density : range) {
-                float const error = std::max(0.0f, density - target_density);
-                max_value = std::max(max_value, error);
-            }
-            return max_value;
-        },
-        [](float const a, float const b) -> float { return std::max(a, b); });
+    if constexpr (DO_PARALLEL) {
+        return tbb::parallel_reduce(
+            tbb::blocked_range<float const*>{densities, densities + size},
+            0.0f,
+            [target_density](tbb::blocked_range<float const*> const& range,
+                             float const value) -> float {
+                float max_value = value;
+                for (auto const density : range) {
+                    float const error =
+                        std::max(0.0f, density - target_density);
+                    max_value = std::max(max_value, error);
+                }
+                return max_value;
+            },
+            [](float const a, float const b) -> float {
+                return std::max(a, b);
+            });
+    } else {
+        float max_error = 0.0f;
+        for (size_t i = 0; i < size; ++i) {
+            float const error = std::max(0.0f, densities[i] - target_density);
+            max_error = std::max(error, max_error);
+        }
+        return max_error;
+    }
 }
 
 void compute_colors(size_t const size,

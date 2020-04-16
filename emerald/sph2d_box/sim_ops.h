@@ -8,14 +8,30 @@
 
 #include <array>
 #include <cstdint>
+#include <unordered_map>
 #include <utility>
 
 namespace emerald::sph2d_box {
 
+constexpr bool DO_PARALLEL = true;
+
 //------------------------------------------------------------------------------
 // Types
-using Block_map =
-    tbb::concurrent_unordered_map<uint64_t, std::pair<size_t, size_t>>;
+template <bool>
+struct Block_map_helper;
+
+template <>
+struct Block_map_helper<true> {
+    using map =
+        tbb::concurrent_unordered_map<uint64_t, std::pair<size_t, size_t>>;
+};
+
+template <>
+struct Block_map_helper<false> {
+    using map = std::unordered_map<uint64_t, std::pair<size_t, size_t>>;
+};
+
+using Block_map = Block_map_helper<DO_PARALLEL>::map;
 
 struct Neighborhood {
     static constexpr uint32_t MAX_COUNT = 63;
@@ -23,14 +39,21 @@ struct Neighborhood {
     uint32_t count = 0;
 };
 
+bool operator==(Neighborhood const& a, Neighborhood const& b);
+bool operator!=(Neighborhood const& a, Neighborhood const& b);
+
 //------------------------------------------------------------------------------
 // Generics
 template <typename Function>
 void do_parts_work(size_t const size, Function&& func) {
-    tbb::parallel_for(size_t{0}, size, std::forward<Function>(func));
+    if constexpr (DO_PARALLEL) {
+        tbb::parallel_for(size_t{0}, size, std::forward<Function>(func));
+    } else {
+        for (size_t i = 0; i < size; ++i) { func(i); }
+    }
 }
 
-template <typename T, bool PARALLEL = true>
+template <typename T, bool PARALLEL = DO_PARALLEL>
 void fill_array(size_t const size, T const value, T* const values) {
     if constexpr (PARALLEL) {
         do_parts_work(size, [=](auto const i) { values[i] = value; });
@@ -39,7 +62,7 @@ void fill_array(size_t const size, T const value, T* const values) {
     }
 }
 
-template <typename T, bool PARALLEL = true>
+template <typename T, bool PARALLEL = DO_PARALLEL>
 void copy_array(size_t const size, T* const dst, T const* const src) {
     if (size < 1 || dst == src) { return; }
 
@@ -122,7 +145,9 @@ void create_neighborhoods(
 void compute_external_forces(size_t const size,
                              float const mass_per_particle,
                              float const gravity,
-                             V2f* const forces);
+                             V2f* const forces,
+                             V2f const* const positions,
+                             V2f const* const velocities);
 
 void init_pressure(size_t const size, float* const pressures);
 

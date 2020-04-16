@@ -20,6 +20,14 @@ struct Simulation_config {
 
 State dam_break_initial_state(Parameters const& params);
 
+State random_initial_state(Parameters const& params);
+
+void compute_all_neighbhorhoods(Simulation_config const& config,
+                                State const& state,
+                                Temp_data& temp);
+
+void sub_step(Simulation_config const& config, State& state, Temp_data& temp);
+
 State simulation_step(Simulation_config const& config,
                       State&& state,
                       Temp_data& temp_data);
@@ -32,6 +40,7 @@ struct EZ_EXAMPLE_SIM {
     explicit EZ_EXAMPLE_SIM(Parameters const& params)
       : config(params)
       , state(dam_break_initial_state(params)) {
+      //, state(random_initial_state(params)) {
     }
 
     void step() {

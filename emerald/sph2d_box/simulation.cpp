@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <random>
 
 namespace emerald::sph2d_box {
 
@@ -155,12 +156,40 @@ State dam_break_initial_state(Parameters const& params) {
         push_x = !push_x;
     }
 
+    fmt::print("Initial dam break state particle count: {}\n",
+               state.positions.size());
+
     return state;
 }
 
-static void sub_step(Simulation_config const& config,
-                     State& state,
-                     Temp_data& temp) {
+State random_initial_state(Parameters const& params) {
+    constexpr size_t count = 1000;
+
+    State state;
+
+    std::mt19937_64 gen{params.seed};
+    std::uniform_real_distribution<float> pos_dist{0.0f, params.length};
+    state.positions.resize(count);
+    for (auto& [x, y] : state.positions) {
+        x = pos_dist(gen);
+        y = pos_dist(gen);
+    }
+
+    std::uniform_real_distribution<float> vel_dist{-0.5f * params.length,
+                                                   0.5f * params.length};
+    state.velocities.resize(count);
+    for (auto& [x, y] : state.velocities) {
+        x = vel_dist(gen);
+        y = vel_dist(gen);
+    }
+
+    state.colors.resize(count, C4uc{128, 128, 255, 255});
+    return state;
+}
+
+void compute_all_neighbhorhoods(Simulation_config const& config,
+                                State const& state,
+                                Temp_data& temp) {
     //------------------------------------------------------------------------------
     // NEIGHBORHOOD
     auto const count = state.positions.size();
@@ -200,6 +229,15 @@ static void sub_step(Simulation_config const& config,
                          temp.grid_coords.data(),
                          temp.index_pairs.data(),
                          temp.block_map);
+}
+
+void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
+    auto const count = state.positions.size();
+    auto const cell_size = config.params.support * 2.0f;
+
+    //------------------------------------------------------------------------------
+    // NEIGHBORHOOD
+    compute_all_neighbhorhoods(config, state, temp);
 
     //------------------------------------------------------------------------------
     // NON PRESSURE FORCE AND PRESSURE INIT
@@ -207,7 +245,9 @@ static void sub_step(Simulation_config const& config,
     compute_external_forces(count,
                             config.mass_per_particle,
                             config.params.gravity,
-                            temp.forces.data());
+                            temp.forces.data(),
+                            state.positions.data(),
+                            state.velocities.data());
 
     temp.pressures.resize(count, 0.0f);
     init_pressure(count, temp.pressures.data());
@@ -217,6 +257,10 @@ static void sub_step(Simulation_config const& config,
     temp.densities.resize(count);
     temp.position_stars.resize(count);
     temp.velocity_stars.resize(count);
+
+    reset_tags(count, temp.tags.data());
+    fill_array(count, {0.0f, 0.0f}, temp.pressure_forces.data());
+
     for (int pci_sub_step = 0; pci_sub_step < 6; ++pci_sub_step) {
         predict_velocities(count,
                            config.mass_per_particle,
