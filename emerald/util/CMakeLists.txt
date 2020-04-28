@@ -1,6 +1,7 @@
 add_library(emerald_util
     all.h
     assert.h
+    flicks.h
     format.h
     foundation.h
     functions.h
