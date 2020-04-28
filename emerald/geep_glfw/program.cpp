@@ -679,7 +679,7 @@ GLuint Program::initShader(const std::string& i_shaderName,
 
     const GLchar* shaderSources[32];
     GLsizei numSources = i_sources.size();
-    assert(numSources > 0);
+    EMLD_ASSERT(numSources > 0, "must have at least one shader source");
 
     if (numSources > 32) {
         EMLD_FAIL("Can't compile shader: " << i_shaderName << std::endl

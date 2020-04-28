@@ -2,7 +2,10 @@
 
 #include <emerald/util/assert.h>
 
+#include <chrono>
 #include <iostream>
+#include <string>
+#include <thread>
 
 //-*****************************************************************************
 namespace emerald {
@@ -202,7 +205,12 @@ Viewer::Viewer(SimPtr i_simPtr, bool i_anim)
     glfwSetWindowSizeCallback(m_window, g_reshape);
 
     // Main loop.
+    // This is not a good main loop design, it interleaves the sim thread
+    // with the graphics thread. We need to fix this.
+    // TODO(encino Separate the sim thread from the graphics thread)
+    std::string previous_title;
     while (!glfwWindowShouldClose(m_window)) {
+        auto const start = std::chrono::high_resolution_clock::now();
         tick(false);
         if (m_sim->needs_redraw()) {
             display();
@@ -210,8 +218,18 @@ Viewer::Viewer(SimPtr i_simPtr, bool i_anim)
             glfwSwapBuffers(m_window);
         }
         glfwPollEvents();
-
-        glfwSetWindowTitle(m_window, m_sim->name().c_str());
+        auto const new_title = m_sim->name();
+        if (new_title != previous_title) {
+            glfwSetWindowTitle(m_window, new_title.c_str());
+            previous_title = new_title;
+        }
+        auto const stop = std::chrono::high_resolution_clock::now();
+        auto const elapsed = stop - start;
+        constexpr std::chrono::duration<uint64_t, std::ratio<1, 60>>
+            min_interval{1};
+        if (elapsed < min_interval) {
+            std::this_thread::sleep_for(min_interval - elapsed);
+        }
     }
 
     glfwDestroyWindow(m_window);
