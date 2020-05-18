@@ -1,10 +1,10 @@
 #pragma once
 
-#include <emerald/sph2d_box/foundation.h>
+#include <emerald/sph_common/types.h>
 #include <emerald/util/functions.h>
 #include <emerald/util/safe_divide.h>
 
-namespace emerald::sph2d_box {
+namespace emerald::sph_common {
 namespace kernels {
 
 using namespace emerald::util;
@@ -62,4 +62,4 @@ inline V2f GradW(const V2f& dP, float const h) {
 }
 
 }  // namespace kernels
-}  // namespace emerald::sph2d_box
+}  // namespace emerald::sph_common

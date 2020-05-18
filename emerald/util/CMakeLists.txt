@@ -8,6 +8,7 @@ add_library(emerald_util
     imath_vec_ordering.h
     murmur3.h
     random.h
+    safe_divide.h
     storage_traits.h
     timer.h
     vector_util.h

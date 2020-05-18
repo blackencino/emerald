@@ -17,38 +17,38 @@ namespace emerald::sph2d_box {
 
 using namespace emerald::util;
 
-bool operator==(Neighborhood const& a, Neighborhood const& b) {
-    if (a.count != b.count) { return false; }
-    for (uint32_t i = 0; i < a.count; ++i) {
-        if (a.indices[i] != b.indices[i]) { return false; }
-    }
-    return true;
-}
+// bool operator==(Neighborhood const& a, Neighborhood const& b) {
+//     if (a.count != b.count) { return false; }
+//     for (uint32_t i = 0; i < a.count; ++i) {
+//         if (a.indices[i] != b.indices[i]) { return false; }
+//     }
+//     return true;
+// }
 
-bool operator!=(Neighborhood const& a, Neighborhood const& b) {
-    return !(a == b);
-}
+// bool operator!=(Neighborhood const& a, Neighborhood const& b) {
+//     return !(a == b);
+// }
 
-Box2f compute_bounds(size_t const size, V2f const* const positions) {
+Box2f compute_bounds(size_t const particle_count, V2f const* const positions) {
     if (size < 1) { return Box2f{}; }
 
     if constexpr (DO_PARALLEL) {
         return tbb::parallel_reduce(
-            // Range for reduction
-            tbb::blocked_range<V2f const*>{positions, positions + size},
-            // Identity element
-            Box2f{},
-            // Reduce a subrange and partial bounds
-            [](tbb::blocked_range<V2f const*> const& range,
-               Box2f partial_bounds) {
-                for (auto const& p : range) { partial_bounds.extendBy(p); }
-                return partial_bounds;
-            },
-            // Reduce two partial bounds
-            [](Box2f bounds_a, Box2f const& bounds_b) {
-                bounds_a.extendBy(bounds_b);
-                return bounds_a;
-            });
+          // Range for reduction
+          tbb::blocked_range<V2f const*>{positions, positions + size},
+          // Identity element
+          Box2f{},
+          // Reduce a subrange and partial bounds
+          [](tbb::blocked_range<V2f const*> const& range,
+             Box2f partial_bounds) {
+              for (auto const& p : range) { partial_bounds.extendBy(p); }
+              return partial_bounds;
+          },
+          // Reduce two partial bounds
+          [](Box2f bounds_a, Box2f const& bounds_b) {
+              bounds_a.extendBy(bounds_b);
+              return bounds_a;
+          });
     } else {
         Box2f bounds;
         for (size_t i = 0; i < size; ++i) { bounds.extendBy(positions[i]); }
@@ -71,37 +71,37 @@ V2i compute_grid_coord(V2f const position,
     return compute_grid_coord(position - bounds_min, cell_size);
 }
 
-void compute_grid_coords(size_t const size,
+void compute_grid_coords(size_t const particle_count,
                          float const cell_size,
                          V2f const bounds_min,
                          V2i* const grid_coords,
                          V2f const* const positions) {
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         grid_coords[i] =
-            compute_grid_coord(positions[i], bounds_min, cell_size);
+          compute_grid_coord(positions[i], bounds_min, cell_size);
     });
 }
 
-void compute_z_indices(size_t const size,
+void compute_z_indices(size_t const particle_count,
                        uint64_t* const z_indices,
                        V2i const* const grid_coords) {
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto const [x, y] = grid_coords[i];
         z_indices[i] = z_index::z_index(x, y);
     });
 }
 
-void compute_index_pairs(size_t const size,
+void compute_index_pairs(size_t const particle_count,
                          std::pair<uint64_t, size_t>* const index_pairs,
                          uint64_t const* const z_indices) {
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         index_pairs[i] = {z_indices[i], i};
     });
 }
 
-void sort_index_pairs(size_t const size,
+void sort_index_pairs(size_t const particle_count,
                       std::pair<uint64_t, size_t>* const index_pairs) {
-    if (size < 1) { return; }
+    if (particle_count <= 1) { return; }
     if constexpr (DO_PARALLEL) {
         tbb::parallel_sort(index_pairs, index_pairs + size);
     } else {
@@ -115,10 +115,10 @@ void sort_index_pairs(size_t const size,
 // as there are unique z indices in the sorted index pairs, and they'll
 // be ordered like 000011222223344444455566666677
 void compute_block_indices(
-    size_t const size,
-    uint32_t* const block_indices,
-    std::pair<uint64_t, size_t>* const sorted_index_pairs) {
-    if (size < 1) { return; }
+  size_t const particle_count,
+  uint32_t* const block_indices,
+  std::pair<uint64_t, size_t> const* const sorted_index_pairs) {
+    if (particle_count < 1) { return; }
 
     // Iterate starting from position 1, init the 0th entry to 0.
     block_indices[0] = 0;
@@ -126,28 +126,28 @@ void compute_block_indices(
     if constexpr (DO_PARALLEL) {
         // Note that we start the range at 1, so we can do i-1.
         tbb::parallel_scan(
-            tbb::blocked_range<size_t>{size_t{1}, size},
-            0,
-            [block_indices, sorted_index_pairs](
-                tbb::blocked_range<size_t> const& range,
-                uint32_t const sum,
-                bool const is_final_scan) {
-                uint32_t temp = sum;
-                for (auto i = range.begin(); i != range.end(); ++i) {
-                    if (sorted_index_pairs[i - 1].first !=
-                        sorted_index_pairs[i].first) {
-                        ++temp;
-                    }
-                    if (is_final_scan) { block_indices[i] = temp; }
-                }
-                return temp;
-            },
-            [](uint32_t const left, uint32_t const right) {
-                return left + right;
-            });
+          tbb::blocked_range<size_t>{size_t{1}, particle_count},
+          0,
+          [block_indices, sorted_index_pairs](
+            tbb::blocked_range<size_t> const& range,
+            uint32_t const sum,
+            bool const is_final_scan) {
+              uint32_t temp = sum;
+              for (auto i = range.begin(); i != range.end(); ++i) {
+                  if (sorted_index_pairs[i - 1].first !=
+                      sorted_index_pairs[i].first) {
+                      ++temp;
+                  }
+                  if (is_final_scan) { block_indices[i] = temp; }
+              }
+              return temp;
+          },
+          [](uint32_t const left, uint32_t const right) {
+              return left + right;
+          });
     } else {
         uint32_t sum = 0;
-        for (size_t i = 1; i < size; ++i) {
+        for (size_t i = 1; i < particle_count; ++i) {
             if (sorted_index_pairs[i - 1].first !=
                 sorted_index_pairs[i].first) {
                 ++sum;
@@ -157,7 +157,7 @@ void compute_block_indices(
     }
 }
 
-void fill_blocks(size_t const size,
+void fill_blocks(size_t const particle_count,
                  std::pair<size_t, size_t>* const blocks,
                  uint32_t* const block_indices) {
     // This one is also weird.
@@ -171,97 +171,107 @@ void fill_blocks(size_t const size,
     //
     // Most visited entries here will do nothing, but the ones that are at the
     // start of blocks will fill that whole block.
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto const block_index = block_indices[i];
         if (i == 0 || block_indices[i - 1] != block_index) {
             auto& block = blocks[block_index];
             block.first = i;
-            for (size_t j = i + 1; j < size; ++j) {
+            for (size_t j = i + 1; j < particle_count; ++j) {
                 if (block_indices[j] != block_index) {
                     block.second = j;
                     return;
                 }
             }
             // If we get here we went all the way to the end and didn't
-            // find a new block, so the end is size
-            block.second = size;
+            // find a new block, so the end is particle_count
+            block.second = particle_count;
         }
     });
 }
 
 Block_map create_block_map(
-    size_t const block_count,
-    Block_map&& into,
-    std::pair<size_t, size_t> const* const blocks,
-    std::pair<uint64_t, size_t> const* const sorted_index_pairs) {
+  size_t const block_count,
+  Block_map&& into,
+  std::pair<size_t, size_t> const* const blocks,
+  std::pair<uint64_t, size_t> const* const sorted_index_pairs) {
     into.clear();
     into.rehash(2 * block_count);
 
-    do_parts_work(
-        block_count, [&into, blocks, sorted_index_pairs](auto const block_i) {
-            auto const block = blocks[block_i];
-            auto const z_index = sorted_index_pairs[block.first].first;
-            into.emplace(z_index, block);
-        });
+    for_each_iota(
+      block_count, [&into, blocks, sorted_index_pairs](auto const block_i) {
+          auto const block = blocks[block_i];
+          auto const z_index = sorted_index_pairs[block.first].first;
+          into.emplace(z_index, block);
+      });
 
     return std::move(into);
 }
 
 void create_neighborhoods(
-    size_t const size,
-    float const max_radius,
-    Neighborhood* const neighborhoods,
-    V2f const* const positions,
-    V2i const* const grid_coords,
-    std::pair<uint64_t, size_t> const* const sorted_index_pairs,
-    Block_map const& block_map) {
-    do_parts_work(size, [=](auto const particle_index) {
-        auto const pos = positions[particle_index];
-        auto const grid_coord = grid_coords[particle_index];
-        auto& nbhd = neighborhoods[particle_index];
-        nbhd.count = 0;
-        for (int32_t j = grid_coord[1] - 1; j <= grid_coord[1] + 1; ++j) {
-            for (int32_t i = grid_coord[0] - 1; i <= grid_coord[0] + 1; ++i) {
-                auto const other_z_index = z_index::z_index(i, j);
-                auto const found_iter = block_map.find(other_z_index);
-                if (found_iter == block_map.end()) { continue; }
+  size_t const particle_count,
+  float const max_radius,
+  Neighborhood* const neighborhoods,
+  V2f const* const positions,
+  V2i const* const grid_coords,
+  std::pair<uint64_t, size_t> const* const sorted_index_pairs,
+  Block_map const& block_map) {
+    // Have to be careful with the captures here, lest we
+    // accidentally make a copy of the block map.
+    for_each_iota(
+      particle_count,
+      [max_distance,
+       neighborhoods,
+       positions,
+       grid_coords,
+       sorted_index_pairs,
+       &block_map](auto const particle_index) {
+          auto const pos = positions[particle_index];
+          auto const grid_coord = grid_coords[particle_index];
+          auto& nbhd = neighborhoods[particle_index];
+          nbhd.count = 0;
+          for (int32_t j = grid_coord[1] - 1; j <= grid_coord[1] + 1; ++j) {
+              for (int32_t i = grid_coord[0] - 1; i <= grid_coord[0] + 1; ++i) {
+                  auto const other_z_index = z_index::z_index(i, j);
+                  auto const found_iter = block_map.find(other_z_index);
+                  if (found_iter == block_map.end()) { continue; }
 
-                auto const [sip_begin, sip_end] = (*found_iter).second;
-                for (auto sip = sip_begin; sip != sip_end; ++sip) {
-                    auto const other_particle_index =
+                  // sip == sorted_index_pair
+                  auto const [sip_begin, sip_end] = (*found_iter).second;
+                  for (auto sip = sip_begin; sip != sip_end; ++sip) {
+                      auto const other_particle_index =
                         sorted_index_pairs[sip].second;
-                    if (other_particle_index == particle_index) { continue; }
-                    auto const other_pos = positions[other_particle_index];
-                    auto const other_len = (other_pos - pos).length();
-                    if (other_len >= max_radius) { continue; }
-                    nbhd.indices.at(nbhd.count) =
+                      if (other_particle_index == particle_index) { continue; }
+                      auto const other_pos = positions[other_particle_index];
+                      auto const other_distance = (other_pos - pos).length();
+                      if (other_distance >= max_distance) { continue; }
+                      nbhd.indices.at(nbhd.count) =
                         static_cast<uint32_t>(other_particle_index);
-                    ++nbhd.count;
-                    if (nbhd.count == Neighborhood::MAX_COUNT) {
-                        // fmt::print("EVER HERE?\n");
-                        std::sort(nbhd.indices.data(),
-                                  nbhd.indices.data() + nbhd.count);
-                        // for (auto const nbr: nbhd.indices) {
-                        //    fmt::print("nbr: {}\n", nbr);
-                        //}
-                        return;
-                    }
-                }
-            }
-        }
-        std::sort(nbhd.indices.data(), nbhd.indices.data() + nbhd.count);
-    });
+                      ++nbhd.count;
+                      if (nbhd.count == Neighborhood::MAX_COUNT) {
+                          // fmt::print("EVER HERE?\n");
+                          std::sort(nbhd.indices.data(),
+                                    nbhd.indices.data() + nbhd.count);
+                          // for (auto const nbr: nbhd.indices) {
+                          //    fmt::print("nbr: {}\n", nbr);
+                          //}
+                          return;
+                      }
+                  }
+              }
+          }
+          std::sort(nbhd.indices.data(), nbhd.indices.data() + nbhd.count);
+      });
 }
 
-void compute_external_forces(size_t const size,
+void compute_external_forces(size_t const particle_count,
                              float const mass_per_particle,
                              float const gravity,
                              V2f* const forces,
                              V2f const* const positions,
                              V2f const* const velocities) {
-    //fill_array(size, V2f{0.0f, -mass_per_particle * gravity}, forces);
+    // fill_array(size, V2f{0.0f, -mass_per_particle * gravity}, forces);
     V2f const center{0.5f, 0.5f};
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto const grav_dir = (positions[i] - center).normalized();
         forces[i] = -mass_per_particle * gravity * grav_dir;
 
@@ -269,11 +279,11 @@ void compute_external_forces(size_t const size,
     });
 }
 
-void init_pressure(size_t const size, float* const pressures) {
+void init_pressure(size_t const particle_count, float* const pressures) {
     fill_array(size, 0.0f, pressures);
 }
 
-void predict_velocities(size_t const size,
+void predict_velocities(size_t const particle_count,
                         float const mass_per_particle,
                         float const dt,
                         V2f* const velocity_stars,
@@ -285,7 +295,7 @@ void predict_velocities(size_t const size,
     accumulate(size, dt / mass_per_particle, velocity_stars, forces);
 }
 
-void predict_positions(size_t const size,
+void predict_positions(size_t const particle_count,
                        float const dt,
                        V2f* const position_stars,
                        V2f const* const positions,
@@ -294,26 +304,26 @@ void predict_positions(size_t const size,
     accumulate(size, dt, position_stars, velocities);
 }
 
-void reset_tags(size_t const size, Tag* const tags) {
+void reset_tags(size_t const particle_count, Tag* const tags) {
     constexpr Tag empty_tag;
     fill_array(size, empty_tag, tags);
 }
 
 void identify_solid_boundaries_and_correct_pressure_forces(
-    size_t const size,
-    float const support,
-    float const world_length,
-    float const mass_per_particle,
-    Tag* const tags,
-    V2f* const pressure_forces,
-    V2f const* const positions) {
+  size_t const particle_count,
+  float const support,
+  float const world_length,
+  float const mass_per_particle,
+  Tag* const tags,
+  V2f* const pressure_forces,
+  V2f const* const positions) {
     float const H = support;
     float const Hp25 = 0.51f * H;
     float const L = world_length;
     float const M = mass_per_particle;
     constexpr float K = 100.0f;
 
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto tag = tags[i];
         auto pressure_force = pressure_forces[i];
         auto const pos_i = positions[i];
@@ -357,7 +367,7 @@ void identify_solid_boundaries_and_correct_pressure_forces(
     });
 }
 
-void enforce_solid_boundaries(size_t const size,
+void enforce_solid_boundaries(size_t const particle_count,
                               float const support,
                               float const world_length,
                               V2f* const positions,
@@ -365,7 +375,7 @@ void enforce_solid_boundaries(size_t const size,
     float const border = 0.0f;
     V2f const bmin{border, border};
     V2f const bmax{world_length - border, world_length - border};
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         V2f& p = positions[i];
         V2f& v = velocities[i];
 
@@ -381,13 +391,13 @@ void enforce_solid_boundaries(size_t const size,
     });
 }
 
-void predict_densities(size_t const size,
+void predict_densities(size_t const particle_count,
                        float const mass_per_particle,
                        float const support,
                        float* const densities,
                        Neighborhood const* const neighborhoods,
                        V2f const* const positions) {
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto const pos_i = positions[i];
         float muchness_predict = kernels::W(0.0f, support);
         auto const& nbhd = neighborhoods[i];
@@ -402,20 +412,20 @@ void predict_densities(size_t const size,
     });
 }
 
-void update_pressures(size_t const size,
+void update_pressures(size_t const particle_count,
                       float const target_density,
                       float const pressure_correction_denom,
                       float* const pressures,
                       float const* const densities) {
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto const density_error =
-            std::max(densities[i] - target_density, 0.0f);
+          std::max(densities[i] - target_density, 0.0f);
         auto const pressure_tilda = density_error / pressure_correction_denom;
         pressures[i] += pressure_tilda;
     });
 }
 
-void compute_pressure_forces(size_t const size,
+void compute_pressure_forces(size_t const particle_count,
                              float const mass_per_particle,
                              float const support,
                              float const viscosity,
@@ -431,7 +441,7 @@ void compute_pressure_forces(size_t const size,
     constexpr float alpha = 1.0f;
     constexpr float beta = 2.0f;
 
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto const pos_i = positions[i];
         auto const vel_i = velocities[i];
         auto const pressure_i = pressures[i];
@@ -463,10 +473,10 @@ void compute_pressure_forces(size_t const size,
             }
 
             auto const grad_w = kernels::GradW(delta_pos, H);
-            pressure_force += -(M * M) *
-                              ((pressure_i / sqr(density_i)) +
-                               (pressure_j / sqr(density_j))) *
-                              grad_w;
+            pressure_force +=
+              -(M * M) *
+              ((pressure_i / sqr(density_i)) + (pressure_j / sqr(density_j))) *
+              grad_w;
 
             // Add viscosity.
             // This is a very non-linear force, so it is done in
@@ -478,10 +488,10 @@ void compute_pressure_forces(size_t const size,
                 auto const den_avg = (density_i + density_j) / 2;
 
                 pressure_force +=
-                    -(M * M) *
-                    (((-alpha * viscosity * mu_ab) + (beta * sqr(mu_ab))) /
-                     den_avg) *
-                    grad_w;
+                  -(M * M) *
+                  (((-alpha * viscosity * mu_ab) + (beta * sqr(mu_ab))) /
+                   den_avg) *
+                  grad_w;
             }
         }
 
@@ -489,7 +499,7 @@ void compute_pressure_forces(size_t const size,
     });
 }
 
-void update_velocities(size_t const size,
+void update_velocities(size_t const particle_count,
                        float const mass_per_particle,
                        float const dt,
                        V2f* const velocities,
@@ -499,33 +509,30 @@ void update_velocities(size_t const size,
     accumulate(size, dt / mass_per_particle, velocities, forces);
 }
 
-void update_positions(size_t const size,
+void update_positions(size_t const particle_count,
                       float const dt,
                       V2f* const positions,
                       V2f const* const velocities) {
     accumulate(size, dt, positions, velocities);
 }
 
-float max_density_error(size_t const size,
+float max_density_error(size_t const particle_count,
                         float const target_density,
                         float const* const densities) {
     if constexpr (DO_PARALLEL) {
         return tbb::parallel_reduce(
-            tbb::blocked_range<float const*>{densities, densities + size},
-            0.0f,
-            [target_density](tbb::blocked_range<float const*> const& range,
-                             float const value) -> float {
-                float max_value = value;
-                for (auto const density : range) {
-                    float const error =
-                        std::max(0.0f, density - target_density);
-                    max_value = std::max(max_value, error);
-                }
-                return max_value;
-            },
-            [](float const a, float const b) -> float {
-                return std::max(a, b);
-            });
+          tbb::blocked_range<float const*>{densities, densities + size},
+          0.0f,
+          [target_density](tbb::blocked_range<float const*> const& range,
+                           float const value) -> float {
+              float max_value = value;
+              for (auto const density : range) {
+                  float const error = std::max(0.0f, density - target_density);
+                  max_value = std::max(max_value, error);
+              }
+              return max_value;
+          },
+          [](float const a, float const b) -> float { return std::max(a, b); });
     } else {
         float max_error = 0.0f;
         for (size_t i = 0; i < size; ++i) {
@@ -536,19 +543,18 @@ float max_density_error(size_t const size,
     }
 }
 
-void compute_colors(size_t const size,
+void compute_colors(size_t const particle_count,
                     float const target_density,
                     C4uc* const colors,
                     float const* const densities) {
-    do_parts_work(size, [=](auto const i) {
+    for_each_iota(particle_count, [=](auto const i) {
         auto const norm_d = densities[i] / (1.1f * target_density);
 
-        colors[i] = {static_cast<uint8_t>(
-                         255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
-                     static_cast<uint8_t>(
-                         255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
-                     255,
-                     255};
+        colors[i] = {
+          static_cast<uint8_t>(255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
+          static_cast<uint8_t>(255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
+          255,
+          255};
     });
 }
 

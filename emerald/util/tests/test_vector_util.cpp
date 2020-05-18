@@ -1,28 +1,30 @@
+#include <emerald/util/format.h>
 #include <emerald/util/foundation.h>
 #include <emerald/util/random.h>
 #include <emerald/util/vector_util.h>
 
+#include <fmt/format.h>
+#include <gtest/gtest.h>
+
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
+namespace emerald::util {
 
-namespace eu = emerald::util;
+TEST(Test_vector_util, Print_hash_key) {
+    V3d g;
+    set_zero(g);
 
-int main(int argc, char* argv[]) {
-    eu::V3d g;
-    eu::set_zero(g);
-
-    eu::UniformRand rand;
+    UniformRand rand;
     std::vector<float> v;
     for (int i = 0; i < 100; ++i) { v.push_back(rand()); }
 
-    const float* vdata = v.data();
-    for (int i = 0; i < 100; ++i) { std::cout << vdata[i] << std::endl; }
+    auto const* const vdata = v.data();
+    for (int i = 0; i < 100; ++i) { fmt::print("{}\n", vdata[i]); }
 
-    eu::VectorHashKey vkey = eu::ComputeVectorHashKey(v);
-    std::cout << "Vector hash key: " << eu::FormatHashKey(vkey) << std::endl;
-
-    return 0;
+    auto const vkey = ComputeVectorHashKey(v);
+    fmt::print("Vector hash key: {}\n", FormatHashKey(vkey));
 }
+
+}  // namespace emerald::util

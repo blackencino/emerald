@@ -7,6 +7,7 @@ if (${EMERALD_BUILD_GUIS})
 endif()
 add_subdirectory(shallow_weaver)
 add_subdirectory(wisp)
-add_subdirectory(sph2d_box)
+add_subdirectory(sph_common)
+#add_subdirectory(sph2d_box)
 
 

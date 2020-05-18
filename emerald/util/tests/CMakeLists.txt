@@ -1,8 +1,16 @@
 
-add_executable(test_vector_util test_vector_util.cpp)
-target_link_libraries(test_vector_util PUBLIC emerald_util)
-add_test(TEST_emerald_util_vector_util test_vector_util)
-
-add_executable(test_functions test_functions.cpp)
-target_link_libraries(test_functions PUBLIC emerald_util)
-add_test(TEST_emerald_util_functions test_functions)
+##------------------------------------------------------------------------------
+# TESTS
+foreach(_test
+        functions
+        safe_divide
+        vector_util)
+    set(_target test_${_test})
+    add_executable(${_target} "${_target}.cpp")
+    target_link_libraries(${_target}
+                          PUBLIC
+                          emerald_util
+                          GTest::GTest
+                          fmt::fmt)
+    add_test(TEST_emerald_util_${_test} ${_target})
+endforeach()
