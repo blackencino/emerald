@@ -1,6 +1,5 @@
 #pragma once
 
-#include <emerald/sph2d_box/foundation.h>
 #include <emerald/util/flicks.h>
 
 #include <cstdint>

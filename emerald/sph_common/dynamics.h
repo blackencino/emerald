@@ -24,7 +24,6 @@ void forward_euler_integrate_linear_values(size_t const entity_count,
                                            T const* const value_dots) {
     // Accomodate in-place
     if (values != value_nexts) { copy_array(entity_count, value_nexts, values); }
-
     accumulate(entity_count, dt, value_nexts, value_dots);
 }
 

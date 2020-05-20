@@ -148,7 +148,29 @@ void create_regular_neighborhoods(
                          [](auto const i, auto const j) { return true; });
 }
 
-void compute_neighborhood_kernels(
+void compute_neighbor_distances_and_vectors_to(
+  size_t const particle_count,
+  Neighbor_values<float>* const neighbor_distances,
+  Neighbor_values<V2f>* const neighbor_vectors_to,
+  V2f const* const positions,
+  uint8_t const* const neighbor_counts,
+  Neighbor_values<size_t> const* const neighbor_indices) {
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        auto const position = positions[particle_index];
+        auto const neighbor_count = neighbor_counts[particle_index];
+        auto& neighbor_distance = neighbor_distances[particle_index];
+        auto& neighbor_vector_to = neighbor_vectors_to[particle_index];
+        auto const& nbhd_indices = neighbor_indices[particle_index];
+        for (uint8_t j = 0; j < neighbor_count; ++j) {
+            auto const other_particle_index = nbhd_indices[j];
+            auto const delta_pos = positions[other_particle_index] - position;
+            neighbor_vector_to[j] = delta_pos;
+            neighbor_distance[j] = delta_pos.length();
+        }
+    });
+}
+
+void compute_neighbor_kernels(
   size_t const particle_count,
   float const support,
   Neighbor_values<float>* const neighbor_kernels,
@@ -164,7 +186,7 @@ void compute_neighborhood_kernels(
     });
 }
 
-void compute_neighborhood_kernel_gradients(
+void compute_neighbor_kernel_gradients(
   size_t const particle_count,
   float const support,
   Neighbor_values<V2f>* const neighbor_kernel_gradients,

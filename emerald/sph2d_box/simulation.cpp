@@ -78,16 +78,16 @@ Simulation_config::Simulation_config(Parameters const& in_params)
     }
 
     fmt::print(
-        "Min R = {}\n"
-        "Min R point = ({}, {})\n"
-        "Min R delta_position = ({}, {})\n"
-        "num neighbors = {}\n",
-        min_length,
-        min_length_point[0],
-        min_length_point[1],
-        min_length_delta_position[0],
-        min_length_delta_position[1],
-        num_neighbors);
+      "Min R = {}\n"
+      "Min R point = ({}, {})\n"
+      "Min R delta_position = ({}, {})\n"
+      "num neighbors = {}\n",
+      min_length,
+      min_length_point[0],
+      min_length_point[1],
+      min_length_delta_position[0],
+      min_length_delta_position[1],
+      num_neighbors);
 
     // Density of a particle is equal to mass times muchness.
     // So density, here, is muchness0 * m_massPerParticle.
@@ -95,10 +95,10 @@ Simulation_config::Simulation_config(Parameters const& in_params)
     mass_per_particle = params.target_density / muchness0;
 
     fmt::print(
-        "Muchness0: {}\n"
-        "Mass per particle: {}\n",
-        muchness0,
-        mass_per_particle);
+      "Muchness0: {}\n"
+      "Mass per particle: {}\n",
+      muchness0,
+      mass_per_particle);
 
     seconds_per_sub_step = to_seconds(params.time_per_step / params.sub_steps);
 
@@ -110,18 +110,18 @@ Simulation_config::Simulation_config(Parameters const& in_params)
 
     // I take out the negative here, and later.
     pressure_correction_denom =
-        beta * (gradw_sum.dot(gradw_sum) + gradw_dot_gradw_sum);
+      beta * (gradw_sum.dot(gradw_sum) + gradw_dot_gradw_sum);
 
     fmt::print(
-        "Pressure correction denom: {}\n"
-        "gradw_sum dot gradw_sum: {}\n"
-        "gradw_sum: ({}, {})\n"
-        "gradw_dot_gradw_sum: {}\n",
-        pressure_correction_denom,
-        gradw_sum.dot(gradw_sum),
-        gradw_sum[0],
-        gradw_sum[1],
-        gradw_dot_gradw_sum);
+      "Pressure correction denom: {}\n"
+      "gradw_sum dot gradw_sum: {}\n"
+      "gradw_sum: ({}, {})\n"
+      "gradw_dot_gradw_sum: {}\n",
+      pressure_correction_denom,
+      gradw_sum.dot(gradw_sum),
+      gradw_sum[0],
+      gradw_sum[1],
+      gradw_dot_gradw_sum);
 };
 
 State dam_break_initial_state(Parameters const& params) {
@@ -210,7 +210,7 @@ void compute_all_neighbhorhoods(Simulation_config const& config,
 
     temp.block_indices.resize(count);
     compute_block_indices(
-        count, temp.block_indices.data(), temp.index_pairs.data());
+      count, temp.block_indices.data(), temp.index_pairs.data());
 
     size_t const block_count = temp.block_indices.back() + 1;
     temp.blocks.resize(block_count);
@@ -221,36 +221,102 @@ void compute_all_neighbhorhoods(Simulation_config const& config,
                                       temp.blocks.data(),
                                       temp.index_pairs.data());
 
-    temp.neighborhoods.resize(count);
-    create_neighborhoods(count,
-                         cell_size,
-                         temp.neighborhoods.data(),
-                         state.positions.data(),
-                         temp.grid_coords.data(),
-                         temp.index_pairs.data(),
-                         temp.block_map);
+    temp.neighbor_counts.resize(count);
+    temp.neighbor_indices.resize(count);
+    temp.neighbor_distances.resize(count);
+    temp.neighbor_vectors_to.resize(count);
+    create_regular_neighborhoods(count,
+                                 cell_size,
+                                 temp.neighbor_counts.data(),
+                                 temp.neighbor_indices.data(),
+                                 temp.neighbor_vectors_to.data(),
+                                 state.positions.data(),
+                                 temp.grid_coords.data(),
+                                 temp.index_pairs.data(),
+                                 temp.block_map);
+}
+
+void recompute_neighborhood_non_index_values(Simulation_config const& config,
+                                             Temp_data& temp) {
+    //------------------------------------------------------------------------------
+    // NEIGHBORHOOD
+    auto const count = temp.positions_star.size();
+    auto const cell_size = config.params.support * 2.0f;
+
+    compute_neighbor_distances_and_vectors_to(count,
+                                              temp.neighbor_distances.data(),
+                                              temp.neighbor_vectors_to.data(),
+                                              temp.positions_star.data(),
+                                              temp.neighbor_counts.data(),
+                                              temp.neighbor_indices.data());
+
+    temp.neighbor_kernels.resize(count);
+    compute_neighbor_kernels(count,
+                             config.params.support,
+                             temp.neighbor_kernels.data(),
+                             temp.neighbor_counts.data(),
+                             temp.neighbor_distances.data());
+
+    temp.neighbor_kernel_gradients.resize(count);
+    compute_neighbor_kernel_gradients(count,
+                                      config.params.support,
+                                      temp.neighbor_kernel_gradients.data(),
+                                      temp.neighbor_counts.data(),
+                                      temp.neighbor_vectors_to.data());
+}
+
+void compute_all_external_forces(Simulation_config const& config,
+                                 State const& state,
+                                 Temp_data& temp) {
+    auto const count = state.positions.size();
+
+    temp.external_forces.resize(count);
+    fill_array(count, {0.0f, 0.0f}, temp.external_forces.data());
+
+    accumulate_constant_pole_attraction_forces(count,
+                                               config.gravity,
+                                               {0.5f, 0.5f},
+                                               temp.external_forces.data(),
+                                               state.positions.data());
+
+    accumulate_simple_drag_forces(count,
+                                  0.025f,
+                                  config.params.support,
+                                  temp.external_forces.data(),
+                                  state.velocities.data());
+
+    // I want an offset of tiny_h
+    // delta_pos = dt * dt / m * f
+    // tiny_h * m / dt * dt
+    auto const tiny_h = 0.001f * config.params.support;
+    auto const magnitude =
+      config.mass_per_particle * tiny_h / sqr(config.seconds_per_sub_step);
+    accumulate_anti_coupling_repulsive_forces(count,
+                                              tiny_h,
+                                              magnitude,
+                                              temp.external_forces.data(),
+                                              temp.neighbor_counts.data(),
+                                              temp.neighbor_distances.data());
 }
 
 void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
     auto const count = state.positions.size();
-    auto const cell_size = config.params.support * 2.0f;
 
-    //------------------------------------------------------------------------------
-    // NEIGHBORHOOD
     compute_all_neighbhorhoods(config, state, temp);
+    compute_all_external_forces(config, state, temp);
 
-    //------------------------------------------------------------------------------
-    // NON PRESSURE FORCE AND PRESSURE INIT
-    temp.forces.resize(count);
-    compute_external_forces(count,
-                            config.mass_per_particle,
-                            config.params.gravity,
-                            temp.forces.data(),
-                            state.positions.data(),
-                            state.velocities.data());
+    // Integrate velocity only from external force
+    temp.velocity_external_forces.resize(count);
+    copy_array(
+      count, temp.velocity_external_forces.data(), state.velocities.data());
+    accumulate(count,
+               config.seconds_per_sub_step / config.mass_per_particle,
+               temp.velocity_external_forces.data(),
+               temp.external_forces.data());
 
-    temp.pressures.resize(count, 0.0f);
-    init_pressure(count, temp.pressures.data());
+    // Init for solving pressures
+    temp.pressures.resize(count);
+    fill_array(count, 0.0f, temp.pressures.data());
 
     temp.tags.resize(count);
     temp.pressure_forces.resize(count);
@@ -258,35 +324,41 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
     temp.position_stars.resize(count);
     temp.velocity_stars.resize(count);
 
-    reset_tags(count, temp.tags.data());
-    fill_array(count, {0.0f, 0.0f}, temp.pressure_forces.data());
-
     for (int pci_sub_step = 0; pci_sub_step < 6; ++pci_sub_step) {
-        predict_velocities(count,
-                           config.mass_per_particle,
-                           config.seconds_per_sub_step,
-                           temp.velocity_stars.data(),
-                           state.velocities.data(),
-                           temp.pressure_forces.data(),
-                           temp.forces.data());
+        copy_array(count, temp.velocity_stars.data(),
+                   temp.velocity_external_forces.data());
 
-        predict_positions(count,
-                          config.seconds_per_sub_step,
-                          temp.position_stars.data(),
-                          state.positions.data(),
-                          temp.velocity_stars.data());
+        if (pci_sub_step > 0) {
+            // integrate velocity
+            accumulate(count,
+                       config.seconds_per_sub_step / config.mass_per_particle,
+                       temp.velocity_stars.data(),
+                       temp.pressure_forces.data());
+        }
 
-        reset_tags(count, temp.tags.data());
+        // integrate position
+        copy_array(count, temp.position_stars.data(),
+                   state.positions.data());
+        accumulate(count,
+                   config.seconds_per_sub_step,
+                   temp.position_stars.data(),
+                   temp.velocity_stars.data());
+
+        // Recompute neighborhood values with kernels.
+        recompute_neighborhood_non_index_values(config, temp);
+
+
+        fill_array(count, Tag{}, temp.tags.data());
         fill_array(count, {0.0f, 0.0f}, temp.pressure_forces.data());
 
         identify_solid_boundaries_and_correct_pressure_forces(
-            count,
-            config.params.support,
-            config.params.length,
-            config.mass_per_particle,
-            temp.tags.data(),
-            temp.pressure_forces.data(),
-            temp.position_stars.data());
+          count,
+          config.params.support,
+          config.params.length,
+          config.mass_per_particle,
+          temp.tags.data(),
+          temp.pressure_forces.data(),
+          temp.position_stars.data());
 
         enforce_solid_boundaries(count,
                                  config.params.support,
@@ -294,12 +366,12 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
                                  temp.position_stars.data(),
                                  temp.velocity_stars.data());
 
-        predict_densities(count,
+        compute_densities(count,
                           config.mass_per_particle,
                           config.params.support,
                           temp.densities.data(),
-                          temp.neighborhoods.data(),
-                          temp.position_stars.data());
+                          temp.neighbor_counts.data(),
+                          temp.neighbor_kernels.data());
 
         update_pressures(count,
                          config.params.target_density,
@@ -312,32 +384,37 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
                                 config.params.support,
                                 config.params.viscosity,
                                 temp.pressure_forces.data(),
-                                temp.neighborhoods.data(),
-                                temp.position_stars.data(),
+                                temp.neighbor_counts.data(),
+                                temp.neighbor_indices.data(),
+                                temp.neighbor_vectors_to.data(),
+                                temp.neighbor_kernel_gradients.data(),
                                 temp.velocity_stars.data(),
                                 temp.pressures.data(),
                                 temp.densities.data());
 
         if (pci_sub_step > 1) {
             auto const max_error = max_density_error(
-                count, config.params.target_density, temp.densities.data());
+              count, config.params.target_density, temp.densities.data());
             if ((max_error / config.params.target_density) <= 0.01f) { break; }
         }
     }
 
     //------------------------------------------------------------------------------
     // FINAL UPDATE
-    update_velocities(count,
-                      config.mass_per_particle,
-                      config.seconds_per_sub_step,
-                      state.velocities.data(),
-                      temp.pressure_forces.data(),
-                      temp.forces.data());
 
-    update_positions(count,
-                     config.seconds_per_sub_step,
-                     state.positions.data(),
-                     state.velocities.data());
+    // Integrate velocity
+    copy_array(count, state.velocities.data(),
+               temp.velocity_external_forces.data());
+    accumulate(count,
+               config.seconds_per_sub_step / config.mass_per_particle,
+               state.velocities.data(),
+               temp.pressure_forces.data());
+
+    // Integrate position
+    accumulate(count,
+               config.seconds_per_sub_step,
+               state.positions.data(),
+               state.velocities.data());
 
     enforce_solid_boundaries(count,
                              config.params.support,

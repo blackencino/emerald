@@ -97,14 +97,22 @@ void create_regular_neighborhoods(
   std::pair<uint64_t, size_t> const* const sorted_index_pairs,
   Block_map const& block_map);
 
-void compute_neighborhood_kernels(
+void compute_neighbor_distances_and_vectors_to(
+  size_t const particle_count,
+  Neighbor_values<float>* const neighbor_distances,
+  Neighbor_values<V2f>* const neighbor_vectors_to,
+  V2f const* const positions,
+  uint8_t const* const neighbor_counts,
+  Neighbor_values<size_t> const* const neighbor_indices);
+
+void compute_neighbor_kernels(
   size_t const particle_count,
   float const support,
   Neighbor_values<float>* const neighbor_kernels,
   uint8_t const* const neighbor_counts,
   Neighbor_values<float> const* const neighbor_distances);
 
-void compute_neighborhood_kernel_gradients(
+void compute_neighbor_kernel_gradients(
   size_t const particle_count,
   float const support,
   Neighbor_values<V2f>* const neighbor_kernel_gradients,

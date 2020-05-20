@@ -104,5 +104,30 @@ protected:
     std::normal_distribution<double> m_distribution;
 };
 
+//------------------------------------------------------------------------------
+struct Lehmer_rand_gen_64 {
+    using result_type = uint64_t;
+    static constexpr result_type min() {
+        return 0;
+    }
+    static constexpr result_type max() {
+        return std::numeric_limits<uint64_t>::max();
+    }
+
+    Lehmer_rand_gen_64() = delete;
+    Lehmer_rand_gen_64(uint64_t const seed)
+      : state(seed) {
+        state *= 0xda942042e4dd58b5;
+        state *= 0xda942042e4dd58b5;
+    };
+
+    uint64_t operator() {
+        state *= 0xda942042e4dd58b5;
+        return state >> 64;
+    }
+
+    __uint128_t state;
+};
+
 }  // End namespace util
 }  // End namespace emerald
