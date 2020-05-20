@@ -121,7 +121,7 @@ struct Lehmer_rand_gen_64 {
         state *= 0xda942042e4dd58b5;
     };
 
-    uint64_t operator() {
+    uint64_t operator()() {
         state *= 0xda942042e4dd58b5;
         return state >> 64;
     }

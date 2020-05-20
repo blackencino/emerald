@@ -1,17 +1,14 @@
 #pragma once
 
-#include <emerald/sph2d_box/foundation.h>
 #include <emerald/sph2d_box/tag.h>
-#include <emerald/sph_common/types.h>
-#include <emerald/sph_common/common.h>
 #include <emerald/sph_common/neighborhood.h>
+#include <emerald/sph_common/types.h>
 
-#include <array>
 #include <cstdint>
-#include <unordered_map>
-#include <utility>
 
 namespace emerald::sph2d_box {
+
+using namespace emerald::sph_common;
 
 void accumulate_gravity_forces(size_t const particle_count,
                                float const mass_per_particle,
@@ -74,6 +71,7 @@ void accumulate_pressure_forces(
   V2f* const pressure_forces,
   uint8_t const* const neighbor_counts,
   Neighbor_values<size_t> const* const neighbor_indices,
+  Neighbor_values<float> const* const neighbor_distances,
   Neighbor_values<V2f> const* const neighbor_vectors_to,
   Neighbor_values<V2f> const* const neighbor_kernel_gradients,
   V2f const* const velocities,

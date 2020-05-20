@@ -1,12 +1,16 @@
 #pragma once
 
-#include <emerald/sph2d_box/foundation.h>
 #include <emerald/sph2d_box/sim_ops.h>
 #include <emerald/sph2d_box/tag.h>
+#include <emerald/sph_common/neighborhood.h>
+#include <emerald/sph_common/types.h>
 
+#include <cstdint>
 #include <vector>
 
 namespace emerald::sph2d_box {
+
+using namespace emerald::sph_common;
 
 struct State {
     std::vector<V2f> positions;

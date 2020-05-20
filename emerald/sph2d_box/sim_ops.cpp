@@ -1,6 +1,7 @@
 #include <emerald/sph2d_box/sim_ops.h>
 
-#include <emerald/sph2d_box/kernels.h>
+#include <emerald/sph_common/common.h>
+#include <emerald/sph_common/kernels.h>
 #include <emerald/util/functions.h>
 #include <emerald/util/random.h>
 #include <emerald/z_index/z_index.h>
@@ -8,11 +9,10 @@
 #include <fmt/format.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
-#include <tbb/parallel_scan.h>
-#include <tbb/parallel_sort.h>
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace emerald::sph2d_box {
 
@@ -43,7 +43,8 @@ void accumulate_simple_drag_forces(size_t const particle_count,
                                    float const particle_diameter,
                                    V2f* const forces,
                                    V2f const* const velocities) {
-    accumulate(particle_count, -magnitude * particle_diameter, velocities);
+    accumulate(
+      particle_count, -magnitude * particle_diameter, forces, velocities);
 }
 
 void accumulate_anti_coupling_repulsive_forces(
@@ -53,15 +54,16 @@ void accumulate_anti_coupling_repulsive_forces(
   V2f* const forces,
   uint8_t const* const neighbor_counts,
   Neighbor_values<float> const* const neighbor_distances) {
-    std::uniform_real_distribution<float> angle_dist{float(-M_PI), float(M_PI)};
     for_each_iota(particle_count, [=](auto const i) {
         auto const nbhd_count = neighbor_counts[i];
         if (!nbhd_count) { return; }
 
         auto const& distances = neighbor_distances[i];
+        std::uniform_real_distribution<float> angle_dist{float(-M_PI),
+                                                         float(M_PI)};
 
         for (uint8_t j = 0; j < nbhd_count; ++j) {
-            if (distances[j] < tiny_h) {
+            if (distances[j] < max_distance) {
                 // add a random offset.
                 Lehmer_rand_gen_64 gen{i};
                 auto const angle = angle_dist(gen);
@@ -202,6 +204,7 @@ void accumulate_pressure_forces(
   V2f* const pressure_forces,
   uint8_t const* const neighbor_counts,
   Neighbor_values<size_t> const* const neighbor_indices,
+  Neighbor_values<float> const* const neighbor_distances,
   Neighbor_values<V2f> const* const neighbor_vectors_to,
   Neighbor_values<V2f> const* const neighbor_kernel_gradients,
   V2f const* const velocities,
@@ -220,9 +223,10 @@ void accumulate_pressure_forces(
         auto const velocity = velocities[particle_index];
         auto const pressure = pressures[particle_index];
         auto const density = densities[particle_index];
-        auto const& nbhd_indices = neighbor_indices[i];
-        auto const& nbhd_vectors_to = neighbor_vectors_to[i];
-        auto const& nbhd_grads_w = neighbor_kernel_gradients[i];
+        auto const& nbhd_indices = neighbor_indices[particle_index];
+        auto const& nbhd_distances = neighbor_distances[particle_index];
+        auto const& nbhd_vectors_to = neighbor_vectors_to[particle_index];
+        auto const& nbhd_grads_w = neighbor_kernel_gradients[particle_index];
         auto const p_over_rho_sqr = pressure / sqr(density);
         V2f pressure_force{0.0f, 0.0f};
         for (uint8_t j = 0; j < nbhd_count; ++j) {
@@ -243,7 +247,8 @@ void accumulate_pressure_forces(
             auto const delta_vel = other_velocity - velocity;
             auto const dot_vab_rab = vector_to_other.dot(delta_vel);
             if (dot_vab_rab < 0) {
-                auto const mu_ab = H * dot_vab_rab / (delta_pos_len + N2);
+                auto const distance = nbhd_distances[j];
+                auto const mu_ab = H * dot_vab_rab / (distance + N2);
                 auto const den_avg = (density + other_density) / 2;
 
                 pressure_force +=
@@ -253,7 +258,7 @@ void accumulate_pressure_forces(
             }
         }
 
-        pressure_forces[i] += -(M * M) * pressure_force;
+        pressure_forces[particle_index] += -(M * M) * pressure_force;
     });
 }
 
@@ -262,7 +267,8 @@ float max_density_error(size_t const particle_count,
                         float const* const densities) {
     if constexpr (DO_PARALLEL) {
         return tbb::parallel_reduce(
-          tbb::blocked_range<float const*>{densities, densities + size},
+          tbb::blocked_range<float const*>{densities,
+                                           densities + particle_count},
           0.0f,
           [target_density](tbb::blocked_range<float const*> const& range,
                            float const value) -> float {
@@ -276,7 +282,7 @@ float max_density_error(size_t const particle_count,
           [](float const a, float const b) -> float { return std::max(a, b); });
     } else {
         float max_error = 0.0f;
-        for (size_t i = 0; i < size; ++i) {
+        for (size_t i = 0; i < particle_count; ++i) {
             float const error = std::max(0.0f, densities[i] - target_density);
             max_error = std::max(error, max_error);
         }

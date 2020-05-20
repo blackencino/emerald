@@ -1,7 +1,9 @@
 #include <emerald/sph2d_box/simulation.h>
 
-#include <emerald/sph2d_box/foundation.h>
-#include <emerald/sph2d_box/kernels.h>
+#include <emerald/sph_common/common.h>
+#include <emerald/sph_common/dynamics.h>
+#include <emerald/sph_common/kernels.h>
+#include <emerald/util/format.h>
 #include <emerald/util/functions.h>
 
 #include <fmt/format.h>
@@ -115,12 +117,11 @@ Simulation_config::Simulation_config(Parameters const& in_params)
     fmt::print(
       "Pressure correction denom: {}\n"
       "gradw_sum dot gradw_sum: {}\n"
-      "gradw_sum: ({}, {})\n"
+      "gradw_sum: {}\n"
       "gradw_dot_gradw_sum: {}\n",
       pressure_correction_denom,
       gradw_sum.dot(gradw_sum),
-      gradw_sum[0],
-      gradw_sum[1],
+      gradw_sum,
       gradw_dot_gradw_sum);
 };
 
@@ -190,8 +191,6 @@ State random_initial_state(Parameters const& params) {
 void compute_all_neighbhorhoods(Simulation_config const& config,
                                 State const& state,
                                 Temp_data& temp) {
-    //------------------------------------------------------------------------------
-    // NEIGHBORHOOD
     auto const count = state.positions.size();
     auto const cell_size = config.params.support * 2.0f;
     temp.grid_coords.resize(count);
@@ -229,6 +228,7 @@ void compute_all_neighbhorhoods(Simulation_config const& config,
                                  cell_size,
                                  temp.neighbor_counts.data(),
                                  temp.neighbor_indices.data(),
+                                 temp.neighbor_distances.data(),
                                  temp.neighbor_vectors_to.data(),
                                  state.positions.data(),
                                  temp.grid_coords.data(),
@@ -238,15 +238,13 @@ void compute_all_neighbhorhoods(Simulation_config const& config,
 
 void recompute_neighborhood_non_index_values(Simulation_config const& config,
                                              Temp_data& temp) {
-    //------------------------------------------------------------------------------
-    // NEIGHBORHOOD
-    auto const count = temp.positions_star.size();
+    auto const count = temp.position_stars.size();
     auto const cell_size = config.params.support * 2.0f;
 
     compute_neighbor_distances_and_vectors_to(count,
                                               temp.neighbor_distances.data(),
                                               temp.neighbor_vectors_to.data(),
-                                              temp.positions_star.data(),
+                                              temp.position_stars.data(),
                                               temp.neighbor_counts.data(),
                                               temp.neighbor_indices.data());
 
@@ -273,11 +271,16 @@ void compute_all_external_forces(Simulation_config const& config,
     temp.external_forces.resize(count);
     fill_array(count, {0.0f, 0.0f}, temp.external_forces.data());
 
-    accumulate_constant_pole_attraction_forces(count,
-                                               config.gravity,
-                                               {0.5f, 0.5f},
-                                               temp.external_forces.data(),
-                                               state.positions.data());
+    // accumulate_constant_pole_attraction_forces(count,
+    //                                            config.params.gravity * config.mass_per_particle,
+    //                                            {0.5f, 0.5f},
+    //                                            temp.external_forces.data(),
+    //                                            state.positions.data());
+
+    accumulate_gravity_forces(count,
+                              config.mass_per_particle,
+                              config.params.gravity,
+                              temp.external_forces.data());
 
     accumulate_simple_drag_forces(count,
                                   0.025f,
@@ -325,7 +328,8 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
     temp.velocity_stars.resize(count);
 
     for (int pci_sub_step = 0; pci_sub_step < 6; ++pci_sub_step) {
-        copy_array(count, temp.velocity_stars.data(),
+        copy_array(count,
+                   temp.velocity_stars.data(),
                    temp.velocity_external_forces.data());
 
         if (pci_sub_step > 0) {
@@ -337,8 +341,7 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
         }
 
         // integrate position
-        copy_array(count, temp.position_stars.data(),
-                   state.positions.data());
+        copy_array(count, temp.position_stars.data(), state.positions.data());
         accumulate(count,
                    config.seconds_per_sub_step,
                    temp.position_stars.data(),
@@ -346,7 +349,6 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
 
         // Recompute neighborhood values with kernels.
         recompute_neighborhood_non_index_values(config, temp);
-
 
         fill_array(count, Tag{}, temp.tags.data());
         fill_array(count, {0.0f, 0.0f}, temp.pressure_forces.data());
@@ -379,18 +381,19 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
                          temp.pressures.data(),
                          temp.densities.data());
 
-        compute_pressure_forces(count,
-                                config.mass_per_particle,
-                                config.params.support,
-                                config.params.viscosity,
-                                temp.pressure_forces.data(),
-                                temp.neighbor_counts.data(),
-                                temp.neighbor_indices.data(),
-                                temp.neighbor_vectors_to.data(),
-                                temp.neighbor_kernel_gradients.data(),
-                                temp.velocity_stars.data(),
-                                temp.pressures.data(),
-                                temp.densities.data());
+        accumulate_pressure_forces(count,
+                                   config.mass_per_particle,
+                                   config.params.support,
+                                   config.params.viscosity,
+                                   temp.pressure_forces.data(),
+                                   temp.neighbor_counts.data(),
+                                   temp.neighbor_indices.data(),
+                                   temp.neighbor_distances.data(),
+                                   temp.neighbor_vectors_to.data(),
+                                   temp.neighbor_kernel_gradients.data(),
+                                   temp.velocity_stars.data(),
+                                   temp.pressures.data(),
+                                   temp.densities.data());
 
         if (pci_sub_step > 1) {
             auto const max_error = max_density_error(
@@ -403,8 +406,8 @@ void sub_step(Simulation_config const& config, State& state, Temp_data& temp) {
     // FINAL UPDATE
 
     // Integrate velocity
-    copy_array(count, state.velocities.data(),
-               temp.velocity_external_forces.data());
+    copy_array(
+      count, state.velocities.data(), temp.velocity_external_forces.data());
     accumulate(count,
                config.seconds_per_sub_step / config.mass_per_particle,
                state.velocities.data(),

@@ -199,7 +199,7 @@ void compute_neighbor_kernel_gradients(
         auto const& neighbor_vector_to = neighbor_vectors_to[particle_index];
         for (uint8_t j = 0; j < neighbor_count; ++j) {
             neighbor_kernel_gradient[j] =
-              kernels::GradW(neighbor_vector_to[j], support);
+              kernels::GradW(-neighbor_vector_to[j], support);
         }
     });
 }

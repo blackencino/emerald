@@ -1,5 +1,7 @@
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
+#include <emerald/sph_common/common.h>
+#include <emerald/sph_common/neighborhood.h>
 #include <emerald/util/format.h>
 
 #include <fmt/format.h>
@@ -25,14 +27,14 @@ struct Simulation_test : public ::testing::Test {
 
 TEST_F(Simulation_test, Simulation_config_constructor) {
     fmt::print(
-        "seconds per sub step: {}\n"
-        "mass per particle: {}\n"
-        "draw radius: {}\n"
-        "pressure correction denom: {}\n",
-        config.seconds_per_sub_step,
-        config.mass_per_particle,
-        config.draw_radius,
-        config.pressure_correction_denom);
+      "seconds per sub step: {}\n"
+      "mass per particle: {}\n"
+      "draw radius: {}\n"
+      "pressure correction denom: {}\n",
+      config.seconds_per_sub_step,
+      config.mass_per_particle,
+      config.draw_radius,
+      config.pressure_correction_denom);
 }
 
 TEST_F(Simulation_test, Dam_break_initial_state) {
@@ -62,20 +64,20 @@ TEST_F(Simulation_test, Grid_coords_repeatability) {
 
         temp2.z_indices.resize(count);
         compute_z_indices(
-            count, temp2.z_indices.data(), temp2.grid_coords.data());
+          count, temp2.z_indices.data(), temp2.grid_coords.data());
         ASSERT_EQ(temp.z_indices, temp2.z_indices);
 
         temp2.index_pairs.resize(count);
         compute_index_pairs(
-            count, temp2.index_pairs.data(), temp2.z_indices.data());
-        //ASSERT_EQ(temp.index_pairs, temp2.index_pairs);
+          count, temp2.index_pairs.data(), temp2.z_indices.data());
+        // ASSERT_EQ(temp.index_pairs, temp2.index_pairs);
 
         sort_index_pairs(count, temp2.index_pairs.data());
         ASSERT_EQ(temp.index_pairs, temp2.index_pairs);
 
         temp2.block_indices.resize(count);
         compute_block_indices(
-            count, temp2.block_indices.data(), temp2.index_pairs.data());
+          count, temp2.block_indices.data(), temp2.index_pairs.data());
         ASSERT_EQ(temp.block_indices, temp2.block_indices);
 
         size_t const block_count = temp2.block_indices.back() + 1;
@@ -84,19 +86,26 @@ TEST_F(Simulation_test, Grid_coords_repeatability) {
         ASSERT_EQ(temp.blocks, temp2.blocks);
 
         temp2.block_map = create_block_map(block_count,
-                                          std::move(temp2.block_map),
-                                          temp2.blocks.data(),
-                                          temp2.index_pairs.data());
+                                           std::move(temp2.block_map),
+                                           temp2.blocks.data(),
+                                           temp2.index_pairs.data());
 
-        temp2.neighborhoods.resize(count);
-        create_neighborhoods(count,
-                             cell_size,
-                             temp2.neighborhoods.data(),
-                             state.positions.data(),
-                             temp2.grid_coords.data(),
-                             temp2.index_pairs.data(),
-                             temp2.block_map);
-        ASSERT_EQ(temp.neighborhoods, temp2.neighborhoods);
+        temp2.neighbor_counts.resize(count);
+        temp2.neighbor_indices.resize(count);
+        temp2.neighbor_distances.resize(count);
+        temp2.neighbor_vectors_to.resize(count);
+        create_regular_neighborhoods(count,
+                                     cell_size,
+                                     temp2.neighbor_counts.data(),
+                                     temp2.neighbor_indices.data(),
+                                     temp2.neighbor_distances.data(),
+                                     temp2.neighbor_vectors_to.data(),
+                                     state.positions.data(),
+                                     temp2.grid_coords.data(),
+                                     temp2.index_pairs.data(),
+                                     temp2.block_map);
+
+        ASSERT_EQ(temp.neighbor_indices, temp2.neighbor_indices);
     }
 }
 

@@ -1,9 +1,9 @@
 add_library(emerald_sph2d_box
-            foundation.h
-            kernels.h
             parameters.h
             sim_ops.h
             simulation.h
+            state.h
+            tag.h
 
             parameters.cpp
             sim_ops.cpp
@@ -12,7 +12,7 @@ target_include_directories(emerald_sph2d_box PUBLIC "${emerald_SOURCE_DIR}")
 target_link_libraries(emerald_sph2d_box
                       PUBLIC
                       emerald_util
-                      emerald_z_index
+                      emerald_sph_common
                       cxxopts::cxxopts
                       openexr::openexr
                       TBB::TBB
