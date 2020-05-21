@@ -33,7 +33,16 @@ void accumulate_constant_pole_attraction_forces(size_t const particle_count,
                                                 V2f* const forces,
                                                 V2f const* const positions) {
     for_each_iota(particle_count, [=](auto const i) {
-        forces[i] += magnitude * ((pole - positions[i]).normalized());
+        auto const r = positions[i] - pole;
+        auto const rN = r.normalized();
+
+        forces[i] -= magnitude * rN;
+
+        V3f const torque{0.0f, 0.0f, 0.125f * magnitude /*/ (1.0f + r.dot(r))*/};
+        V3f const r3{rN[0], rN[1], 0.0f};
+        V3f const turn = torque.cross(r3);
+
+        forces[i] += V2f{turn[0], turn[1]};
     });
 }
 
@@ -74,89 +83,6 @@ void accumulate_anti_coupling_repulsive_forces(
                 // Our distances are sorted from least to most,
                 // so once we find a distance that's too great we can bail.
                 return;
-            }
-        }
-    });
-}
-
-void identify_solid_boundaries_and_correct_pressure_forces(
-  size_t const particle_count,
-  float const support,
-  float const world_length,
-  float const mass_per_particle,
-  Tag* const tags,
-  V2f* const pressure_forces,
-  V2f const* const positions) {
-    float const H = support;
-    float const Hp25 = 0.51f * H;
-    float const L = world_length;
-    float const M = mass_per_particle;
-    constexpr float K = 100.0f;
-
-    for_each_iota(particle_count, [=](auto const i) {
-        auto tag = tags[i];
-        auto const pos_i = positions[i];
-
-        tag.reset(NEAR_SOLID_TAG);
-        tag.reset(NEAR_SOLID_VALLEY_TAG);
-        tag.reset(NEAR_SOLID_CORNER_TAG);
-
-        V2f pressure_force_correction{0.0f, 0.0f};
-
-        for (int dim = 0; dim < 2; ++dim) {
-            // Min wall.
-            auto const x_min = Hp25 - pos_i[dim];
-            if (x_min > 0.0f) {
-                pressure_force_correction[dim] += x_min * M * K / H;
-
-                if (tag.test(NEAR_SOLID_VALLEY_TAG)) {
-                    tag.set(NEAR_SOLID_CORNER_TAG);
-                } else if (tag.test(NEAR_SOLID_TAG)) {
-                    tag.set(NEAR_SOLID_VALLEY_TAG);
-                } else {
-                    tag.set(NEAR_SOLID_TAG);
-                }
-            }
-
-            // Max wall.
-            auto const x_max = (L - Hp25) - pos_i[dim];
-            if (x_max < 0.0f) {
-                pressure_force_correction[dim] += x_max * M * K / H;
-
-                if (tag.test(NEAR_SOLID_VALLEY_TAG)) {
-                    tag.set(NEAR_SOLID_CORNER_TAG);
-                } else if (tag.test(NEAR_SOLID_TAG)) {
-                    tag.set(NEAR_SOLID_VALLEY_TAG);
-                } else {
-                    tag.set(NEAR_SOLID_TAG);
-                }
-            }
-        }
-
-        tags[i] = tag;
-        pressure_forces[i] += pressure_force_correction;
-    });
-}
-
-void enforce_solid_boundaries(size_t const particle_count,
-                              float const support,
-                              float const world_length,
-                              V2f* const positions,
-                              V2f* const velocities) {
-    float const border = 0.0f;
-    V2f const bmin{border, border};
-    V2f const bmax{world_length - border, world_length - border};
-    for_each_iota(particle_count, [=](auto const i) {
-        V2f& p = positions[i];
-        V2f& v = velocities[i];
-
-        for (int dim = 0; dim < 2; ++dim) {
-            if (p[dim] < bmin[dim]) {
-                p[dim] = bmin[dim];
-                v[dim] = std::max(0.0f, v[dim]);
-            } else if (p[dim] > bmax[dim]) {
-                p[dim] = bmax[dim];
-                v[dim] = std::min(0.0f, v[dim]);
             }
         }
     });

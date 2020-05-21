@@ -35,21 +35,6 @@ void accumulate_anti_coupling_repulsive_forces(
   uint8_t const* const neighbor_counts,
   Neighbor_values<float> const* const neighbor_distances);
 
-void identify_solid_boundaries_and_correct_pressure_forces(
-  size_t const particle_count,
-  float const support,
-  float const world_length,
-  float const mass_per_particle,
-  Tag* const tags,
-  V2f* const pressure_forces,
-  V2f const* const positions);
-
-void enforce_solid_boundaries(size_t const particle_count,
-                              float const support,
-                              float const world_length,
-                              V2f* const positions,
-                              V2f* const velocities);
-
 void compute_densities(size_t const particle_count,
                        float const mass_per_particle,
                        float const support,

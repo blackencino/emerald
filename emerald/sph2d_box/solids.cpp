@@ -5,6 +5,7 @@
 #include <fmt/format.h>
 
 #include <cmath>
+#include <random>
 
 namespace emerald::sph2d_box {
 
@@ -163,14 +164,32 @@ Solid_state world_walls_initial_solid_state(Parameters const& params) {
     boxes.emplace_back(V2f{-0.5f * border_size, L},
                        V2f{L + 0.5f * border_size, L + border_size});
 
-    auto tiny_block = [&boxes, L](V2f const unit) {
-        float const r = 0.07f;
+    auto tiny_block = [&boxes, L](V2f const unit, float const roff) {
+        float const r = 0.04f + std::abs(roff);
         boxes.emplace_back(L * (unit - V2f{r, r}), L * (unit + V2f{r, r}));
     };
 
-    tiny_block({0.75f, 0.25f});
-    tiny_block({0.75f, 0.5f});
-    tiny_block({0.75f, 0.75f});
+    std::mt19937_64 gen{1919};
+    std::uniform_real_distribution<float> dist{-0.06f, 0.06f};
+
+    int const N = 4;
+    for (int by = 0; by < N; ++by) {
+        float const byf = float(by + 1) / (N+1);
+
+        for (int bx = 0; bx < N; ++bx) {
+            float const bxf = float(bx+1) / (N+1);
+
+            tiny_block({bxf + dist(gen), byf + dist(gen)}, dist(gen));
+        }
+    }
+
+
+    //for (int i = 0; i < 21; ++i) { tiny_block({dist(gen), dist(gen)}); }
+
+    // tiny_block({0.75f, 0.25f});
+    // tiny_block({0.75f, 0.5f});
+    // tiny_block({0.75f, 0.75f});
+    // tiny_block({0.25f, 0.5f});
 
     size_t total_estimated_count = 100;
     for (auto const& box : boxes) {

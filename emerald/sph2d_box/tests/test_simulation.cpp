@@ -17,14 +17,14 @@ constexpr int REPEATABILITY_TEST_COUNT = 100;
 struct Simulation_test : public ::testing::Test {
     Parameters params;
     Simulation_config config;
-    State state;
     Solid_state solid_state;
+    State state;
 
     Simulation_test()
       : params()
       , config(params)
-      , state(dam_break_initial_state(params))
-      , solid_state(world_walls_initial_solid_state(params)) {
+      , solid_state(world_walls_initial_solid_state(params))
+      , state(dam_break_initial_state(params, solid_state)) {
     }
 };
 

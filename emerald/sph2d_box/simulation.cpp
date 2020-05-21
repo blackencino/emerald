@@ -125,7 +125,8 @@ Simulation_config::Simulation_config(Parameters const& in_params)
       gradw_dot_gradw_sum);
 };
 
-State dam_break_initial_state(Parameters const& params) {
+State dam_break_initial_state(Parameters const& params,
+                              Solid_state const& solid_state) {
     State state;
 
     // The grid cells are H*2 on a side, where "H" is support.
@@ -144,8 +145,55 @@ State dam_break_initial_state(Parameters const& params) {
       emit_solid_box(init_volume, R, max_count, state.positions.data());
     state.positions.resize(emitted_count);
 
-    state.velocities.resize(emitted_count, {0.0f, 0.0f});
-    state.colors.resize(emitted_count, {128, 128, 255, 255});
+    std::vector<uint8_t> kill;
+    kill.resize(emitted_count, 0);
+
+    auto const& other_block_map = solid_state.block_map;
+    for_each_iota(
+      emitted_count,
+      [R,
+       cell_size = 2.0f * H,
+       kill = kill.data(),
+       positions = state.positions.data(),
+       other_positions = solid_state.positions.data(),
+       other_sorted_index_pairs = solid_state.index_pairs.data(),
+       &other_block_map](auto const particle_index) {
+          auto const pos = positions[particle_index];
+          auto const grid_coord =
+            compute_grid_coord(pos, V2f{0.0f, 0.0f}, cell_size);
+          for (int32_t j = grid_coord[1] - 1; j <= grid_coord[1] + 1; ++j) {
+              for (int32_t i = grid_coord[0] - 1; i <= grid_coord[0] + 1; ++i) {
+                  auto const other_z_index = z_index::z_index(i, j);
+                  auto const found_iter = other_block_map.find(other_z_index);
+                  if (found_iter == other_block_map.end()) { continue; }
+
+                  // sip == sorted_index_pair
+                  auto const [sip_begin, sip_end] = (*found_iter).second;
+                  for (auto sip = sip_begin; sip != sip_end; ++sip) {
+                      auto const other_particle_index =
+                        other_sorted_index_pairs[sip].second;
+
+                      auto const distance =
+                        (other_positions[other_particle_index] - pos).length();
+                      if (distance < 2 * R) {
+                          kill[particle_index] = 1;
+                          return;
+                      }
+                  }
+              }
+          }
+      });
+
+    state.velocities.reserve(emitted_count);
+    for (size_t i = 0; i < emitted_count; ++i) {
+        if (!kill[i]) { state.velocities.push_back(state.positions[i]); }
+    }
+
+    auto const post_kill_count = state.velocities.size();
+    std::swap(state.positions, state.velocities);
+
+    state.velocities.resize(post_kill_count, {0.0f, 0.0f});
+    state.colors.resize(post_kill_count, {128, 128, 255, 255});
 
     fmt::print("Initial dam break state particle count: {}\n",
                state.positions.size());
@@ -153,30 +201,30 @@ State dam_break_initial_state(Parameters const& params) {
     return state;
 }
 
-State random_initial_state(Parameters const& params) {
-    constexpr size_t count = 1000;
+// State random_initial_state(Parameters const& params) {
+//     constexpr size_t count = 1000;
 
-    State state;
+//     State state;
 
-    std::mt19937_64 gen{params.seed};
-    std::uniform_real_distribution<float> pos_dist{0.0f, params.length};
-    state.positions.resize(count);
-    for (auto& [x, y] : state.positions) {
-        x = pos_dist(gen);
-        y = pos_dist(gen);
-    }
+//     std::mt19937_64 gen{params.seed};
+//     std::uniform_real_distribution<float> pos_dist{0.0f, params.length};
+//     state.positions.resize(count);
+//     for (auto& [x, y] : state.positions) {
+//         x = pos_dist(gen);
+//         y = pos_dist(gen);
+//     }
 
-    std::uniform_real_distribution<float> vel_dist{-0.5f * params.length,
-                                                   0.5f * params.length};
-    state.velocities.resize(count);
-    for (auto& [x, y] : state.velocities) {
-        x = vel_dist(gen);
-        y = vel_dist(gen);
-    }
+//     std::uniform_real_distribution<float> vel_dist{-0.5f * params.length,
+//                                                    0.5f * params.length};
+//     state.velocities.resize(count);
+//     for (auto& [x, y] : state.velocities) {
+//         x = vel_dist(gen);
+//         y = vel_dist(gen);
+//     }
 
-    state.colors.resize(count, C4uc{128, 128, 255, 255});
-    return state;
-}
+//     state.colors.resize(count, C4uc{128, 128, 255, 255});
+//     return state;
+// }
 
 void compute_all_neighbhorhoods(Simulation_config const& config,
                                 State const& state,
@@ -305,16 +353,16 @@ void compute_all_external_forces(Simulation_config const& config,
     temp.external_forces.resize(count);
     fill_array(count, {0.0f, 0.0f}, temp.external_forces.data());
 
-    // accumulate_constant_pole_attraction_forces(count,
-    //                                            config.params.gravity *
-    //                                            config.mass_per_particle,
-    //                                            {0.5f, 0.5f},
-    //                                            temp.external_forces.data(),
-    //                                            state.positions.data());
+    accumulate_constant_pole_attraction_forces(
+      count,
+      0.25f * config.params.gravity * config.mass_per_particle,
+      {0.5f, 0.5f},
+      temp.external_forces.data(),
+      state.positions.data());
 
     accumulate_gravity_forces(count,
                               config.mass_per_particle,
-                              config.params.gravity,
+                              .25f * config.params.gravity,
                               temp.external_forces.data());
 
     accumulate_simple_drag_forces(count,
@@ -391,21 +439,6 @@ void sub_step(Simulation_config const& config,
         fill_array(count, Tag{}, temp.tags.data());
         fill_array(count, {0.0f, 0.0f}, temp.pressure_forces.data());
 
-        // identify_solid_boundaries_and_correct_pressure_forces(
-        //   count,
-        //   config.params.support,
-        //   config.params.length,
-        //   config.mass_per_particle,
-        //   temp.tags.data(),
-        //   temp.pressure_forces.data(),
-        //   temp.position_stars.data());
-
-        // enforce_solid_boundaries(count,
-        //                          config.params.support,
-        //                          config.params.length,
-        //                          temp.position_stars.data(),
-        //                          temp.velocity_stars.data());
-
         compute_densities(count,
                           config.mass_per_particle,
                           config.params.support,
@@ -476,12 +509,6 @@ void sub_step(Simulation_config const& config,
                config.seconds_per_sub_step,
                state.positions.data(),
                state.velocities.data());
-
-    // enforce_solid_boundaries(count,
-    //                          config.params.support,
-    //                          config.params.length,
-    //                          state.positions.data(),
-    //                          state.velocities.data());
 }
 
 State simulation_step(Simulation_config const& config,
