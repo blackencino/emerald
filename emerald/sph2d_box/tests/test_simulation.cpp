@@ -1,5 +1,6 @@
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
+#include <emerald/sph2d_box/solids.h>
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/neighborhood.h>
 #include <emerald/util/format.h>
@@ -17,11 +18,13 @@ struct Simulation_test : public ::testing::Test {
     Parameters params;
     Simulation_config config;
     State state;
+    Solid_state solid_state;
 
     Simulation_test()
       : params()
       , config(params)
-      , state(dam_break_initial_state(params)) {
+      , state(dam_break_initial_state(params))
+      , solid_state(world_walls_initial_solid_state(params)) {
     }
 };
 
@@ -50,7 +53,7 @@ TEST_F(Simulation_test, Grid_coords_repeatability) {
     auto const cell_size = config.params.support * 2.0f;
 
     Temp_data temp;
-    compute_all_neighbhorhoods(config, state, temp);
+    compute_all_neighbhorhoods(config, state, solid_state, temp);
 
     Temp_data temp2;
     temp2.grid_coords.resize(count);
@@ -102,6 +105,7 @@ TEST_F(Simulation_test, Grid_coords_repeatability) {
                                      temp2.neighbor_vectors_to.data(),
                                      state.positions.data(),
                                      temp2.grid_coords.data(),
+                                     state.positions.data(),
                                      temp2.index_pairs.data(),
                                      temp2.block_map);
 

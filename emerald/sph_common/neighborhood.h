@@ -78,10 +78,11 @@ void create_neighborhoods(
   Neighbor_values<float>* const neighbor_distances,
   Neighbor_values<V2f>* const neighbor_vectors_to,
 
-  V2f const* const positions,
-  V2i const* const grid_coords,
-  std::pair<uint64_t, size_t> const* const sorted_index_pairs,
-  Block_map const& block_map,
+  V2f const* const self_positions,
+  V2i const* const self_grid_coords,
+  V2f const* const other_positions,
+  std::pair<uint64_t, size_t> const* const other_sorted_index_pairs,
+  Block_map const& other_block_map,
   AcceptConditionFunction&& accept_condition_function);
 
 void create_regular_neighborhoods(
@@ -92,16 +93,18 @@ void create_regular_neighborhoods(
   Neighbor_values<float>* const neighbor_distances,
   Neighbor_values<V2f>* const neighbor_vectors_to,
 
-  V2f const* const positions,
-  V2i const* const grid_coords,
-  std::pair<uint64_t, size_t> const* const sorted_index_pairs,
-  Block_map const& block_map);
+  V2f const* const self_positions,
+  V2i const* const self_grid_coords,
+  V2f const* const other_positions,
+  std::pair<uint64_t, size_t> const* const other_sorted_index_pairs,
+  Block_map const& other_block_map);
 
 void compute_neighbor_distances_and_vectors_to(
   size_t const particle_count,
   Neighbor_values<float>* const neighbor_distances,
   Neighbor_values<V2f>* const neighbor_vectors_to,
-  V2f const* const positions,
+  V2f const* const self_positions,
+  V2f const* const other_positions,
   uint8_t const* const neighbor_counts,
   Neighbor_values<size_t> const* const neighbor_indices);
 
@@ -158,10 +161,12 @@ void create_neighborhoods(
   Neighbor_values<float>* const neighbor_distances,
   Neighbor_values<V2f>* const neighbor_vectors_to,
 
-  V2f const* const positions,
-  V2i const* const grid_coords,
-  std::pair<uint64_t, size_t> const* const sorted_index_pairs,
-  Block_map const& block_map,
+  V2f const* const self_positions,
+  V2i const* const self_grid_coords,
+
+  V2f const* const other_positions,
+  std::pair<uint64_t, size_t> const* const other_sorted_index_pairs,
+  Block_map const& other_block_map,
   AcceptConditionFunction&& accept_condition_function) {
     for_each_iota(
       particle_count,
@@ -170,14 +175,15 @@ void create_neighborhoods(
        neighbor_indices,
        neighbor_distances,
        neighbor_vectors_to,
-       positions,
-       grid_coords,
-       sorted_index_pairs,
-       &block_map,
+       self_positions,
+       self_grid_coords,
+       other_positions,
+       other_sorted_index_pairs,
+       &other_block_map,
        accept = std::forward<AcceptConditionFunction>(
          accept_condition_function)](auto const particle_index) {
-          auto const pos = positions[particle_index];
-          auto const grid_coord = grid_coords[particle_index];
+          auto const pos = self_positions[particle_index];
+          auto const grid_coord = self_grid_coords[particle_index];
 
           Neighbors neighbors;
           uint8_t nbhd_count = 0;
@@ -190,15 +196,16 @@ void create_neighborhoods(
                    (i <= grid_coord[0] + 1);
                    ++i) {
                   auto const other_z_index = z_index::z_index(i, j);
-                  auto const found_iter = block_map.find(other_z_index);
-                  if (found_iter == block_map.end()) { continue; }
+                  auto const found_iter = other_block_map.find(other_z_index);
+                  if (found_iter == other_block_map.end()) { continue; }
 
                   // sip == sorted_index_pair
                   auto const [sip_begin, sip_end] = (*found_iter).second;
                   for (auto sip = sip_begin; sip != sip_end; ++sip) {
                       auto const other_particle_index =
-                        sorted_index_pairs[sip].second;
-                      if ((other_particle_index == particle_index) ||
+                        other_sorted_index_pairs[sip].second;
+                      if (((other_positions == self_positions) &&
+                           (other_particle_index == particle_index)) ||
                           !accept(particle_index, other_particle_index)) {
                           continue;
                       }
@@ -206,7 +213,7 @@ void create_neighborhoods(
                       auto& neighbor = neighbors.at(nbhd_count);
                       neighbor.index = other_particle_index;
                       neighbor.vector_to =
-                        positions[other_particle_index] - pos;
+                        other_positions[other_particle_index] - pos;
                       neighbor.distance = neighbor.vector_to.length();
 
                       if (neighbor.distance >= max_distance) { continue; }

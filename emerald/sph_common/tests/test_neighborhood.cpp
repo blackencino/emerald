@@ -222,6 +222,7 @@ TEST_F(Neighborhood_test, Create_regular_neighborhoods) {
                                  neighbor_vectors_to.data(),
                                  positions.data(),
                                  grid_coords.data(),
+                                 positions.data(),
                                  index_pairs.data(),
                                  block_map);
     auto const later = std::chrono::high_resolution_clock::now();
@@ -337,6 +338,7 @@ TEST_F(Neighborhood_test, Compute_neighbor_distances_and_vectors_to) {
                                  expected_neighbor_vectors_to.data(),
                                  positions.data(),
                                  grid_coords.data(),
+                                 positions.data(),
                                  index_pairs.data(),
                                  block_map);
 
@@ -347,6 +349,7 @@ TEST_F(Neighborhood_test, Compute_neighbor_distances_and_vectors_to) {
     compute_neighbor_distances_and_vectors_to(count,
                                               neighbor_distances.data(),
                                               neighbor_vectors_to.data(),
+                                              positions.data(),
                                               positions.data(),
                                               neighbor_counts.data(),
                                               neighbor_indices.data());

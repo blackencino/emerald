@@ -5,16 +5,16 @@
 
 namespace emerald::sph_common {
 
-void compute_linear_accelerations_constant_mass(
+void accumulate_linear_accelerations_constant_mass(
   size_t const entity_count,
   float const inverse_mass_per_entity,
   V2f* const accelerations,
   V2f const* const forces);
 
-void compute_linear_accelerations(size_t const entity_count,
-                                  V2f* const accelerations,
-                                  float const* const inverse_masses,
-                                  V2f const* const forces);
+void accumulate_linear_accelerations(size_t const entity_count,
+                                     V2f* const accelerations,
+                                     float const* const inverse_masses,
+                                     V2f const* const forces);
 
 template <typename T>
 void forward_euler_integrate_linear_values(size_t const entity_count,
@@ -23,7 +23,9 @@ void forward_euler_integrate_linear_values(size_t const entity_count,
                                            T const* const values,
                                            T const* const value_dots) {
     // Accomodate in-place
-    if (values != value_nexts) { copy_array(entity_count, value_nexts, values); }
+    if (values != value_nexts) {
+        copy_array(entity_count, value_nexts, values);
+    }
     accumulate(entity_count, dt, value_nexts, value_dots);
 }
 

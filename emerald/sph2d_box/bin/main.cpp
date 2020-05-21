@@ -23,6 +23,15 @@ protected:
                                          m_sim.state.positions.size(),
                                          m_sim.state.positions.data(),
                                          m_sim.state.colors.data());
+
+
+        m_solids_multi_scale_draw = std::make_unique<Multi_scale_draw>(1, 2048);
+        m_solids_multi_scale_draw->update_scale(0,
+                                         m_sim.config.draw_radius,
+                                         m_sim.solid_state.positions.size(),
+                                         m_sim.solid_state.positions.data(),
+                                         m_sim.solid_state.colors.data());
+
         m_updated = true;
     }
 
@@ -31,10 +40,12 @@ public:
       : Sim3D()
       , m_sim(params) {
 
+        auto const border_size = params.support * 3.0f;
+
         Imath::Frustumf frustum;
         frustum.set(-1.0f, 1.0f,
-                    0.0f, m_sim.config.params.length,
-                    m_sim.config.params.length, 0.0f,
+                    -border_size, m_sim.config.params.length + border_size,
+                    m_sim.config.params.length + border_size, -border_size,
                     true);
 
         m_modelview.makeIdentity();
@@ -66,6 +77,7 @@ public:
     void draw() override {
         glDisable(GL_DEPTH_TEST);
         m_multi_scale_draw->draw(m_modelview, m_projection);
+        m_solids_multi_scale_draw->draw(m_modelview, m_projection);
         m_updated = false;
     }
 
@@ -94,6 +106,7 @@ protected:
     // int m_zoom_out = 0;
 
     std::unique_ptr<Multi_scale_draw> m_multi_scale_draw;
+    std::unique_ptr<Multi_scale_draw> m_solids_multi_scale_draw;
     bool m_updated = false;
 };
 

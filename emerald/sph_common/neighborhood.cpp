@@ -131,20 +131,22 @@ void create_regular_neighborhoods(
   Neighbor_values<float>* const neighbor_distances,
   Neighbor_values<V2f>* const neighbor_vectors_to,
 
-  V2f const* const positions,
-  V2i const* const grid_coords,
-  std::pair<uint64_t, size_t> const* const sorted_index_pairs,
-  Block_map const& block_map) {
+  V2f const* const self_positions,
+  V2i const* const self_grid_coords,
+  V2f const* const other_positions,
+  std::pair<uint64_t, size_t> const* const other_sorted_index_pairs,
+  Block_map const& other_block_map) {
     create_neighborhoods(particle_count,
                          max_distance,
                          neighbor_counts,
                          neighbor_indices,
                          neighbor_distances,
                          neighbor_vectors_to,
-                         positions,
-                         grid_coords,
-                         sorted_index_pairs,
-                         block_map,
+                         self_positions,
+                         self_grid_coords,
+                         other_positions,
+                         other_sorted_index_pairs,
+                         other_block_map,
                          [](auto const i, auto const j) { return true; });
 }
 
@@ -152,18 +154,19 @@ void compute_neighbor_distances_and_vectors_to(
   size_t const particle_count,
   Neighbor_values<float>* const neighbor_distances,
   Neighbor_values<V2f>* const neighbor_vectors_to,
-  V2f const* const positions,
+  V2f const* const self_positions,
+  V2f const* const other_positions,
   uint8_t const* const neighbor_counts,
   Neighbor_values<size_t> const* const neighbor_indices) {
     for_each_iota(particle_count, [=](auto const particle_index) {
-        auto const position = positions[particle_index];
+        auto const position = self_positions[particle_index];
         auto const neighbor_count = neighbor_counts[particle_index];
         auto& neighbor_distance = neighbor_distances[particle_index];
         auto& neighbor_vector_to = neighbor_vectors_to[particle_index];
         auto const& nbhd_indices = neighbor_indices[particle_index];
         for (uint8_t j = 0; j < neighbor_count; ++j) {
             auto const other_particle_index = nbhd_indices[j];
-            auto const delta_pos = positions[other_particle_index] - position;
+            auto const delta_pos = other_positions[other_particle_index] - position;
             neighbor_vector_to[j] = delta_pos;
             neighbor_distance[j] = delta_pos.length();
         }

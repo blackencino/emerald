@@ -2,12 +2,14 @@ add_library(emerald_sph2d_box
             parameters.h
             sim_ops.h
             simulation.h
+            solids.h
             state.h
             tag.h
 
             parameters.cpp
             sim_ops.cpp
-            simulation.cpp)
+            simulation.cpp
+            solids.cpp)
 target_include_directories(emerald_sph2d_box PUBLIC "${emerald_SOURCE_DIR}")
 target_link_libraries(emerald_sph2d_box
                       PUBLIC

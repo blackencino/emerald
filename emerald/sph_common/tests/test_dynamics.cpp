@@ -1,5 +1,6 @@
 #include <emerald/sph_common/dynamics.h>
 
+#include <emerald/util/format.h>
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
@@ -9,6 +10,8 @@
 #include <vector>
 
 namespace emerald::sph_common {
+
+using namespace emerald::util;
 
 struct Dynamics_test : public ::testing::Test {
     Dynamics_test() {
@@ -59,7 +62,8 @@ TEST_F(Dynamics_test, Linear_accelerations_constant_mass) {
                    [inv_mass](V2f const& f) { return f * inv_mass; });
 
     linear_accelerations.resize(count);
-    compute_linear_accelerations_constant_mass(
+    fill_array(count, {0.0f, 0.0f}, linear_accelerations.data());
+    accumulate_linear_accelerations_constant_mass(
       count, inv_mass, linear_accelerations.data(), forces.data());
     EXPECT_EQ(expected_linear_accelerations, linear_accelerations);
 }
@@ -75,8 +79,17 @@ TEST_F(Dynamics_test, Linear_accelerations) {
     }
 
     linear_accelerations.resize(count);
-    compute_linear_accelerations(
+    fill_array(count, {0.0f, 0.0f}, linear_accelerations.data());
+    accumulate_linear_accelerations(
       count, linear_accelerations.data(), inv_masses.data(), forces.data());
+    for (size_t i = 0; i < count; ++i) {
+        if (expected_linear_accelerations[i] != linear_accelerations[i]) {
+            fmt::print("Error linacc. i = {}, expected = {}, got = {}\n",
+                       i,
+                       expected_linear_accelerations[i],
+                       linear_accelerations[i]);
+        }
+    }
     EXPECT_EQ(expected_linear_accelerations, linear_accelerations);
 }
 
@@ -89,7 +102,8 @@ TEST_F(Dynamics_test, Forward_euler_integrate) {
     std::vector<V2f> position_nexts;
 
     accelerations.resize(count);
-    compute_linear_accelerations(
+    fill_array(count, {0.0f, 0.0f}, accelerations.data());
+    accumulate_linear_accelerations(
       count, accelerations.data(), inv_masses.data(), forces.data());
 
     float const dt = 1.0f / 24.0f;
