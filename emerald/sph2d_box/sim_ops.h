@@ -63,10 +63,6 @@ void accumulate_pressure_forces(
   float const* const pressures,
   float const* const densities);
 
-float max_density_error(size_t const particle_count,
-                        float const target_density,
-                        float const* const densities);
-
 void compute_colors(size_t const particle_count,
                     float const target_density,
                     C4uc* const colors,

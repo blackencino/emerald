@@ -39,12 +39,12 @@ void compute_all_external_forces(Simulation_config const& config,
 
 void sub_step(Simulation_config const& config,
               State& state,
-              const Solid_state& solid_state,
+              Solid_state const& solid_state,
               Temp_data& temp);
 
 State simulation_step(Simulation_config const& config,
                       State&& state,
-                      const Solid_state& solid_state,
+                      Solid_state const& solid_state,
                       Temp_data& temp_data);
 
 struct EZ_EXAMPLE_SIM {

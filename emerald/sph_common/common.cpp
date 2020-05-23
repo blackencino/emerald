@@ -74,4 +74,62 @@ void compute_z_indices(size_t const particle_count,
     });
 }
 
+float max_density_error(size_t const count,
+                        float const target_density,
+                        float const* const densities) {
+    return max_element(
+      count, 0.0f, densities, [target_density](float const density) -> float {
+          return std::max(0.0f, density - target_density);
+      });
+}
+
+float max_vector_squared_magnitude(size_t const count,
+                                   V2f const* const vectors) {
+    return max_element(count, 0.0f, vectors, [](V2f const vec) -> float {
+        return vec.dot(vec);
+    });
+}
+
+float average_value(size_t const particle_count,
+                    int64_t const discretization,
+                    float const normalized_value,
+                    float const* const values) {
+    if (!particle_count) { return 0.0f; }
+
+    int64_t discretized_sum = 0;
+    auto const discretization_f = static_cast<float>(discretization);
+    constexpr float discretization_f = discretization_d;
+    if constexpr (DO_PARALLEL) {
+        discretized_sum = tbb::parallel_reduce(
+          tbb::blocked_range<float const*>{values, values + particle_count},
+          discretized_sum,
+          [](tbb::blocked_range<float const*> const& range,
+             int64_t const incoming_sum) -> int64_t {
+              int64_t sum = incoming_sum;
+              for (float const value : range) {
+                  sum += static_cast<int64_t>((value / normalized_value) *
+                                              discretization_f);
+              }
+              return sum;
+          },
+          [](int64_t const a, int64_t const b) -> int64_t { return a + b; });
+    } else {
+        for (size_t i = 0; i < particle_count; ++i) {
+            discretized_sum += static_cast<int64_t>(
+              (values[i] / normalized_value) * discretization_f);
+        }
+    }
+
+    double const numer = static_cast<double>(discretized_sum) *
+                         static_cast<double>(normalized_value);
+    double const denom =
+      static_cast<double>(particle_count) * static_cast<double>(discretization);
+
+    if (is_safe_divide(numer, denom)) {
+        return static_cast<float>(numer / denom);
+    } else {
+        return 0.0f;
+    }
+}
+
 }  // namespace emerald::sph_common

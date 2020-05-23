@@ -123,29 +123,40 @@ TEST_F(Common_test, Compute_z_indices) {
     EXPECT_EQ(z_indices.end(), last);
 }
 
-// TEST_F(Common_test, Max_density_error) {
-//     std::vector<float> densities;
-//     constexpr float target_density = 1000.0f;
-//     densities.resize(7372);
-//     std::mt19937_64 gen{91191};
-//     std::uniform_real_distribution<float> dist{target_density * 0.5f,
-//                                                target_density * 1.5f};
+TEST_F(Common_test, Max_density_error) {
+    std::vector<float> densities;
+    constexpr float target_density = 1000.0f;
+    densities.resize(7372);
+    std::mt19937_64 gen{91191};
+    std::uniform_real_distribution<float> dist{target_density * 0.5f,
+                                               target_density * 1.5f};
 
-//     auto gen_density = [&gen, &dist]() -> float { return dist(gen); };
+    auto gen_density = [&gen, &dist]() -> float { return dist(gen); };
 
-//     std::generate(densities.begin(), densities.end(), gen_density);
+    std::generate(densities.begin(), densities.end(), gen_density);
 
-//     float expected_max_error = 0.0f;
-//     for (auto const density : densities) {
-//         auto const error = std::max(0.0f, density - target_density);
-//         expected_max_error = std::max(error, expected_max_error);
-//     }
+    float expected_max_error = 0.0f;
+    for (auto const density : densities) {
+        auto const error = std::max(0.0f, density - target_density);
+        expected_max_error = std::max(error, expected_max_error);
+    }
 
-//     auto const max_error =
-//         max_density_error(densities.size(), target_density,
-//         densities.data());
+    auto const max_error =
+      max_density_error(densities.size(), target_density, densities.data());
 
-//     EXPECT_EQ(expected_max_error, max_error);
-// }
+    EXPECT_EQ(expected_max_error, max_error);
+}
+
+TEST_F(Common_test, Max_vector_squared_magnitude) {
+    float expected = 0.0f;
+    for (auto const& pos : positions) {
+        expected = std::max(expected, pos.dot(pos));
+    }
+
+    auto const got =
+      max_vector_squared_magnitude(positions.size(), positions.data());
+
+    EXPECT_EQ(expected, got);
+}
 
 }  // namespace emerald::sph_common

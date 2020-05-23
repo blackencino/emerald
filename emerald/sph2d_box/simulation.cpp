@@ -513,7 +513,7 @@ void sub_step(Simulation_config const& config,
 
 State simulation_step(Simulation_config const& config,
                       State&& state,
-                      const Solid_state& solid_state,
+                      Solid_state const& solid_state,
                       Temp_data& temp_data) {
     for (int sub_step_iter = 0; sub_step_iter < config.params.sub_steps;
          ++sub_step_iter) {

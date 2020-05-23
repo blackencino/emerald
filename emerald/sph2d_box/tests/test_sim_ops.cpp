@@ -29,28 +29,21 @@ struct Sim_ops_test : public ::testing::Test {
     std::vector<V2f> positions;
 };
 
-TEST_F(Sim_ops_test, Max_density_error) {
-    std::vector<float> densities;
-    constexpr float target_density = 1000.0f;
-    densities.resize(7372);
-    std::mt19937_64 gen{91191};
-    std::uniform_real_distribution<float> dist{target_density * 0.5f,
-                                               target_density * 1.5f};
+TEST_F(Sim_ops_test, Accumulate_gravity) {
+    auto const count = positions.size();
+    auto forces = positions;
 
-    auto gen_density = [&gen, &dist]() -> float { return dist(gen); };
+    float const gravity = 9.81f;
+    float const mass = 10.1235f;
 
-    std::generate(densities.begin(), densities.end(), gen_density);
-
-    float expected_max_error = 0.0f;
-    for (auto const density : densities) {
-        auto const error = std::max(0.0f, density - target_density);
-        expected_max_error = std::max(error, expected_max_error);
+    auto expected_forces = forces;
+    for (auto& expected_force : expected_forces) {
+        expected_force[1] -= gravity * mass;
     }
 
-    auto const max_error =
-      max_density_error(densities.size(), target_density, densities.data());
+    accumulate_gravity_forces(count, mass, gravity, forces.data());
 
-    EXPECT_EQ(expected_max_error, max_error);
+    EXPECT_EQ(expected_forces, forces);
 }
 
 }  // namespace emerald::sph2d_box

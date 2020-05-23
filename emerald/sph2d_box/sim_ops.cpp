@@ -7,8 +7,6 @@
 #include <emerald/z_index/z_index.h>
 
 #include <fmt/format.h>
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_reduce.h>
 
 #include <algorithm>
 #include <cmath>
@@ -38,7 +36,8 @@ void accumulate_constant_pole_attraction_forces(size_t const particle_count,
 
         forces[i] -= magnitude * rN;
 
-        V3f const torque{0.0f, 0.0f, 0.125f * magnitude /*/ (1.0f + r.dot(r))*/};
+        V3f const torque{
+          0.0f, 0.0f, 0.125f * magnitude /*/ (1.0f + r.dot(r))*/};
         V3f const r3{rN[0], rN[1], 0.0f};
         V3f const turn = torque.cross(r3);
 
@@ -186,34 +185,6 @@ void accumulate_pressure_forces(
 
         pressure_forces[particle_index] += -(M * M) * pressure_force;
     });
-}
-
-float max_density_error(size_t const particle_count,
-                        float const target_density,
-                        float const* const densities) {
-    if constexpr (DO_PARALLEL) {
-        return tbb::parallel_reduce(
-          tbb::blocked_range<float const*>{densities,
-                                           densities + particle_count},
-          0.0f,
-          [target_density](tbb::blocked_range<float const*> const& range,
-                           float const value) -> float {
-              float max_value = value;
-              for (auto const density : range) {
-                  float const error = std::max(0.0f, density - target_density);
-                  max_value = std::max(max_value, error);
-              }
-              return max_value;
-          },
-          [](float const a, float const b) -> float { return std::max(a, b); });
-    } else {
-        float max_error = 0.0f;
-        for (size_t i = 0; i < particle_count; ++i) {
-            float const error = std::max(0.0f, densities[i] - target_density);
-            max_error = std::max(error, max_error);
-        }
-        return max_error;
-    }
 }
 
 void compute_colors(size_t const particle_count,
