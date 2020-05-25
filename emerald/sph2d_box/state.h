@@ -66,6 +66,12 @@ struct Temp_data {
     std::vector<Neighbor_values<V2f>> solid_neighbor_vectors_to;
     std::vector<Neighbor_values<float>> solid_neighbor_kernels;
     std::vector<Neighbor_values<V2f>> solid_neighbor_kernel_gradients;
+
+    std::vector<V3f> alpha_denom_parts;
+    std::vector<float> alphas;
+    std::vector<float> divergence_kappas;
+    std::vector<float> density_kappas;
+    std::vector<float> density_stars;
 };
 
 }  // namespace emerald::sph2d_box

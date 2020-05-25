@@ -1,5 +1,6 @@
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/sph2d_box/bin/multi_scale_draw.h>
+#include <emerald/sph2d_box/dfsph.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
 #include <emerald/util/assert.h>
@@ -24,13 +25,13 @@ protected:
                                          m_sim.state.positions.data(),
                                          m_sim.state.colors.data());
 
-
         m_solids_multi_scale_draw = std::make_unique<Multi_scale_draw>(1, 2048);
-        m_solids_multi_scale_draw->update_scale(0,
-                                         m_sim.config.draw_radius,
-                                         m_sim.solid_state.positions.size(),
-                                         m_sim.solid_state.positions.data(),
-                                         m_sim.solid_state.colors.data());
+        m_solids_multi_scale_draw->update_scale(
+          0,
+          m_sim.config.draw_radius,
+          m_sim.solid_state.positions.size(),
+          m_sim.solid_state.positions.data(),
+          m_sim.solid_state.colors.data());
 
         m_updated = true;
     }
@@ -39,13 +40,15 @@ public:
     explicit Sph2d_box_sim(emerald::sph2d_box::Parameters const& params)
       : Sim3D()
       , m_sim(params) {
-
         auto const border_size = params.support * 3.0f;
 
         Imath::Frustumf frustum;
-        frustum.set(-1.0f, 1.0f,
-                    -border_size, m_sim.config.params.length + border_size,
-                    m_sim.config.params.length + border_size, -border_size,
+        frustum.set(-1.0f,
+                    1.0f,
+                    -border_size,
+                    m_sim.config.params.length + border_size,
+                    m_sim.config.params.length + border_size,
+                    -border_size,
                     true);
 
         m_modelview.makeIdentity();
@@ -57,7 +60,11 @@ public:
     }
 
     void step() override {
-        m_sim.step();
+        // m_sim.step();
+        m_sim.state = dfsph_simulation_step(m_sim.config,
+                                            std::move(m_sim.state),
+                                            m_sim.solid_state,
+                                            m_sim.temp_data);
         m_multi_scale_draw->update_scale(0,
                                          m_sim.config.draw_radius,
                                          m_sim.state.positions.size(),

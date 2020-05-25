@@ -1,6 +1,7 @@
 #pragma once
 
 #include <emerald/sph_common/types.h>
+#include <emerald/util/safe_divide.h>
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
@@ -12,7 +13,9 @@
 
 namespace emerald::sph_common {
 
-constexpr bool DO_PARALLEL = true;
+using namespace emerald::util;
+
+constexpr bool DO_PARALLEL = false;  // true;
 
 //------------------------------------------------------------------------------
 // Generics
@@ -124,5 +127,51 @@ float average_value(size_t const particle_count,
                     int64_t const discretization,
                     float const normalized_value,
                     float const* const values);
+
+template <typename T, typename Function>
+float average_func_value(size_t const particle_count,
+                         int64_t const discretization,
+                         float const normalized_value,
+                         T const* const values,
+                         Function&& func) {
+    if (!particle_count) { return 0.0f; }
+
+    int64_t discretized_sum = 0;
+    auto const discretization_f = static_cast<float>(discretization);
+    if constexpr (DO_PARALLEL) {
+        discretized_sum = tbb::parallel_reduce(
+          tbb::blocked_range<T const*>{values, values + particle_count},
+          discretized_sum,
+          [normalized_value,
+           discretization_f,
+           func = std::forward<Function>(func)](
+            tbb::blocked_range<T const*> const& range,
+            int64_t const incoming_sum) -> int64_t {
+              int64_t sum = incoming_sum;
+              for (T const& value : range) {
+                  sum += static_cast<int64_t>((func(value) / normalized_value) *
+                                              discretization_f);
+              }
+              return sum;
+          },
+          [](int64_t const a, int64_t const b) -> int64_t { return a + b; });
+    } else {
+        for (size_t i = 0; i < particle_count; ++i) {
+            discretized_sum += static_cast<int64_t>(
+              (func(values[i]) / normalized_value) * discretization_f);
+        }
+    }
+
+    double const numer = static_cast<double>(discretized_sum) *
+                         static_cast<double>(normalized_value);
+    double const denom =
+      static_cast<double>(particle_count) * static_cast<double>(discretization);
+
+    if (is_safe_divide(numer, denom)) {
+        return static_cast<float>(numer / denom);
+    } else {
+        return 0.0f;
+    }
+}
 
 }  // namespace emerald::sph_common

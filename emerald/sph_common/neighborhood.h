@@ -201,7 +201,10 @@ void create_neighborhoods(
 
                   // sip == sorted_index_pair
                   auto const [sip_begin, sip_end] = (*found_iter).second;
-                  for (auto sip = sip_begin; sip != sip_end; ++sip) {
+                  for (auto sip = sip_begin;
+                       (nbhd_count < NEIGHBORHOOD_MAX_COUNT) &&
+                       (sip != sip_end);
+                       ++sip) {
                       auto const other_particle_index =
                         other_sorted_index_pairs[sip].second;
                       if (((other_positions == self_positions) &&

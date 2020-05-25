@@ -1,11 +1,29 @@
 #include <emerald/sph2d_box/dfsph_ops.h>
 
+#include <emerald/util/format.h>
+#include <emerald/util/safe_divide.h>
+
+#include <fmt/format.h>
+
 namespace emerald::sph2d_box {
+
+using namespace emerald::util;
 
 float dfsph_average_density(size_t const particle_count,
                             float const target_density,
                             float const* const densities) {
     return average_value(particle_count, 1000, target_density, densities);
+}
+
+float dfsph_average_density_dot(size_t const particle_count,
+                                float const target_density,
+                                float const* const density_dots) {
+    return average_func_value(
+      particle_count,
+      1000,
+      target_density,
+      density_dots,
+      [](float const density_dot) { return std::max(density_dot, 0.0f); });
 }
 
 void dfsph_compute_alpha_denom_parts(
@@ -29,7 +47,7 @@ void dfsph_compute_alpha_denom_parts(
         }
 
         alpha_denom_parts[particle_index] =
-          V3f{mj_grad_w_sum[0].mj_grad_w_sum[1], mj_grad_w_mag_sqr_sum};
+          V3f{mj_grad_w_sum[0], mj_grad_w_sum[1], mj_grad_w_mag_sqr_sum};
     });
 }
 
@@ -48,7 +66,7 @@ void dfsph_accumulate_alpha_denom_parts_from_solids(
         auto const& nbhd_indices = solid_neighbor_indices[particle_index];
         auto const& nbhd_kernel_gradients =
           solid_neighbor_kernel_gradients[particle_index];
-        V2f phi_density0_grad_w_sum;
+        V2f phi_density0_grad_w_sum{0.0f, 0.0f};
         for (uint8_t j = 0; j < nbhd_count; ++j) {
             auto const other_particle_index = nbhd_indices[j];
             auto const other_volume = solid_volumes[other_particle_index];
@@ -57,7 +75,7 @@ void dfsph_accumulate_alpha_denom_parts_from_solids(
         }
 
         alpha_denom_parts[particle_index] +=
-          V3f{phi_density0_grad_w_sum[0].phi_density0_grad_w_sum[1], 0.0f};
+          V3f{phi_density0_grad_w_sum[0], phi_density0_grad_w_sum[1], 0.0f};
     });
 }
 
@@ -67,12 +85,16 @@ void dfsph_compute_alphas_from_parts(size_t const particle_count,
                                      V3f const* const alpha_denom_parts) {
     for_each_iota(particle_count, [=](auto const particle_index) {
         auto const denom_parts = alpha_denom_parts[particle_index];
-        V2f const mj_grad_w_sum{parts[0], parts[1]};
-        float const mj_grad_w_mag_sqr_sum = parts[2];
+        V2f const mj_grad_w_sum{denom_parts[0], denom_parts[1]};
+        float const mj_grad_w_mag_sqr_sum = denom_parts[2];
 
         auto const numer = densities[particle_index];
         auto const denom =
           mj_grad_w_sum.dot(mj_grad_w_sum) + mj_grad_w_mag_sqr_sum;
+
+        if (!is_safe_divide(numer, denom)) {
+            fmt::print("WHOA NO SAFE DIVIDE AT ALPHA {} / {} \n", numer, denom);
+        }
 
         alphas[particle_index] = safe_divide(numer, denom).value_or(0.0f);
     });
@@ -82,7 +104,7 @@ void dfsph_compute_density_dots(
   size_t const particle_count,
   float const mass_per_particle,
   float* const density_dots,
-  V2f* const velocities,
+  V2f const* const velocities,
   uint8_t const* const neighbor_counts,
   Neighbor_values<size_t> const* const neighbor_indices,
   Neighbor_values<V2f> const* const neighbor_kernel_gradients) {
@@ -111,8 +133,8 @@ void dfsph_accumulate_density_dots_from_solids(
   size_t const particle_count,
   float const target_density,
   float* const density_dots,
-  V2f* const velocities,
-  V2f* const solid_velocities,
+  V2f const* const velocities,
+  V2f const* const solid_velocities,
   float const* const solid_volumes,
   uint8_t const* const solid_neighbor_counts,
   Neighbor_values<size_t> const* const solid_neighbor_indices,
@@ -146,7 +168,12 @@ void dfsph_compute_kappas_from_density_dots(size_t const particle_count,
                                             float const* const density_dots,
                                             float const* const alphas) {
     for_each_iota(particle_count, [=](auto const particle_index) {
-        auto const numer = alphas[particle_index] * density_dots[particle_index];
+        auto const density_dot = density_dots[particle_index];
+        if (density_dot <= 0.0f) {
+            kappas[particle_index] = 0.0f;
+            return;
+        }
+        auto const numer = alphas[particle_index] * density_dot;
         kappas[particle_index] = safe_divide(numer, dt).value_or(0.0f);
     });
 }
@@ -159,8 +186,12 @@ void dfsph_compute_kappas_from_density_errors(size_t const particle_count,
                                               float const* const alphas) {
     auto const denom = sqr(dt);
     for_each_iota(particle_count, [=](auto const particle_index) {
-        auto const numer =
-          alphas[particle_index] * (densities[particle_index] - target_density);
+        auto const density_error = densities[particle_index] - target_density;
+        if (density_error <= 0.0f) {
+            kappas[particle_index] = 0.0f;
+            return;
+        }
+        auto const numer = alphas[particle_index] * density_error;
         kappas[particle_index] = safe_divide(numer, denom).value_or(0.0f);
     });
 }
@@ -173,7 +204,7 @@ void dfsph_apply_kappas_to_velocities(
   float const* const kappas,
   float const* const densities,
   uint8_t const* const neighbor_counts,
-  Neighbor_values<uint8_t> const* const neighbor_indices,
+  Neighbor_values<size_t> const* const neighbor_indices,
   Neighbor_values<V2f> const* const neighbor_kernel_gradients) {
     for_each_iota(particle_count, [=](auto const particle_index) {
         auto const nbhd_count = neighbor_counts[particle_index];
@@ -212,7 +243,7 @@ void dfsph_apply_kappas_to_velocities_from_solids(
   float const* const densities,
   float const* const solid_volumes,
   uint8_t const* const solid_neighbor_counts,
-  Neighbor_values<uint8_t> const* const solid_neighbor_indices,
+  Neighbor_values<size_t> const* const solid_neighbor_indices,
   Neighbor_values<V2f> const* const solid_neighbor_kernel_gradients) {
     for_each_iota(particle_count, [=](auto const particle_index) {
         auto const nbhd_count = solid_neighbor_counts[particle_index];

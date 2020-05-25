@@ -1,5 +1,6 @@
 #include <emerald/sph2d_box/dfsph.h>
 
+#include <emerald/sph2d_box/dfsph_ops.h>
 #include <emerald/sph_common/common.h>
 #include <emerald/util/safe_divide.h>
 
@@ -18,7 +19,7 @@ flicks dfsph_cfl_maximum_time_step(size_t const particle_count,
     double const denom = std::sqrt(static_cast<double>(
       max_vector_squared_magnitude(particle_count, velocities)));
 
-    return to_flicks(safe_divide(numer / denom).value_or(0.0f));
+    return to_flicks(safe_divide(numer, denom).value_or(0.0f));
 }
 
 void dfsph_integrate_velocity_from_non_pressure_forces(
@@ -73,10 +74,9 @@ float dfsph_compute_divergence_error_kappas(float const dt,
                                             Solid_state const& solid_state,
                                             Temp_data& temp) {
     auto const particle_count = state.positions.size();
-    auto* temp_density_dots = temp.kappas.data();
     dfsph_compute_density_dots(particle_count,
                                config.mass_per_particle,
-                               temp_density_dots,
+                               temp.density_stars.data(),
                                state.velocities.data(),
                                temp.neighbor_counts.data(),
                                temp.neighbor_indices.data(),
@@ -84,7 +84,7 @@ float dfsph_compute_divergence_error_kappas(float const dt,
     dfsph_accumulate_density_dots_from_solids(
       particle_count,
       config.params.target_density,
-      temp_density_dots,
+      temp.density_stars.data(),
       state.velocities.data(),
       solid_state.velocities.data(),
       solid_state.volumes.data(),
@@ -92,13 +92,13 @@ float dfsph_compute_divergence_error_kappas(float const dt,
       temp.solid_neighbor_indices.data(),
       temp.solid_neighbor_kernel_gradients.data());
 
-    auto const avg_density_dot = dfsph_average_density(
-      particle_count, config.params.target_density, temp_density_dots);
+    auto const avg_density_dot = dfsph_average_density_dot(
+      particle_count, config.params.target_density, temp.density_stars.data());
 
     dfsph_compute_kappas_from_density_dots(particle_count,
                                            dt,
-                                           temp.kappas.data(),
-                                           temp_density_dots,
+                                           temp.divergence_kappas.data(),
+                                           temp.density_stars.data(),
                                            temp.alphas.data());
 
     return avg_density_dot;
@@ -168,6 +168,7 @@ void dfsph_correct_divergence_error(float const dt,
          ++iter) {
         auto const average_density_dot = dfsph_compute_divergence_error_kappas(
           dt, config, state, solid_state, temp);
+        fmt::print("Average Density Dot: {}\n", average_density_dot);
         dfsph_apply_kappas(
           dt, temp.divergence_kappas.data(), config, state, solid_state, temp);
         if (iter > 0 && average_density_dot <=
@@ -178,7 +179,51 @@ void dfsph_correct_divergence_error(float const dt,
         }
     }
     fmt::print("Correct Divergence Error: Reached max iterations: {}\n",
-               config.params.dfsph.max_divergence_iterations);
+               config.params.dfsph.max_correction_iterations);
+}
+
+void dfsph_compute_density_stars_from_densities_and_density_dots(
+  size_t const particle_count,
+  float const dt,
+  float* const density_stars,
+  float const* const density_dots,
+  float const* const densities) {
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        density_stars[particle_index] =
+          densities[particle_index] + dt * density_dots[particle_index];
+    });
+}
+
+void dfsph_compute_density_stars(float const dt,
+                                 Simulation_config const& config,
+                                 State& state,
+                                 Solid_state const& solid_state,
+                                 Temp_data& temp) {
+    auto const particle_count = state.positions.size();
+    dfsph_compute_density_dots(particle_count,
+                               config.mass_per_particle,
+                               temp.density_stars.data(),
+                               state.velocities.data(),
+                               temp.neighbor_counts.data(),
+                               temp.neighbor_indices.data(),
+                               temp.neighbor_kernel_gradients.data());
+    dfsph_accumulate_density_dots_from_solids(
+      particle_count,
+      config.params.target_density,
+      temp.density_stars.data(),
+      state.velocities.data(),
+      solid_state.velocities.data(),
+      solid_state.volumes.data(),
+      temp.solid_neighbor_counts.data(),
+      temp.solid_neighbor_indices.data(),
+      temp.solid_neighbor_kernel_gradients.data());
+
+    dfsph_compute_density_stars_from_densities_and_density_dots(
+      particle_count,
+      dt,
+      temp.density_stars.data(),
+      temp.density_stars.data(),
+      temp.densities.data());
 }
 
 void dfsph_correct_density_error(float const dt,
@@ -190,31 +235,32 @@ void dfsph_correct_density_error(float const dt,
     // Warm start
     dfsph_apply_kappas(
       dt, temp.density_kappas.data(), config, state, solid_state, temp);
-    // Reuse density kappas array for density_stars
-    auto* const temp_density_stars = temp.density_kappas.data();
     for (int iter = 0; iter < config.params.dfsph.max_correction_iterations;
          ++iter) {
-        dfsph_compute_densities(
-          temp_density_stars, config, state, solid_state, temp);
+        dfsph_compute_density_stars(dt, config, state, solid_state, temp);
         auto const avg_density_star = dfsph_average_density(
-          count, config.params.target_density, temp_density_stars);
+          count, config.params.target_density, temp.density_stars.data());
+        fmt::print("Average density star: {}\n", avg_density_star);
 
         dfsph_compute_kappas_from_density_errors(count,
                                                  dt,
                                                  config.params.target_density,
                                                  temp.density_kappas.data(),
-                                                 temp_density_stars,
+                                                 temp.density_stars.data(),
                                                  temp.alphas.data());
         dfsph_apply_kappas(
           dt, temp.density_kappas.data(), config, state, solid_state, temp);
         if (iter > 1 &&
-            (average_density_star - config.params.target_density) <=
+            (avg_density_star - config.params.target_density) <=
               config.params.dfsph.average_density_star_error_tolerance) {
             fmt::print("Correct Density Error: Exiting after {} iterations\n",
                        iter);
             return;
         }
     }
+
+    fmt::print("Correct Density Error: Reached max iterations: {}\n",
+               config.params.dfsph.max_correction_iterations);
 }
 
 void dfsph_sub_step(float const dt,
@@ -227,14 +273,10 @@ void dfsph_sub_step(float const dt,
     // through the sub timestep.
     //--------------------------------------------------------------------------
     // dfsph_compute_all_external_forces(config, state, temp);
-    // dfsph_integrate_velocity_from_non_pressure_forces(
-    //   float const dt,
-    //   Simulation_config const& config,
-    //   State& state,
-    //   Solid_state const& solid_state,
-    //   Temp_data& temp);
-    // dfsph_correct_density_error(dt, config, state, solid_state, temp);
-    // dfsph_integrate_positions(dt, config, state, solid_state, temp);
+    // dfsph_integrate_velocity_from_non_pressure_forces(dt, config, state,
+    // solid_state, temp); dfsph_correct_density_error(dt, config, state,
+    // solid_state, temp); dfsph_integrate_positions(dt, config, state,
+    // solid_state, temp);
     // // TODO: MOVE SOLIDS HERE
     // compute_all_neighbhorhoods(config, state, solid_state, temp);
     // dfsph_compute_densities(
@@ -243,18 +285,17 @@ void dfsph_sub_step(float const dt,
     // dfsph_correct_divergence_error(dt, config, state, solid_state, temp);
 
     compute_all_neighbhorhoods(config, state, solid_state, temp);
+    compute_all_neighborhood_kernels(config, temp);
     dfsph_compute_densities(
       temp.densities.data(), config, state, solid_state, temp);
     dfsph_compute_alphas(config, state, solid_state, temp);
-    dfsph_correct_divergence_error(dt, config, state, solid_state, temp);
-    dfsph_compute_all_external_forces(config, state, temp);
+    // HACK the 1.0f should be dt
+    dfsph_correct_divergence_error(1.0f, config, state, solid_state, temp);
+    compute_all_external_forces(config, state, temp);
     dfsph_integrate_velocity_from_non_pressure_forces(
-      float const dt,
-      Simulation_config const& config,
-      State& state,
-      Solid_state const& solid_state,
-      Temp_data& temp);
-    dfsph_correct_density_error(dt, config, state, solid_state, temp);
+      dt, config, state, solid_state, temp);
+    // HACK the 1.0f should be dt
+    dfsph_correct_density_error(1.0f, config, state, solid_state, temp);
     dfsph_integrate_positions(dt, config, state, solid_state, temp);
 }
 
@@ -278,6 +319,7 @@ void dfsph_resize_and_init_temp_arrays(size_t const particle_count,
     temp.densities.resize(particle_count);
     temp.divergence_kappas.resize(particle_count);
     temp.density_kappas.resize(particle_count);
+    temp.density_stars.resize(particle_count);
 
     fill_array(particle_count, 0.0f, temp.divergence_kappas.data());
     fill_array(particle_count, 0.0f, temp.density_kappas.data());
@@ -286,17 +328,16 @@ void dfsph_resize_and_init_temp_arrays(size_t const particle_count,
 State dfsph_simulation_step(Simulation_config const& config,
                             State&& state,
                             const Solid_state& solid_state,
-                            Temp_data& temp_data) {
+                            Temp_data& temp) {
     flicks const min_time_step = config.params.time_per_step / 1000;
 
     auto const particle_count = state.positions.size();
-    dfsph_resize_and_init_temp_arrays(size_t const particle_count,
-                                      Temp_data& temp);
+    dfsph_resize_and_init_temp_arrays(particle_count, temp);
 
     int sub_steps = 0;
     flicks remaining_time_step = config.params.time_per_step;
     while (remaining_time_step.count() > 0) {
-        auto const cfl_step = cfl_maximum_time_step(
+        auto const cfl_step = dfsph_cfl_maximum_time_step(
           particle_count, config.params.support, state.velocities.data());
         if (cfl_step < min_time_step) {
             fmt::print(stderr,
@@ -308,11 +349,21 @@ State dfsph_simulation_step(Simulation_config const& config,
         if ((remaining_time_step - sub_time_step) < min_time_step) {
             sub_time_step = flicks{(remaining_time_step.count() + 1) / 2};
         }
-        dfsph_sub_step(sub_time_step, config, state, solid_state, temp_data);
+        dfsph_sub_step(
+          to_seconds(sub_time_step), config, state, solid_state, temp);
 
         remaining_time_step -= sub_time_step;
         ++sub_steps;
+
+        // HACK
+        break;
     }
+
+    state.colors.resize(particle_count);
+    compute_colors(particle_count,
+                   config.params.target_density,
+                   state.colors.data(),
+                   temp.densities.data());
 
     fmt::print("DFSPH frame complete, sub_steps: {}\n", sub_steps);
 

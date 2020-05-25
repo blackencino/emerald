@@ -292,19 +292,9 @@ void compute_all_neighbhorhoods(Simulation_config const& config,
                                  solid_state.block_map);
 }
 
-void recompute_neighborhood_non_index_values(Simulation_config const& config,
-                                             Solid_state const& solid_state,
-                                             Temp_data& temp) {
-    auto const count = temp.position_stars.size();
-    auto const cell_size = config.params.support * 2.0f;
-
-    compute_neighbor_distances_and_vectors_to(count,
-                                              temp.neighbor_distances.data(),
-                                              temp.neighbor_vectors_to.data(),
-                                              temp.position_stars.data(),
-                                              temp.position_stars.data(),
-                                              temp.neighbor_counts.data(),
-                                              temp.neighbor_indices.data());
+void compute_all_neighborhood_kernels(Simulation_config const& config,
+                                      Temp_data& temp) {
+    auto const count = temp.neighbor_counts.size();
 
     temp.neighbor_kernels.resize(count);
     compute_neighbor_kernels(count,
@@ -319,15 +309,6 @@ void recompute_neighborhood_non_index_values(Simulation_config const& config,
                                       temp.neighbor_kernel_gradients.data(),
                                       temp.neighbor_counts.data(),
                                       temp.neighbor_vectors_to.data());
-
-    compute_neighbor_distances_and_vectors_to(
-      count,
-      temp.solid_neighbor_distances.data(),
-      temp.solid_neighbor_vectors_to.data(),
-      temp.position_stars.data(),
-      solid_state.positions.data(),
-      temp.solid_neighbor_counts.data(),
-      temp.solid_neighbor_indices.data());
 
     temp.solid_neighbor_kernels.resize(count);
     compute_neighbor_kernels(count,
@@ -345,6 +326,32 @@ void recompute_neighborhood_non_index_values(Simulation_config const& config,
       temp.solid_neighbor_vectors_to.data());
 }
 
+void recompute_neighborhood_non_index_values(Simulation_config const& config,
+                                             Solid_state const& solid_state,
+                                             Temp_data& temp) {
+    auto const count = temp.neighbor_counts.size();
+    auto const cell_size = config.params.support * 2.0f;
+
+    compute_neighbor_distances_and_vectors_to(count,
+                                              temp.neighbor_distances.data(),
+                                              temp.neighbor_vectors_to.data(),
+                                              temp.position_stars.data(),
+                                              temp.position_stars.data(),
+                                              temp.neighbor_counts.data(),
+                                              temp.neighbor_indices.data());
+
+    compute_neighbor_distances_and_vectors_to(
+      count,
+      temp.solid_neighbor_distances.data(),
+      temp.solid_neighbor_vectors_to.data(),
+      temp.position_stars.data(),
+      solid_state.positions.data(),
+      temp.solid_neighbor_counts.data(),
+      temp.solid_neighbor_indices.data());
+
+    compute_all_neighborhood_kernels(config, temp);
+}
+
 void compute_all_external_forces(Simulation_config const& config,
                                  State const& state,
                                  Temp_data& temp) {
@@ -353,36 +360,36 @@ void compute_all_external_forces(Simulation_config const& config,
     temp.external_forces.resize(count);
     fill_array(count, {0.0f, 0.0f}, temp.external_forces.data());
 
-    accumulate_constant_pole_attraction_forces(
-      count,
-      0.25f * config.params.gravity * config.mass_per_particle,
-      {0.5f, 0.5f},
-      temp.external_forces.data(),
-      state.positions.data());
+    // accumulate_constant_pole_attraction_forces(
+    //   count,
+    //   0.25f * config.params.gravity * config.mass_per_particle,
+    //   {0.5f, 0.5f},
+    //   temp.external_forces.data(),
+    //   state.positions.data());
 
     accumulate_gravity_forces(count,
                               config.mass_per_particle,
-                              .25f * config.params.gravity,
+                              config.params.gravity,
                               temp.external_forces.data());
 
-    accumulate_simple_drag_forces(count,
-                                  0.025f,
-                                  config.params.support,
-                                  temp.external_forces.data(),
-                                  state.velocities.data());
+    // accumulate_simple_drag_forces(count,
+    //                               0.025f,
+    //                               config.params.support,
+    //                               temp.external_forces.data(),
+    //                               state.velocities.data());
 
-    // I want an offset of tiny_h
-    // delta_pos = dt * dt / m * f
-    // tiny_h * m / dt * dt
-    auto const tiny_h = 0.001f * config.params.support;
-    auto const magnitude =
-      config.mass_per_particle * tiny_h / sqr(config.seconds_per_sub_step);
-    accumulate_anti_coupling_repulsive_forces(count,
-                                              tiny_h,
-                                              magnitude,
-                                              temp.external_forces.data(),
-                                              temp.neighbor_counts.data(),
-                                              temp.neighbor_distances.data());
+    // // I want an offset of tiny_h
+    // // delta_pos = dt * dt / m * f
+    // // tiny_h * m / dt * dt
+    // auto const tiny_h = 0.001f * config.params.support;
+    // auto const magnitude =
+    //   config.mass_per_particle * tiny_h / sqr(config.seconds_per_sub_step);
+    // accumulate_anti_coupling_repulsive_forces(count,
+    //                                           tiny_h,
+    //                                           magnitude,
+    //                                           temp.external_forces.data(),
+    //                                           temp.neighbor_counts.data(),
+    //                                           temp.neighbor_distances.data());
 }
 
 void sub_step(Simulation_config const& config,

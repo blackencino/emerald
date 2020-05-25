@@ -18,6 +18,12 @@ struct Parameters {
     float gravity = 9.81f;
     float viscosity = 0.01f;
     float target_density = 1000.0f;
+
+    struct {
+        int max_correction_iterations = 1000;
+        float average_density_dot_tolerance = 0.001f * 1000.0f;
+        float average_density_star_error_tolerance = 0.0001f * 1000.0f;
+    } dfsph;
 };
 
 std::tuple<Parameters, int> parse_parameters(int argc, char* argv[]);
