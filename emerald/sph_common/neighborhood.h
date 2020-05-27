@@ -13,6 +13,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace emerald::sph_common {
 
@@ -121,6 +122,42 @@ void compute_neighbor_kernel_gradients(
   Neighbor_values<V2f>* const neighbor_kernel_gradients,
   uint8_t const* const neighbor_counts,
   Neighbor_values<V2f> const* const neighbor_vectors_to);
+
+struct Neighborhood_pointers {
+    uint8_t const* const counts = nullptr;
+    Neighbor_values<size_t> const* const indices = nullptr;
+    Neighbor_values<float> const* const distances = nullptr;
+    Neighbor_values<V2f> const* const vectors_to = nullptr;
+    Neighbor_values<float> const* const kernels = nullptr;
+    Neighbor_values<V2f> const* const kernel_gradients = nullptr;
+};
+
+struct Neighborhood_vectors {
+    std::vector<uint8_t> counts;
+    std::vector<Neighbor_values<size_t>> indices;
+    std::vector<Neighbor_values<float>> distances;
+    std::vector<Neighbor_values<V2f>> vectors_to;
+    std::vector<Neighbor_values<float>> kernels;
+    std::vector<Neighbor_values<V2f>> kernel_gradients;
+
+    void resize(size_t const count) {
+        counts.resize(count);
+        indices.resize(count);
+        distances.resize(count);
+        vectors_to.resize(count);
+        kernels.resize(count);
+        kernel_gradients.resize(count);
+    }
+
+    Neighborhood_pointers pointers() const {
+        return {counts.data(),
+                indices.data(),
+                distances.data(),
+                vectors_to.data(),
+                kernels.data(),
+                kernel_gradients.data()};
+    }
+};
 
 //------------------------------------------------------------------------------
 // TEMPLATE IMPLEMENTATIONS

@@ -22,7 +22,8 @@ target_link_libraries(emerald_sph_common
 foreach(_test
         common
         dynamics
-        neighborhood)
+        neighborhood
+        performance)
     set(_target test_${_test})
     add_executable(${_target} "tests/${_target}.cpp")
     target_link_libraries(${_target}
