@@ -15,14 +15,21 @@ namespace emerald::sph_common {
 
 using namespace emerald::util;
 
-constexpr bool DO_PARALLEL = false; //true;
+constexpr bool DO_PARALLEL = true;
 
 //------------------------------------------------------------------------------
 // Generics
 template <typename Function>
-void for_each_iota(size_t const count, Function&& func) {
+void for_each_iota(size_t const count,
+                   Function&& func,
+                   size_t const grainsize = 512) {
     if constexpr (DO_PARALLEL) {
-        tbb::parallel_for(size_t{0}, count, std::forward<Function>(func));
+        tbb::parallel_for(
+          tbb::blocked_range<size_t>{size_t{0}, count, grainsize},
+          [func = std::forward<Function>(func)](
+            tbb::blocked_range<size_t> const& range) {
+              for (size_t i = range.begin(); i != range.end(); ++i) { func(i); }
+          });
     } else {
         for (size_t i = 0; i < count; ++i) { func(i); }
     }
