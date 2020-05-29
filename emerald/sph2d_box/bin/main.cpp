@@ -1,6 +1,7 @@
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/sph2d_box/bin/multi_scale_draw.h>
 #include <emerald/sph2d_box/dfsph.h>
+#include <emerald/sph2d_box/iisph.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
 #include <emerald/util/assert.h>
@@ -61,7 +62,7 @@ public:
 
     void step() override {
         // m_sim.step();
-        m_sim.state = dfsph_simulation_step(m_sim.config,
+        m_sim.state = iisph_simulation_step(m_sim.config,
                                             std::move(m_sim.state),
                                             m_sim.solid_state,
                                             m_sim.temp_data);

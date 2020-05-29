@@ -1,5 +1,6 @@
 #include <emerald/sph2d_box/simulation.h>
 
+#include <emerald/sph2d_box/solids.h>
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/dynamics.h>
 #include <emerald/sph_common/kernels.h>
@@ -36,47 +37,54 @@ Simulation_config::Simulation_config(Parameters const& in_params)
     int num_neighbors = 0;
 
     // -15 to 15 is more than we need, but just to be safe...
-    V2f const init_volume_min{-15.0f * R, -15.0f};
-    V2f const init_volume_max{15.0f * R, 15.0f};
+    Box2f const init_volume{{-15.0f * R, -15.0f * R}, {15.0f * R, 15.0f * R}};
 
     float min_length = 10000.0f;
     V2f min_length_point;
     V2f min_length_delta_position;
 
-    // Do the cube
-    V2f const start_point = init_volume_min;
-    V2f point = start_point;
-    bool push_x = false;
-    float offset_x = 0.0f;
-    float const dx = 2.0f * R;
-    float const dy = std::sqrt(3.0f) * R;
-    for (; point.y <= init_volume_max.y; point.y += dy) {
-        // Do a row.
-        offset_x = R;
-        point.x = push_x ? start_point.x : start_point.x + R;
-        point.x += offset_x;
-        for (; point.x <= init_volume_max.x; point.x += dx) {
-            auto const delta_position = pos_i - point;
-            auto const length = delta_position.length();
+    // Fill a cube with points.
+    auto const emit_max = estimate_solid_box_emission_count(init_volume, R);
+    std::vector<V2f> positions;
+    positions.resize(emit_max);
+    auto const emitted =
+      emit_solid_box(init_volume, R, emit_max, positions.data());
+    positions.resize(emitted);
 
-            if (length < min_length) {
-                min_length = length;
-                min_length_point = point;
-                min_length_delta_position = delta_position;
-            }
+    // Find the point closest to zero.
+    V2f best_point;
+    float best_r2 = std::numeric_limits<float>::max();
+    size_t best_index = emitted + 1;
 
-            auto const w = kernels::W(length, H);
-            if (w > 0.0f) {
-                muchness0 += w;
-                ++num_neighbors;
-            }
-
-            auto const gradw = kernels::GradW(delta_position, H);
-
-            gradw_sum += gradw;
-            gradw_dot_gradw_sum += gradw.dot(gradw);
+    for (size_t i = 0; i < emitted; ++i) {
+        auto const r2 = positions[i].length2();
+        if (r2 < best_r2) {
+            best_point = positions[i];
+            best_r2 = r2;
+            best_index = i;
         }
-        push_x = !push_x;
+    }
+
+    for (auto const point : positions) {
+        auto const delta_position = best_point - point;
+        auto const length = delta_position.length();
+
+        if (length < min_length) {
+            min_length = length;
+            min_length_point = point;
+            min_length_delta_position = delta_position;
+        }
+
+        auto const w = kernels::W(length, H);
+        if (w > 0.0f) {
+            muchness0 += w;
+            ++num_neighbors;
+        }
+
+        auto const gradw = kernels::GradW(delta_position, H);
+
+        gradw_sum += gradw;
+        gradw_dot_gradw_sum += gradw.dot(gradw);
     }
 
     fmt::print(
@@ -184,19 +192,28 @@ State dam_break_initial_state(Parameters const& params,
           }
       });
 
-    state.velocities.reserve(emitted_count);
+    std::vector<V2f> surviving_positions;
+    surviving_positions.clear();
+    surviving_positions.reserve(emitted_count);
     for (size_t i = 0; i < emitted_count; ++i) {
-        if (!kill[i]) { state.velocities.push_back(state.positions[i]); }
+        if (!kill[i]) { surviving_positions.push_back(state.positions[i]); }
     }
 
-    auto const post_kill_count = state.velocities.size();
-    std::swap(state.positions, state.velocities);
+    auto const post_kill_count = surviving_positions.size();
+    std::swap(state.positions, surviving_positions);
 
+    state.velocities.clear();
     state.velocities.resize(post_kill_count, {0.0f, 0.0f});
+
+    state.colors.clear();
     state.colors.resize(post_kill_count, {128, 128, 255, 255});
 
     fmt::print("Initial dam break state particle count: {}\n",
                state.positions.size());
+
+    // for (auto const vel : state.velocities) {
+    //     fmt::print("Velocity: {}\n", vel);
+    // }
 
     return state;
 }
@@ -355,23 +372,23 @@ void compute_all_external_forces(Simulation_config const& config,
     temp.external_forces.resize(count);
     fill_array(count, {0.0f, 0.0f}, temp.external_forces.data());
 
-    // accumulate_constant_pole_attraction_forces(
-    //   count,
-    //   0.25f * config.params.gravity * config.mass_per_particle,
-    //   {0.5f, 0.5f},
-    //   temp.external_forces.data(),
-    //   state.positions.data());
+    accumulate_constant_pole_attraction_forces(
+      count,
+      0.25f * config.params.gravity * config.mass_per_particle,
+      {0.5f, 0.5f},
+      temp.external_forces.data(),
+      state.positions.data());
 
-    accumulate_gravity_forces(count,
-                              config.mass_per_particle,
-                              config.params.gravity,
-                              temp.external_forces.data());
+    // accumulate_gravity_forces(count,
+    //                           config.mass_per_particle,
+    //                           config.params.gravity,
+    //                           temp.external_forces.data());
 
-    // accumulate_simple_drag_forces(count,
-    //                               0.025f,
-    //                               config.params.support,
-    //                               temp.external_forces.data(),
-    //                               state.velocities.data());
+    accumulate_simple_drag_forces(count,
+                                  0.025f,
+                                  config.params.support,
+                                  temp.external_forces.data(),
+                                  state.velocities.data());
 
     // // I want an offset of tiny_h
     // // delta_pos = dt * dt / m * f

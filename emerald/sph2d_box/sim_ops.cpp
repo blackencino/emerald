@@ -36,12 +36,12 @@ void accumulate_constant_pole_attraction_forces(size_t const particle_count,
 
         forces[i] -= magnitude * rN;
 
-        V3f const torque{
-          0.0f, 0.0f, 0.125f * magnitude /*/ (1.0f + r.dot(r))*/};
-        V3f const r3{rN[0], rN[1], 0.0f};
-        V3f const turn = torque.cross(r3);
+        // V3f const torque{
+        //   0.0f, 0.0f, 0.125f * magnitude /*/ (1.0f + r.dot(r))*/};
+        // V3f const r3{rN[0], rN[1], 0.0f};
+        // V3f const turn = torque.cross(r3);
 
-        forces[i] += V2f{turn[0], turn[1]};
+        // forces[i] += V2f{turn[0], turn[1]};
     });
 }
 

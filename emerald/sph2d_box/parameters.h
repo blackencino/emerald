@@ -24,6 +24,13 @@ struct Parameters {
         float average_density_dot_tolerance = 0.001f * 1000.0f;
         float average_density_star_error_tolerance = 0.0001f * 1000.0f;
     } dfsph;
+
+    struct {
+        int max_pressure_iterations = 30;
+        float error_average_threshold = 0.0033f;
+        float error_max_threshold = 0.03f;
+        float omega = 0.5f;
+    } iisph;
 };
 
 std::tuple<Parameters, int> parse_parameters(int argc, char* argv[]);

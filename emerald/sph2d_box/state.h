@@ -62,6 +62,12 @@ struct Temp_data {
     std::vector<float> divergence_kappas;
     std::vector<float> density_kappas;
     std::vector<float> density_stars;
+
+    std::vector<float> aiis;
+    std::vector<V2f> diis;
+    std::vector<V2f> sum_dij_pjs;
+    std::vector<float> fluid_volumes;
+    std::vector<float> new_pressures;
 };
 
 }  // namespace emerald::sph2d_box

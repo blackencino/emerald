@@ -303,18 +303,8 @@ void dfsph_resize_and_init_temp_arrays(size_t const particle_count,
                                        Temp_data& temp) {
     temp.external_forces.resize(particle_count);
     temp.alpha_denom_parts.resize(particle_count);
-    temp.neighborhood.counts.resize(particle_count);
-    temp.neighborhood.indices.resize(particle_count);
-    temp.neighborhood.distances.resize(particle_count);
-    temp.neighborhood.vectors_to.resize(particle_count);
-    temp.neighborhood.kernels.resize(particle_count);
-    temp.neighborhood.kernel_gradients.resize(particle_count);
-    temp.solid_neighborhood.counts.resize(particle_count);
-    temp.solid_neighborhood.indices.resize(particle_count);
-    temp.solid_neighborhood.distances.resize(particle_count);
-    temp.solid_neighborhood.vectors_to.resize(particle_count);
-    temp.solid_neighborhood.kernels.resize(particle_count);
-    temp.solid_neighborhood.kernel_gradients.resize(particle_count);
+    temp.neighborhood.resize(particle_count);
+    temp.solid_neighborhood.resize(particle_count);
     temp.alphas.resize(particle_count);
     temp.densities.resize(particle_count);
     temp.divergence_kappas.resize(particle_count);

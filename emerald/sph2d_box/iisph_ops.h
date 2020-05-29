@@ -51,7 +51,7 @@ void iisph_compute_aiis_and_density_stars(
   float* const aiis,
   float* const density_stars,
 
-  float const* const diis,
+  V2f const* const diis,
   float const* const densities,
 
   float const* const fluid_volumes,

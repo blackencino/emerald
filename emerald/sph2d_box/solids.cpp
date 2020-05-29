@@ -68,7 +68,8 @@ void compute_volumes(size_t const particle_count,
             muchness += nbhd_kernels[j];
         }
 
-        volumes[particle_index] = 1.0f / muchness;
+        // CJH hack numer should be 1.0f
+        volumes[particle_index] = 1.7f / muchness;
     });
 }
 
@@ -106,41 +107,31 @@ Solid_state compute_neighbor_data_and_volumes(Parameters const& params,
                                              solid_state.blocks.data(),
                                              solid_state.index_pairs.data());
 
-    std::vector<uint8_t> neighbor_counts;
-    std::vector<Neighbor_values<size_t>> neighbor_indices;
-    std::vector<Neighbor_values<float>> neighbor_distances;
-    std::vector<Neighbor_values<V2f>> neighbor_vectors_to;
-    std::vector<Neighbor_values<float>> neighbor_kernels;
-
-    neighbor_counts.resize(count);
-    neighbor_indices.resize(count);
-    neighbor_distances.resize(count);
-    neighbor_vectors_to.resize(count);
+    Neighborhood_vectors neighborhood;
+    neighborhood.resize(count);
     create_regular_neighborhoods(count,
                                  cell_size,
-                                 neighbor_counts.data(),
-                                 neighbor_indices.data(),
-                                 neighbor_distances.data(),
-                                 neighbor_vectors_to.data(),
+                                 neighborhood.counts.data(),
+                                 neighborhood.indices.data(),
+                                 neighborhood.distances.data(),
+                                 neighborhood.vectors_to.data(),
                                  solid_state.positions.data(),
                                  solid_state.grid_coords.data(),
                                  solid_state.positions.data(),
                                  solid_state.index_pairs.data(),
                                  solid_state.block_map);
-
-    neighbor_kernels.resize(count);
     compute_neighbor_kernels(count,
                              params.support,
-                             neighbor_kernels.data(),
-                             neighbor_counts.data(),
-                             neighbor_distances.data());
+                             neighborhood.kernels.data(),
+                             neighborhood.counts.data(),
+                             neighborhood.distances.data());
 
     solid_state.volumes.resize(count);
     compute_volumes(count,
                     params.support,
                     solid_state.volumes.data(),
-                    neighbor_counts.data(),
-                    neighbor_kernels.data());
+                    neighborhood.counts.data(),
+                    neighborhood.kernels.data());
 
     return std::move(solid_state);
 }
@@ -179,7 +170,8 @@ Solid_state world_walls_initial_solid_state(Parameters const& params) {
         for (int bx = 0; bx < N; ++bx) {
             float const bxf = float(bx+1) / (N+1);
 
-            tiny_block({bxf + dist(gen), byf + dist(gen)}, dist(gen));
+            // HACK
+            // tiny_block({bxf + dist(gen), byf + dist(gen)}, dist(gen));
         }
     }
 

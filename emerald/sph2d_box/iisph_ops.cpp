@@ -2,12 +2,18 @@
 
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/kernels.h>
+#include <emerald/util/format.h>
+
+#include <fmt/format.h>
 
 #include <algorithm>
 #include <atomic>
 #include <utility>
 
 namespace emerald::sph2d_box {
+
+using namespace emerald::sph_common;
+using namespace emerald::util;
 
 //------------------------------------------------------------------------------
 // Fluid volumes
@@ -36,7 +42,7 @@ static void iisph_compute_densities_partial(
     for_each_iota(particle_count, [=](auto const particle_index) {
         float density = 0.0f;
         if (!boundary) {
-            density = self_volumes[particle_index] * target_density;
+            density = self_volumes[particle_index] * target_density * w0;
         }
         auto const nbhd_count = neighborhood.counts[particle_index];
         if (!nbhd_count) {
@@ -199,13 +205,10 @@ static void iisph_compute_aiis_and_density_stars_partial(
   V2f const* const neighbor_velocities,
   Neighborhood_pointers const neighborhood) {
     for_each_iota(particle_count, [=](auto const particle_index) {
-        float density_star = 0.0f;
-        if (!boundary) { density_star = densities[particle_index]; }
-
         auto const nbhd_count = neighborhood.counts[particle_index];
         if (!nbhd_count) {
             if (!boundary) {
-                density_stars[particle_index] = density_star;
+                density_stars[particle_index] = densities[particle_index];
                 aiis[particle_index] = 0.0f;
             }
             return;
@@ -215,6 +218,7 @@ static void iisph_compute_aiis_and_density_stars_partial(
         auto const self_velocity = self_velocities[particle_index];
 
         float aii = 0.0f;
+        float delta_density = 0.0f;
         auto const& nbhd_indices = neighborhood.indices[particle_index];
         auto const& nbhd_kernel_gradients =
           neighborhood.kernel_gradients[particle_index];
@@ -241,16 +245,28 @@ static void iisph_compute_aiis_and_density_stars_partial(
                 }
             }
 
-            density_star +=
+            // fmt::print("delta_vel: {}, grad_w: {}, dot: {}\n",
+            //            (self_velocity - neighbor_velocity),
+            //            grad_w,
+            //            (self_velocity - neighbor_velocity).dot(grad_w));
+
+            delta_density +=
               dt * mass * ((self_velocity - neighbor_velocity).dot(grad_w));
         }
 
         if (boundary) {
+            // fmt::print("{}: boundary delta density: {}\n",
+            //            particle_index,
+            //            delta_density);
             aiis[particle_index] += aii;
-            density_stars[particle_index] += density_star;
+            density_stars[particle_index] += delta_density;
         } else {
+            // fmt::print(
+            //   "{}: fluid delta density: {}\n", particle_index,
+            //   delta_density);
             aiis[particle_index] = aii;
-            density_stars[particle_index] = density_star;
+            density_stars[particle_index] =
+              densities[particle_index] + delta_density;
         }
     });
 }
@@ -458,14 +474,24 @@ std::pair<float, float> iisph_compute_new_pressures(
     for_each_iota(
       particle_count,
       [=, &integral_error_sum, &error_max](auto const particle_index) {
-          auto const old_pressure = old_pressures[particle_index];
           auto const alpha = alphas[particle_index];
+          auto const old_pressure = old_pressures[particle_index];
+          if (alpha == 0.0f) {
+              betas_in_new_pressures_out[particle_index] = old_pressure;
+              return;
+          }
           auto const density_star = density_stars[particle_index];
+          // fmt::print("Density_star: {}\n", density_star);
           auto const beta = betas_in_new_pressures_out[particle_index];
 
           auto const numer = target_density - density_star - beta;
           if (!safe_divide(numer, alpha)) {
               betas_in_new_pressures_out[particle_index] = old_pressure;
+              fmt::print(
+                "ERROR: safe_divide fail in compute new pressures. numer: {}, "
+                "denom: {}, nbhd: {}, {}\n",
+                numer,
+                alpha);
               return;
           }
 
@@ -482,11 +508,16 @@ std::pair<float, float> iisph_compute_new_pressures(
           // numer = error + aiipi
           // numer - aiipi = error
           auto const error =
-            std::abs((numer - alpha * old_pressure) / target_density);
+            std::max(0.0f, -(numer - (alpha * old_pressure)) / target_density);
+          // fmt::print("Error {}: {}\n", particle_index, error);
           update_max(error_max, error);
           integral_error_sum += static_cast<uint64_t>(error * 1000.0f);
 
           auto const new_pressure = numer / alpha;
+          // fmt::print("Pressure {}: old: {}, new: {}\n",
+          //            particle_index,
+          //            old_pressure,
+          //            new_pressure);
           betas_in_new_pressures_out[particle_index] =
             std::max(0.0f, mix(old_pressure, new_pressure, omega));
       });

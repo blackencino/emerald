@@ -7,6 +7,7 @@ add_library(emerald_sph2d_box
             tag.h
             dfsph.h
             dfsph_ops.h
+            iisph.h
             iisph_ops.h
 
             parameters.cpp
@@ -15,6 +16,7 @@ add_library(emerald_sph2d_box
             solids.cpp
             dfsph.cpp
             dfsph_ops.cpp
+            iisph.cpp
             iisph_ops.cpp)
 target_include_directories(emerald_sph2d_box PUBLIC "${emerald_SOURCE_DIR}")
 target_link_libraries(emerald_sph2d_box
