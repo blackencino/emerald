@@ -52,16 +52,16 @@ void dfsph_compute_alphas(Simulation_config const& config,
     dfsph_compute_alpha_denom_parts(particle_count,
                                     config.mass_per_particle,
                                     temp.alpha_denom_parts.data(),
-                                    temp.neighbor_counts.data(),
-                                    temp.neighbor_kernel_gradients.data());
+                                    temp.neighborhood.counts.data(),
+                                    temp.neighborhood.kernel_gradients.data());
     dfsph_accumulate_alpha_denom_parts_from_solids(
       particle_count,
       config.params.target_density,
       temp.alpha_denom_parts.data(),
       solid_state.volumes.data(),
-      temp.solid_neighbor_counts.data(),
-      temp.solid_neighbor_indices.data(),
-      temp.solid_neighbor_kernel_gradients.data());
+      temp.solid_neighborhood.counts.data(),
+      temp.solid_neighborhood.indices.data(),
+      temp.solid_neighborhood.kernel_gradients.data());
     dfsph_compute_alphas_from_parts(particle_count,
                                     temp.alphas.data(),
                                     temp.densities.data(),
@@ -78,9 +78,9 @@ float dfsph_compute_divergence_error_kappas(float const dt,
                                config.mass_per_particle,
                                temp.density_stars.data(),
                                state.velocities.data(),
-                               temp.neighbor_counts.data(),
-                               temp.neighbor_indices.data(),
-                               temp.neighbor_kernel_gradients.data());
+                               temp.neighborhood.counts.data(),
+                               temp.neighborhood.indices.data(),
+                               temp.neighborhood.kernel_gradients.data());
     dfsph_accumulate_density_dots_from_solids(
       particle_count,
       config.params.target_density,
@@ -88,9 +88,9 @@ float dfsph_compute_divergence_error_kappas(float const dt,
       state.velocities.data(),
       solid_state.velocities.data(),
       solid_state.volumes.data(),
-      temp.solid_neighbor_counts.data(),
-      temp.solid_neighbor_indices.data(),
-      temp.solid_neighbor_kernel_gradients.data());
+      temp.solid_neighborhood.counts.data(),
+      temp.solid_neighborhood.indices.data(),
+      temp.solid_neighborhood.kernel_gradients.data());
 
     auto const avg_density_dot = dfsph_average_density_dot(
       particle_count, config.params.target_density, temp.density_stars.data());
@@ -117,9 +117,9 @@ void dfsph_apply_kappas(float const dt,
                                      state.velocities.data(),
                                      kappas,
                                      temp.densities.data(),
-                                     temp.neighbor_counts.data(),
-                                     temp.neighbor_indices.data(),
-                                     temp.neighbor_kernel_gradients.data());
+                                     temp.neighborhood.counts.data(),
+                                     temp.neighborhood.indices.data(),
+                                     temp.neighborhood.kernel_gradients.data());
 
     dfsph_apply_kappas_to_velocities_from_solids(
       particle_count,
@@ -129,9 +129,9 @@ void dfsph_apply_kappas(float const dt,
       kappas,
       temp.densities.data(),
       solid_state.volumes.data(),
-      temp.solid_neighbor_counts.data(),
-      temp.solid_neighbor_indices.data(),
-      temp.solid_neighbor_kernel_gradients.data());
+      temp.solid_neighborhood.counts.data(),
+      temp.solid_neighborhood.indices.data(),
+      temp.solid_neighborhood.kernel_gradients.data());
 }
 
 void dfsph_compute_densities(float* const densities,
@@ -144,16 +144,16 @@ void dfsph_compute_densities(float* const densities,
                       config.mass_per_particle,
                       config.params.support,
                       densities,
-                      temp.neighbor_counts.data(),
-                      temp.neighbor_kernels.data());
+                      temp.neighborhood.counts.data(),
+                      temp.neighborhood.kernels.data());
 
     accumulate_density_from_solids(count,
                                    config.params.target_density,
                                    densities,
                                    solid_state.volumes.data(),
-                                   temp.solid_neighbor_counts.data(),
-                                   temp.solid_neighbor_indices.data(),
-                                   temp.solid_neighbor_kernels.data());
+                                   temp.solid_neighborhood.counts.data(),
+                                   temp.solid_neighborhood.indices.data(),
+                                   temp.solid_neighborhood.kernels.data());
 }
 
 void dfsph_correct_divergence_error(float const dt,
@@ -204,9 +204,9 @@ void dfsph_compute_density_stars(float const dt,
                                config.mass_per_particle,
                                temp.density_stars.data(),
                                state.velocities.data(),
-                               temp.neighbor_counts.data(),
-                               temp.neighbor_indices.data(),
-                               temp.neighbor_kernel_gradients.data());
+                               temp.neighborhood.counts.data(),
+                               temp.neighborhood.indices.data(),
+                               temp.neighborhood.kernel_gradients.data());
     dfsph_accumulate_density_dots_from_solids(
       particle_count,
       config.params.target_density,
@@ -214,9 +214,9 @@ void dfsph_compute_density_stars(float const dt,
       state.velocities.data(),
       solid_state.velocities.data(),
       solid_state.volumes.data(),
-      temp.solid_neighbor_counts.data(),
-      temp.solid_neighbor_indices.data(),
-      temp.solid_neighbor_kernel_gradients.data());
+      temp.solid_neighborhood.counts.data(),
+      temp.solid_neighborhood.indices.data(),
+      temp.solid_neighborhood.kernel_gradients.data());
 
     dfsph_compute_density_stars_from_densities_and_density_dots(
       particle_count,
@@ -303,18 +303,18 @@ void dfsph_resize_and_init_temp_arrays(size_t const particle_count,
                                        Temp_data& temp) {
     temp.external_forces.resize(particle_count);
     temp.alpha_denom_parts.resize(particle_count);
-    temp.neighbor_counts.resize(particle_count);
-    temp.neighbor_indices.resize(particle_count);
-    temp.neighbor_distances.resize(particle_count);
-    temp.neighbor_vectors_to.resize(particle_count);
-    temp.neighbor_kernels.resize(particle_count);
-    temp.neighbor_kernel_gradients.resize(particle_count);
-    temp.solid_neighbor_counts.resize(particle_count);
-    temp.solid_neighbor_indices.resize(particle_count);
-    temp.solid_neighbor_distances.resize(particle_count);
-    temp.solid_neighbor_vectors_to.resize(particle_count);
-    temp.solid_neighbor_kernels.resize(particle_count);
-    temp.solid_neighbor_kernel_gradients.resize(particle_count);
+    temp.neighborhood.counts.resize(particle_count);
+    temp.neighborhood.indices.resize(particle_count);
+    temp.neighborhood.distances.resize(particle_count);
+    temp.neighborhood.vectors_to.resize(particle_count);
+    temp.neighborhood.kernels.resize(particle_count);
+    temp.neighborhood.kernel_gradients.resize(particle_count);
+    temp.solid_neighborhood.counts.resize(particle_count);
+    temp.solid_neighborhood.indices.resize(particle_count);
+    temp.solid_neighborhood.distances.resize(particle_count);
+    temp.solid_neighborhood.vectors_to.resize(particle_count);
+    temp.solid_neighborhood.kernels.resize(particle_count);
+    temp.solid_neighborhood.kernel_gradients.resize(particle_count);
     temp.alphas.resize(particle_count);
     temp.densities.resize(particle_count);
     temp.divergence_kappas.resize(particle_count);

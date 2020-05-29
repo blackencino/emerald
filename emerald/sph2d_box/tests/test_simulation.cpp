@@ -92,24 +92,20 @@ TEST_F(Simulation_test, Grid_coords_repeatability) {
                                            std::move(temp2.block_map),
                                            temp2.blocks.data(),
                                            temp2.index_pairs.data());
-
-        temp2.neighbor_counts.resize(count);
-        temp2.neighbor_indices.resize(count);
-        temp2.neighbor_distances.resize(count);
-        temp2.neighbor_vectors_to.resize(count);
+        temp2.neighborhood.resize(count);
         create_regular_neighborhoods(count,
                                      cell_size,
-                                     temp2.neighbor_counts.data(),
-                                     temp2.neighbor_indices.data(),
-                                     temp2.neighbor_distances.data(),
-                                     temp2.neighbor_vectors_to.data(),
+                                     temp2.neighborhood.counts.data(),
+                                     temp2.neighborhood.indices.data(),
+                                     temp2.neighborhood.distances.data(),
+                                     temp2.neighborhood.vectors_to.data(),
                                      state.positions.data(),
                                      temp2.grid_coords.data(),
                                      state.positions.data(),
                                      temp2.index_pairs.data(),
                                      temp2.block_map);
 
-        ASSERT_EQ(temp.neighbor_indices, temp2.neighbor_indices);
+        ASSERT_EQ(temp.neighborhood.indices, temp2.neighborhood.indices);
     }
 }
 

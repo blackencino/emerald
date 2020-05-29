@@ -41,12 +41,7 @@ struct Temp_data {
     std::vector<std::pair<size_t, size_t>> blocks;
     Block_map block_map;
 
-    std::vector<uint8_t> neighbor_counts;
-    std::vector<Neighbor_values<size_t>> neighbor_indices;
-    std::vector<Neighbor_values<float>> neighbor_distances;
-    std::vector<Neighbor_values<V2f>> neighbor_vectors_to;
-    std::vector<Neighbor_values<float>> neighbor_kernels;
-    std::vector<Neighbor_values<V2f>> neighbor_kernel_gradients;
+    Neighborhood_vectors neighborhood;
 
     std::vector<Tag> tags;
 
@@ -60,12 +55,7 @@ struct Temp_data {
     std::vector<V2f> position_stars;
     std::vector<V2f> velocity_stars;
 
-    std::vector<uint8_t> solid_neighbor_counts;
-    std::vector<Neighbor_values<size_t>> solid_neighbor_indices;
-    std::vector<Neighbor_values<float>> solid_neighbor_distances;
-    std::vector<Neighbor_values<V2f>> solid_neighbor_vectors_to;
-    std::vector<Neighbor_values<float>> solid_neighbor_kernels;
-    std::vector<Neighbor_values<V2f>> solid_neighbor_kernel_gradients;
+    Neighborhood_vectors solid_neighborhood;
 
     std::vector<V3f> alpha_denom_parts;
     std::vector<float> alphas;

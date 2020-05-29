@@ -1,3 +1,5 @@
+#pragma once
+
 #include <emerald/sph_common/neighborhood.h>
 #include <emerald/sph_common/types.h>
 

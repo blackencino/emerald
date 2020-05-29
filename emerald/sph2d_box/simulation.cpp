@@ -259,32 +259,26 @@ void compute_all_neighbhorhoods(Simulation_config const& config,
                                       temp.blocks.data(),
                                       temp.index_pairs.data());
 
-    temp.neighbor_counts.resize(count);
-    temp.neighbor_indices.resize(count);
-    temp.neighbor_distances.resize(count);
-    temp.neighbor_vectors_to.resize(count);
+    temp.neighborhood.resize(count);
     create_regular_neighborhoods(count,
                                  cell_size,
-                                 temp.neighbor_counts.data(),
-                                 temp.neighbor_indices.data(),
-                                 temp.neighbor_distances.data(),
-                                 temp.neighbor_vectors_to.data(),
+                                 temp.neighborhood.counts.data(),
+                                 temp.neighborhood.indices.data(),
+                                 temp.neighborhood.distances.data(),
+                                 temp.neighborhood.vectors_to.data(),
                                  state.positions.data(),
                                  temp.grid_coords.data(),
                                  state.positions.data(),
                                  temp.index_pairs.data(),
                                  temp.block_map);
 
-    temp.solid_neighbor_counts.resize(count);
-    temp.solid_neighbor_indices.resize(count);
-    temp.solid_neighbor_distances.resize(count);
-    temp.solid_neighbor_vectors_to.resize(count);
+    temp.solid_neighborhood.resize(count);
     create_regular_neighborhoods(count,
                                  cell_size,
-                                 temp.solid_neighbor_counts.data(),
-                                 temp.solid_neighbor_indices.data(),
-                                 temp.solid_neighbor_distances.data(),
-                                 temp.solid_neighbor_vectors_to.data(),
+                                 temp.solid_neighborhood.counts.data(),
+                                 temp.solid_neighborhood.indices.data(),
+                                 temp.solid_neighborhood.distances.data(),
+                                 temp.solid_neighborhood.vectors_to.data(),
                                  state.positions.data(),
                                  temp.grid_coords.data(),
                                  solid_state.positions.data(),
@@ -294,60 +288,61 @@ void compute_all_neighbhorhoods(Simulation_config const& config,
 
 void compute_all_neighborhood_kernels(Simulation_config const& config,
                                       Temp_data& temp) {
-    auto const count = temp.neighbor_counts.size();
+    auto const count = temp.neighborhood.counts.size();
 
-    temp.neighbor_kernels.resize(count);
+    temp.neighborhood.kernels.resize(count);
     compute_neighbor_kernels(count,
                              config.params.support,
-                             temp.neighbor_kernels.data(),
-                             temp.neighbor_counts.data(),
-                             temp.neighbor_distances.data());
+                             temp.neighborhood.kernels.data(),
+                             temp.neighborhood.counts.data(),
+                             temp.neighborhood.distances.data());
 
-    temp.neighbor_kernel_gradients.resize(count);
+    temp.neighborhood.kernel_gradients.resize(count);
     compute_neighbor_kernel_gradients(count,
                                       config.params.support,
-                                      temp.neighbor_kernel_gradients.data(),
-                                      temp.neighbor_counts.data(),
-                                      temp.neighbor_vectors_to.data());
+                                      temp.neighborhood.kernel_gradients.data(),
+                                      temp.neighborhood.counts.data(),
+                                      temp.neighborhood.vectors_to.data());
 
-    temp.solid_neighbor_kernels.resize(count);
+    temp.solid_neighborhood.kernels.resize(count);
     compute_neighbor_kernels(count,
                              config.params.support,
-                             temp.solid_neighbor_kernels.data(),
-                             temp.solid_neighbor_counts.data(),
-                             temp.solid_neighbor_distances.data());
+                             temp.solid_neighborhood.kernels.data(),
+                             temp.solid_neighborhood.counts.data(),
+                             temp.solid_neighborhood.distances.data());
 
-    temp.solid_neighbor_kernel_gradients.resize(count);
+    temp.solid_neighborhood.kernel_gradients.resize(count);
     compute_neighbor_kernel_gradients(
       count,
       config.params.support,
-      temp.solid_neighbor_kernel_gradients.data(),
-      temp.solid_neighbor_counts.data(),
-      temp.solid_neighbor_vectors_to.data());
+      temp.solid_neighborhood.kernel_gradients.data(),
+      temp.solid_neighborhood.counts.data(),
+      temp.solid_neighborhood.vectors_to.data());
 }
 
 void recompute_neighborhood_non_index_values(Simulation_config const& config,
                                              Solid_state const& solid_state,
                                              Temp_data& temp) {
-    auto const count = temp.neighbor_counts.size();
+    auto const count = temp.neighborhood.counts.size();
     auto const cell_size = config.params.support * 2.0f;
-
-    compute_neighbor_distances_and_vectors_to(count,
-                                              temp.neighbor_distances.data(),
-                                              temp.neighbor_vectors_to.data(),
-                                              temp.position_stars.data(),
-                                              temp.position_stars.data(),
-                                              temp.neighbor_counts.data(),
-                                              temp.neighbor_indices.data());
 
     compute_neighbor_distances_and_vectors_to(
       count,
-      temp.solid_neighbor_distances.data(),
-      temp.solid_neighbor_vectors_to.data(),
+      temp.neighborhood.distances.data(),
+      temp.neighborhood.vectors_to.data(),
+      temp.position_stars.data(),
+      temp.position_stars.data(),
+      temp.neighborhood.counts.data(),
+      temp.neighborhood.indices.data());
+
+    compute_neighbor_distances_and_vectors_to(
+      count,
+      temp.solid_neighborhood.distances.data(),
+      temp.solid_neighborhood.vectors_to.data(),
       temp.position_stars.data(),
       solid_state.positions.data(),
-      temp.solid_neighbor_counts.data(),
-      temp.solid_neighbor_indices.data());
+      temp.solid_neighborhood.counts.data(),
+      temp.solid_neighborhood.indices.data());
 
     compute_all_neighborhood_kernels(config, temp);
 }
@@ -450,16 +445,16 @@ void sub_step(Simulation_config const& config,
                           config.mass_per_particle,
                           config.params.support,
                           temp.densities.data(),
-                          temp.neighbor_counts.data(),
-                          temp.neighbor_kernels.data());
+                          temp.neighborhood.counts.data(),
+                          temp.neighborhood.kernels.data());
 
         accumulate_density_from_solids(count,
                                        config.params.target_density,
                                        temp.densities.data(),
                                        solid_state.volumes.data(),
-                                       temp.solid_neighbor_counts.data(),
-                                       temp.solid_neighbor_indices.data(),
-                                       temp.solid_neighbor_kernels.data());
+                                       temp.solid_neighborhood.counts.data(),
+                                       temp.solid_neighborhood.indices.data(),
+                                       temp.solid_neighborhood.kernels.data());
 
         update_pressures(count,
                          config.params.target_density,
@@ -472,11 +467,11 @@ void sub_step(Simulation_config const& config,
                                    config.params.support,
                                    config.params.viscosity,
                                    temp.pressure_forces.data(),
-                                   temp.neighbor_counts.data(),
-                                   temp.neighbor_indices.data(),
-                                   temp.neighbor_distances.data(),
-                                   temp.neighbor_vectors_to.data(),
-                                   temp.neighbor_kernel_gradients.data(),
+                                   temp.neighborhood.counts.data(),
+                                   temp.neighborhood.indices.data(),
+                                   temp.neighborhood.distances.data(),
+                                   temp.neighborhood.vectors_to.data(),
+                                   temp.neighborhood.kernel_gradients.data(),
                                    temp.velocity_stars.data(),
                                    temp.pressures.data(),
                                    temp.densities.data());
@@ -487,9 +482,9 @@ void sub_step(Simulation_config const& config,
           config.params.target_density,
           temp.pressure_forces.data(),
           solid_state.volumes.data(),
-          temp.solid_neighbor_counts.data(),
-          temp.solid_neighbor_indices.data(),
-          temp.solid_neighbor_kernel_gradients.data(),
+          temp.solid_neighborhood.counts.data(),
+          temp.solid_neighborhood.indices.data(),
+          temp.solid_neighborhood.kernel_gradients.data(),
           temp.pressures.data(),
           temp.densities.data());
 
