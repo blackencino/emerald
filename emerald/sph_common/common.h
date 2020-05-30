@@ -37,8 +37,16 @@ void for_each_iota(size_t const count,
 
 template <typename T, bool PARALLEL = DO_PARALLEL>
 void fill_array(size_t const count, T const value, T* const values) {
+    if (!count) { return; }
+
     if constexpr (PARALLEL) {
-        for_each_iota(count, [=](auto const i) { values[i] = value; });
+        // for_each_iota(count, [=](auto const i) { values[i] = value; });
+        constexpr size_t grainsize = 512;
+        tbb::parallel_for(
+          tbb::blocked_range<size_t>{size_t{0}, count, grainsize},
+          [=](tbb::blocked_range<size_t> const& range) {
+              std::fill(values + range.begin(), values + range.end(), value);
+          });
     } else {
         std::fill(values, values + count, value);
     }
@@ -46,10 +54,17 @@ void fill_array(size_t const count, T const value, T* const values) {
 
 template <typename T, bool PARALLEL = DO_PARALLEL>
 void copy_array(size_t const count, T* const dst, T const* const src) {
-    if (count < 1 || dst == src) { return; }
+    if (!count || dst == src) { return; }
 
     if constexpr (PARALLEL) {
-        for_each_iota(count, [=](auto const i) { dst[i] = src[i]; });
+        // for_each_iota(count, [=](auto const i) { dst[i] = src[i]; });
+        constexpr size_t grainsize = 512;
+        tbb::parallel_for(
+          tbb::blocked_range<size_t>{size_t{0}, count, grainsize},
+          [=](tbb::blocked_range<size_t> const& range) {
+              std::copy(
+                src + range.begin(), src + range.end(), dst + range.begin());
+          });
     } else {
         std::copy(src, src + count, dst);
     }

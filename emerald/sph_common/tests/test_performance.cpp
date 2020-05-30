@@ -467,4 +467,54 @@ TEST_F(Performance_test, Divergence_separated) {
                std::chrono::duration<double>{end - start}.count());
 }
 
+TEST_F(Performance_test, Copy_parallel) {
+    auto const count = particles.positions.size();
+
+    auto const start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10000; ++i) {
+        copy_array<V2f, true>(
+          count, particles.new_positions.data(), particles.positions.data());
+    }
+    auto const end = std::chrono::high_resolution_clock::now();
+
+    fmt::print("Copy parallel: {}\n",
+               std::chrono::duration<double>{end - start}.count());
+}
+
+TEST_F(Performance_test, Copy_serial) {
+    auto const count = particles.positions.size();
+
+    auto const start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10000; ++i) {
+        copy_array<V2f, false>(
+          count, particles.new_positions.data(), particles.positions.data());
+    }
+    auto const end = std::chrono::high_resolution_clock::now();
+
+    fmt::print("Copy serial: {}\n",
+               std::chrono::duration<double>{end - start}.count());
+}
+
+TEST_F(Performance_test, Copy_parallel_std) {
+    auto const count = particles.positions.size();
+
+    auto const start = std::chrono::high_resolution_clock::now();
+    auto const* const pos_data = particles.positions.data();
+    auto* const new_pos_data = particles.new_positions.data();
+    constexpr size_t grainsize = 512;
+    for (int i = 0; i < 10000; ++i) {
+        tbb::parallel_for(
+          tbb::blocked_range<size_t>{size_t{0}, count, grainsize},
+          [=](tbb::blocked_range<size_t> const& range) {
+              std::copy(pos_data + range.begin(),
+                        pos_data + range.end(),
+                        new_pos_data + range.begin());
+          });
+    }
+    auto const end = std::chrono::high_resolution_clock::now();
+
+    fmt::print("Copy parallel std: {}\n",
+               std::chrono::duration<double>{end - start}.count());
+}
+
 }  // namespace emerald::sph_common
