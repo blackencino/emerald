@@ -11,6 +11,8 @@ add_library(emerald_sph2d_box
             iisph_ap.h
             iisph_ap_ops.h
             iisph_ops.h
+            iisph_pseudo_ap.h
+            iisph_pseudo_ap_ops.h
 
             parameters.cpp
             sim_ops.cpp
@@ -21,7 +23,9 @@ add_library(emerald_sph2d_box
             iisph.cpp
             iisph_ap.cpp
             iisph_ap_ops.cpp
-            iisph_ops.cpp)
+            iisph_ops.cpp
+            iisph_pseudo_ap.cpp
+            iisph_pseudo_ap_ops.cpp)
 target_include_directories(emerald_sph2d_box PUBLIC "${emerald_SOURCE_DIR}")
 target_link_libraries(emerald_sph2d_box
                       PUBLIC

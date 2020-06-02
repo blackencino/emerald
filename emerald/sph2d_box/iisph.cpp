@@ -3,6 +3,7 @@
 #include <emerald/sph2d_box/iisph_ops.h>
 #include <emerald/sph2d_box/sim_ops.h>
 #include <emerald/sph_common/common.h>
+#include <emerald/util/assert.h>
 #include <emerald/util/flicks.h>
 #include <emerald/util/format.h>
 #include <emerald/util/safe_divide.h>
@@ -165,7 +166,8 @@ State iisph_simulation_step(Simulation_config const& config,
                             State&& state,
                             const Solid_state& solid_state,
                             Temp_data& temp) {
-    flicks const min_time_step = config.params.time_per_step / 1000;
+    flicks const min_sub_time_step = config.params.time_per_step / 30;
+    flicks const max_sub_time_step = config.params.time_per_step / 4;
 
     auto const particle_count = state.positions.size();
     iisph_resize_temp_arrays(particle_count, temp);
@@ -191,10 +193,19 @@ State iisph_simulation_step(Simulation_config const& config,
         // }
         // auto sub_time_step =
         //   std::clamp(cfl_step, min_time_step, remaining_time_step);
-        // if ((remaining_time_step - sub_time_step) < min_time_step) {
-        //     sub_time_step = flicks{(remaining_time_step.count() + 1) / 2};
-        // }
-        auto const sub_time_step = std::min(cfl_step, remaining_time_step);
+        //
+        auto sub_time_step =
+          std::clamp(cfl_step, min_sub_time_step, max_sub_time_step);
+        sub_time_step = std::min(sub_time_step, remaining_time_step);
+        if ((remaining_time_step - sub_time_step) < min_sub_time_step) {
+            sub_time_step = remaining_time_step;
+        }
+        // HACK
+        sub_time_step = min_sub_time_step;
+        EMLD_ASSERT(
+          std::clamp(sub_time_step, min_sub_time_step, max_sub_time_step) ==
+            sub_time_step,
+          "TIME DISCRETIZATION ERROR");
         fmt::print("Remaining time step: {}, sub time step: {}\n",
                    to_seconds(remaining_time_step),
                    to_seconds(sub_time_step));
@@ -205,7 +216,7 @@ State iisph_simulation_step(Simulation_config const& config,
         ++sub_steps;
 
         // HACK
-        //break;
+        // break;
     }
 
     state.colors.resize(particle_count);
