@@ -327,23 +327,25 @@ State dfsph_simulation_step(Simulation_config const& config,
     int sub_steps = 0;
     flicks remaining_time_step = config.params.time_per_step;
     while (remaining_time_step.count() > 0) {
-        auto const cfl_step = dfsph_cfl_maximum_time_step(
-          particle_count, config.params.support, state.velocities.data());
-        if (cfl_step < min_time_step) {
-            fmt::print(stderr,
-                       "WARNING: CFL max time step is too small: {}\n",
-                       to_seconds(cfl_step));
-        }
-        auto sub_time_step =
-          std::clamp(cfl_step, min_time_step, remaining_time_step);
-        if ((remaining_time_step - sub_time_step) < min_time_step) {
-            sub_time_step = flicks{(remaining_time_step.count() + 1) / 2};
-        }
-        dfsph_sub_step(
-          to_seconds(sub_time_step), config, state, solid_state, temp);
+        // auto const cfl_step = dfsph_cfl_maximum_time_step(
+        //   particle_count, config.params.support, state.velocities.data());
+        // if (cfl_step < min_time_step) {
+        //     fmt::print(stderr,
+        //                "WARNING: CFL max time step is too small: {}\n",
+        //                to_seconds(cfl_step));
+        // }
+        // auto sub_time_step =
+        //   std::clamp(cfl_step, min_time_step, remaining_time_step);
+        // if ((remaining_time_step - sub_time_step) < min_time_step) {
+        //     sub_time_step = flicks{(remaining_time_step.count() + 1) / 2};
+        // }
+        // dfsph_sub_step(
+        //   to_seconds(sub_time_step), config, state, solid_state, temp);
 
-        remaining_time_step -= sub_time_step;
-        ++sub_steps;
+        // remaining_time_step -= sub_time_step;
+        // ++sub_steps;
+
+        dfsph_sub_step(to_seconds(config.params.time_per_step / 30), config, state, solid_state, temp);
 
         // HACK
         break;
