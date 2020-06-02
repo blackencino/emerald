@@ -69,7 +69,7 @@ void compute_volumes(size_t const particle_count,
         }
 
         // CJH hack numer should be 1.0f
-        volumes[particle_index] = 1.7f / muchness;
+        volumes[particle_index] = 1.0f / muchness;
     });
 }
 

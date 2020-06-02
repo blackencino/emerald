@@ -16,7 +16,7 @@ namespace emerald::sph_common {
 using namespace emerald::util;
 
 // HACK
-constexpr bool DO_PARALLEL = false;
+constexpr bool DO_PARALLEL = true;
 
 //------------------------------------------------------------------------------
 // Generics

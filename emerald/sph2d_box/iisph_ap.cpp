@@ -153,6 +153,10 @@ State iisph_ap_simulation_step(Simulation_config const& config,
     while (remaining_time_step.count() > 0) {
         auto const cfl_step = iisph_cfl_maximum_time_step(
           particle_count, config.params.support, state.velocities.data());
+
+        auto const cfl_ratio =
+          to_seconds(config.params.time_per_step) / to_seconds(cfl_step);
+        fmt::print("CFL RATIO: {}\n", cfl_ratio);
         // CJH HACK
         // if (cfl_step < min_time_step) {
         //     fmt::print(stderr,
@@ -164,7 +168,7 @@ State iisph_ap_simulation_step(Simulation_config const& config,
         // if ((remaining_time_step - sub_time_step) < min_time_step) {
         //     sub_time_step = flicks{(remaining_time_step.count() + 1) / 2};
         // }
-        //auto const sub_time_step = std::min(cfl_step, remaining_time_step);
+        // auto const sub_time_step = std::min(cfl_step, remaining_time_step);
         // auto const sub_time_step = remaining_time_step;
         auto const sub_time_step = config.params.time_per_step / 10;
         fmt::print("Remaining time step: {}, sub time step: {}\n",
@@ -175,9 +179,6 @@ State iisph_ap_simulation_step(Simulation_config const& config,
 
         remaining_time_step -= sub_time_step;
         ++sub_steps;
-
-        // HACK
-        //break;
     }
 
     state.colors.resize(particle_count);

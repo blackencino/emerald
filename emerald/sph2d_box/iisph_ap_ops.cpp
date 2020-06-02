@@ -96,7 +96,6 @@ void iisph_ap_density_stars_and_diagonals(
         auto const self_denom = sqr(self_density);
         auto const target_denom = sqr(target_density);
 
-        // HACK
         if (safe_divide(sum_mf_gradwif, self_denom) &&
             safe_divide(sum_mb_gradwib, self_denom) &&
             safe_divide(sum_mb_gradwib, target_denom) &&
@@ -104,10 +103,7 @@ void iisph_ap_density_stars_and_diagonals(
             auto const aii =
               (sum_mf_gradwif + sum_mb_gradwib)
                 .dot(sum_mf_gradwif / sqr(self_density) +
-                     sum_mb_gradwib / sqr(self_density) /*+
-                     // hack
-                     sum_mb_gradwib / sqr(self_density)
-                     sum_mb_gradwib / sqr(target_density)*/) +
+                     sum_mb_gradwib / sqr(self_density)) +
               self_mass * sum_mf_gradwif_dot_gradwif / sqr(self_density);
 
             diagonals[particle_index] = -(sqr(dt) * aii);
@@ -151,13 +147,7 @@ static void iisph_ap_compute_pressure_accelerations_partial(
         auto const& nbhd_kernel_gradients =
           neighborhood.kernel_gradients[particle_index];
         if (boundary) {
-            // HACK
             auto const coeff = p_over_rho_sqr;
-            // auto const coeff =
-            //    p_over_rho_sqr +
-            //    safe_divide(self_pressure,
-            //    sqr(target_density)).value_or(0.0f);
-            // auto const coeff = p_over_rho_sqr * 2.0f;
             for (uint8_t j = 0; j < nbhd_count; ++j) {
                 auto const neighbor_particle_index = nbhd_indices[j];
                 auto const neighbor_mass =
