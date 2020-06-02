@@ -129,7 +129,6 @@ State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
                                       const Solid_state& solid_state,
                                       Temp_data& temp) {
     auto const start = std::chrono::high_resolution_clock::now();
-    flicks const min_time_step = config.params.time_per_step / 1000;
 
     auto const particle_count = state.positions.size();
     iisph_ap_resize_temp_arrays(particle_count, temp);
@@ -138,26 +137,21 @@ State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
                                 config.mass_per_particle,
                                 temp.fluid_volumes.data());
 
-    // for (auto const vel : state.velocities) {
-    //     fmt::print("Velocity: {}\n", vel);
-    // }
-
-    flicks const min_sub_time_step = config.params.time_per_step / 30;
+    flicks const min_sub_time_step = config.params.time_per_step / 50;
     flicks const max_sub_time_step = config.params.time_per_step / 5;
 
-    int remaining_sub_steps = 30;
+    int remaining_sub_steps = 50;
     flicks const time_per_sub_step =
       config.params.time_per_step / remaining_sub_steps;
     int sub_steps = 0;
     while (remaining_sub_steps > 0) {
         auto const cfl_step =
           iisph_cfl_maximum_time_step(
-            particle_count, config.params.support, state.velocities.data()) /
-          2;
+            particle_count, config.params.support, state.velocities.data());
 
         auto num_sub_steps = static_cast<int>(
           std::ceil(to_seconds(cfl_step) / to_seconds(time_per_sub_step)));
-        num_sub_steps = std::clamp(num_sub_steps, 1, 6);
+        num_sub_steps = std::clamp(num_sub_steps, 1, 10);
         num_sub_steps = std::min(num_sub_steps, remaining_sub_steps);
 
         auto const sub_time_step = num_sub_steps * time_per_sub_step;
