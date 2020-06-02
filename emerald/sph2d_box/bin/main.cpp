@@ -2,6 +2,7 @@
 #include <emerald/sph2d_box/bin/multi_scale_draw.h>
 #include <emerald/sph2d_box/dfsph.h>
 #include <emerald/sph2d_box/iisph.h>
+#include <emerald/sph2d_box/iisph_ap.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
 #include <emerald/util/assert.h>
@@ -61,11 +62,15 @@ public:
     }
 
     void step() override {
-        // m_sim.step();
-        m_sim.state = iisph_simulation_step(m_sim.config,
-                                            std::move(m_sim.state),
-                                            m_sim.solid_state,
-                                            m_sim.temp_data);
+        //m_sim.step();
+        // m_sim.state = iisph_simulation_step(m_sim.config,
+        //                                     std::move(m_sim.state),
+        //                                     m_sim.solid_state,
+        //                                     m_sim.temp_data);
+        m_sim.state = iisph_ap_simulation_step(m_sim.config,
+                                               std::move(m_sim.state),
+                                               m_sim.solid_state,
+                                               m_sim.temp_data);
         m_multi_scale_draw->update_scale(0,
                                          m_sim.config.draw_radius,
                                          m_sim.state.positions.size(),

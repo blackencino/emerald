@@ -372,23 +372,23 @@ void compute_all_external_forces(Simulation_config const& config,
     temp.external_forces.resize(count);
     fill_array(count, {0.0f, 0.0f}, temp.external_forces.data());
 
-    accumulate_constant_pole_attraction_forces(
-      count,
-      0.25f * config.params.gravity * config.mass_per_particle,
-      {0.5f, 0.5f},
-      temp.external_forces.data(),
-      state.positions.data());
+    // accumulate_constant_pole_attraction_forces(
+    //   count,
+    //   0.25f * config.params.gravity * config.mass_per_particle,
+    //   {0.5f, 0.5f},
+    //   temp.external_forces.data(),
+    //   state.positions.data());
 
-    // accumulate_gravity_forces(count,
-    //                           config.mass_per_particle,
-    //                           config.params.gravity,
-    //                           temp.external_forces.data());
+    accumulate_gravity_forces(count,
+                              config.mass_per_particle,
+                              config.params.gravity,
+                              temp.external_forces.data());
 
-    accumulate_simple_drag_forces(count,
-                                  0.025f,
-                                  config.params.support,
-                                  temp.external_forces.data(),
-                                  state.velocities.data());
+    // accumulate_simple_drag_forces(count,
+    //                               0.025f,
+    //                               config.params.support,
+    //                               temp.external_forces.data(),
+    //                               state.velocities.data());
 
     // // I want an offset of tiny_h
     // // delta_pos = dt * dt / m * f

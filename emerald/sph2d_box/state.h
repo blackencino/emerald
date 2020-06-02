@@ -68,6 +68,8 @@ struct Temp_data {
     std::vector<V2f> sum_dij_pjs;
     std::vector<float> fluid_volumes;
     std::vector<float> new_pressures;
+
+    std::vector<V2f> pressure_accelerations;
 };
 
 }  // namespace emerald::sph2d_box

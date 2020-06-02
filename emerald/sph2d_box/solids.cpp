@@ -171,7 +171,7 @@ Solid_state world_walls_initial_solid_state(Parameters const& params) {
             float const bxf = float(bx+1) / (N+1);
 
             // HACK
-            // tiny_block({bxf + dist(gen), byf + dist(gen)}, dist(gen));
+            tiny_block({bxf + dist(gen), byf + dist(gen)}, dist(gen));
         }
     }
 

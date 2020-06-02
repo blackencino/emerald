@@ -27,7 +27,7 @@ struct Parameters {
 
     struct {
         int max_pressure_iterations = 30;
-        float error_average_threshold = 0.0033f;
+        float error_average_threshold = 0.001f;//0.0033f;
         float error_max_threshold = 0.03f;
         float omega = 0.5f;
     } iisph;

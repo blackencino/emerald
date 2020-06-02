@@ -449,7 +449,7 @@ void iisph_compute_betas(size_t const particle_count,
 }
 
 template <typename T>
-inline void update_max(std::atomic<T>& atom, T const val) {
+static inline void update_max(std::atomic<T>& atom, T const val) {
     for (T atom_val = atom;
          atom_val < val && !atom.compare_exchange_weak(
                              atom_val, val, std::memory_order_relaxed);) {}
@@ -616,108 +616,5 @@ void iisph_integrate_positions_in_place(size_t const particle_count,
         positions[particle_index] += dt * velocities[particle_index];
     });
 }
-
-#if 0
-//------------------------------------------------------------------------------
-void iisph_sub_time_step_internal(...) {
-    iisph_compute_densities(particle_count,
-                            support,
-                            target_density,
-                            densities,
-                            fluid_volumes,
-                            fluid_neighborhood,
-                            solid_volumes,
-                            solid_neighborhood);
-
-    iisph_integrate_velocities_in_place(
-      particle_count, dt, target_density, velocities, volumes, external_forces);
-
-    iisph_compute_diis(particle_count,
-                       dt,
-                       target_density,
-                       diis,
-                       self_densities,
-                       fluid_volumes,
-                       fluid_neighborhood,
-                       solid_volumes,
-                       solid_neighborhood);
-
-    iisph_compute_aiis_and_density_stars(particle_count,
-                                         dt,
-                                         target_density,
-                                         aiis,
-                                         density_stars,
-                                         diis,
-                                         densities,
-                                         fluid_volumes,
-                                         fluid_velocities,
-                                         fluid_neighborhood,
-                                         solid_volumes,
-                                         solid_velocities,
-                                         solid_neighborhood);
-
-    float* tmp_old_pressures = old_pressures;
-    float* tmp_new_pressures = new_pressures;
-
-    fill_array(particle_count, 0.0f, tmp_old_pressures);
-
-    int iter = 0;
-    for (; iter < max_pressure_iterations; ++iter) {
-        iisph_compute_sum_dij_pjs(particle_count,
-                               dt,
-                               target_density,
-                               sum_dij_pjs,
-                               fluid_volumes,
-                               densities,
-                               tmp_old_pressures,
-                               fluid_neighborhood);
-
-        float* betas = tmp_new_pressures;
-        iisph_compute_betas(particle_count,
-                         dt,
-                         target_density,
-                         betas,
-                         densities,
-                         tmp_old_pressures,
-                         diis,
-                         sum_dij_pjs,
-                         fluid_volumes,
-                         fluid_neighborhood,
-                         solid_volumes,
-                         solid_neighborhood);
-
-        auto const [error_average, error_max] = iisph_compute_new_pressures(
-                                                                            particle_count,
-                                                                            omega,
-                                                                            target_density,
-                                                                            betas,
-                                                                            tmp_old_pressures,
-                                                                            aiis,
-                                                                            density_stars);
-
-        std::swap(tmp_old_pressures, tmp_new_pressures);
-
-        if (iter > 1 && error_average <= error_average_threshold && error_max <= error_max_threshold) {
-            break;
-        }
-    }
-
-    iisph_apply_pressures_in_place(particle_count,
-                                   dt,
-                                   target_density,
-                                   velocities,
-                                   densities,
-                                   tmp_old_pressures,
-                                   fluid_volumes,
-                                   fluid_neighborhood,
-                                   solid_volumes,
-                                   solid_neighborhood);
-    iisph_integrate_positions_in_place(particle_count,
-                                       dt,
-                                       positions,
-                                       velocities);
-}
-
-#endif
 
 }  // namespace emerald::sph2d_box
