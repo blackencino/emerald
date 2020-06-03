@@ -67,7 +67,7 @@ public:
     }
 
     void step() override {
-        // m_sim.step();
+        m_sim.step();
         // m_sim.state = dfsph_simulation_step(m_sim.config,
         //                                     std::move(m_sim.state),
         //                                     m_sim.solid_state,
@@ -84,10 +84,10 @@ public:
         //                                               std::move(m_sim.state),
         //                                               m_sim.solid_state,
         //                                               m_sim.temp_data);
-        m_sim.state = dfsph_p_simulation_step(m_sim.config,
-                                              std::move(m_sim.state),
-                                              m_sim.solid_state,
-                                              m_sim.temp_data);
+        // m_sim.state = dfsph_p_simulation_step(m_sim.config,
+        //                                       std::move(m_sim.state),
+        //                                       m_sim.solid_state,
+        //                                       m_sim.temp_data);
 
         m_multi_scale_draw->update_scale(0,
                                          m_sim.config.draw_radius,

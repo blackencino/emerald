@@ -534,6 +534,8 @@ State simulation_step(Simulation_config const& config,
                       State&& state,
                       Solid_state const& solid_state,
                       Temp_data& temp_data) {
+    auto const start = std::chrono::high_resolution_clock::now();
+
     for (int sub_step_iter = 0; sub_step_iter < config.params.sub_steps;
          ++sub_step_iter) {
         sub_step(config, state, solid_state, temp_data);
@@ -545,6 +547,12 @@ State simulation_step(Simulation_config const& config,
                    config.params.target_density,
                    state.colors.data(),
                    temp_data.densities.data());
+
+    auto const end = std::chrono::high_resolution_clock::now();
+
+    fmt::print("PCISPH frame complete, sub_steps: {}, ms: {}\n",
+               config.params.sub_steps,
+               std::chrono::duration<double>{end - start}.count() * 1000.0);
 
     return std::move(state);
 }
