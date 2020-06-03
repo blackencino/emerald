@@ -1,6 +1,7 @@
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/sph2d_box/bin/multi_scale_draw.h>
 #include <emerald/sph2d_box/dfsph.h>
+#include <emerald/sph2d_box/dfsph_p.h>
 #include <emerald/sph2d_box/iisph.h>
 #include <emerald/sph2d_box/iisph_ap.h>
 #include <emerald/sph2d_box/iisph_pseudo_ap.h>
@@ -56,6 +57,9 @@ public:
 
         m_modelview.makeIdentity();
         m_projection = frustum.projectionMatrix();
+
+        dfsph_p_init(
+          m_sim.config, m_sim.state, m_sim.solid_state, m_sim.temp_data);
     }
 
     std::string name() const override {
@@ -76,10 +80,14 @@ public:
         //                                        std::move(m_sim.state),
         //                                        m_sim.solid_state,
         //                                        m_sim.temp_data);
-        m_sim.state = iisph_pseudo_ap_simulation_step(m_sim.config,
-                                                      std::move(m_sim.state),
-                                                      m_sim.solid_state,
-                                                      m_sim.temp_data);
+        // m_sim.state = iisph_pseudo_ap_simulation_step(m_sim.config,
+        //                                               std::move(m_sim.state),
+        //                                               m_sim.solid_state,
+        //                                               m_sim.temp_data);
+        m_sim.state = dfsph_p_simulation_step(m_sim.config,
+                                              std::move(m_sim.state),
+                                              m_sim.solid_state,
+                                              m_sim.temp_data);
 
         m_multi_scale_draw->update_scale(0,
                                          m_sim.config.draw_radius,

@@ -8,6 +8,7 @@
 #include <tbb/parallel_reduce.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <utility>
 
@@ -195,6 +196,46 @@ float average_func_value(size_t const particle_count,
     } else {
         return 0.0f;
     }
+}
+
+//------------------------------------------------------------------------------
+template <typename T>
+inline void update_atomic_max(std::atomic<T>& atom, T const val) {
+    for (T atom_val = atom;
+         atom_val < val && !atom.compare_exchange_weak(
+                             atom_val, val, std::memory_order_relaxed);) {}
+}
+
+template <typename InputValue, typename TransformFunction>
+std::pair<float, float> compute_transformed_scalar_average_and_max(
+  size_t const particle_count,
+  float const discretization,
+  InputValue const* const input_values,
+  TransformFunction&& trans_func) {
+    if (particle_count < 1) { return {0.0f, 0.0f}; }
+
+    std::atomic<int64_t> integral_value_sum = 0;
+    std::atomic<float> value_max = std::numeric_limits<float>::lowest();
+
+    for_each_iota(
+      particle_count,
+      [=, &integral_value_sum, &value_max](auto const particle_index) {
+          auto const value = trans_func(input_values[particle_index]);
+          update_atomic_max(value_max, value);
+          integral_value_sum += static_cast<int64_t>(value * discretization);
+      });
+
+    auto const value_average_numer = static_cast<double>(integral_value_sum);
+    auto const value_average_denom = static_cast<double>(1000 * particle_count);
+    return {value_average_numer / value_average_denom, value_max};
+}
+
+inline std::pair<float, float> compute_scalar_average_and_max(
+  size_t const particle_count,
+  float const discretization,
+  float const* const values) {
+    return compute_transformed_scalar_average_and_max(
+      particle_count, discretization, values, [](float const f) { return f; });
 }
 
 }  // namespace emerald::sph_common

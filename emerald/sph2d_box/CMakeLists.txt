@@ -7,6 +7,8 @@ add_library(emerald_sph2d_box
             tag.h
             dfsph.h
             dfsph_ops.h
+            dfsph_p.h
+            dfsph_p_ops.h
             iisph.h
             iisph_ap.h
             iisph_ap_ops.h
@@ -20,6 +22,8 @@ add_library(emerald_sph2d_box
             solids.cpp
             dfsph.cpp
             dfsph_ops.cpp
+            dfsph_p.cpp
+            dfsph_p_ops.cpp
             iisph.cpp
             iisph_ap.cpp
             iisph_ap_ops.cpp

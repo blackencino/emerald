@@ -20,9 +20,15 @@ struct Parameters {
     float target_density = 1000.0f;
 
     struct {
-        int max_correction_iterations = 1000;
-        float average_density_dot_tolerance = 0.001f * 1000.0f;
-        float average_density_star_error_tolerance = 0.0001f * 1000.0f;
+        int max_correction_iterations = 15;
+        float average_density_dot_tolerance = 0.0035f * 1000.0f;
+        float average_density_star_error_tolerance = 0.03 * 1000.0f;
+
+        float density_error_average_threshold = 0.0035f;
+        float density_error_max_threshold = 0.03f;
+
+        float divergence_error_average_threshold = 0.0035f;
+        float divergence_error_max_threshold = 0.03f;
     } dfsph;
 
     struct {
