@@ -36,7 +36,7 @@ endif()
 
 # Packages
 find_package(Alembic REQUIRED CONFIG)
-find_package(openexr REQUIRED)
+find_package(OpenEXR REQUIRED)
 find_package(fmt REQUIRED)
 find_package(TBB REQUIRED)
 find_package(boost REQUIRED)

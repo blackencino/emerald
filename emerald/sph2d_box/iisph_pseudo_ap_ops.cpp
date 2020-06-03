@@ -93,25 +93,30 @@ void iisph_pseudo_ap_density_stars_and_pseudo_diagonals(
             }
         }
 
-        auto const self_denom = sqr(self_density);
-        auto const target_denom = sqr(target_density);
+        auto const denom = sqr(self_density);
+        auto const sum_all = sum_mf_gradwif + sum_mb_gradwib;
+        auto const sum_all_dot_sum_all = sum_all.dot(sum_all);
+        auto const numer = sum_all_dot_sum_all + (self_mass * sum_mf_gradwif_dot_gradwif);
 
-        if (safe_divide(sum_mf_gradwif, self_denom) &&
-            safe_divide(sum_mb_gradwib, self_denom) &&
-            safe_divide(sum_mb_gradwib, target_denom) &&
-            safe_divide(sum_mf_gradwif_dot_gradwif, self_denom)) {
-            auto const aii =
-              (sum_mf_gradwif + sum_mb_gradwib)
-                .dot(sum_mf_gradwif / sqr(self_density) +
-                     sum_mb_gradwib / sqr(self_density)) +
-              self_mass * sum_mf_gradwif_dot_gradwif / sqr(self_density);
+        pseudo_diagonals[particle_index] = -safe_divide(numer, denom).value_or(0.0f);
 
-            pseudo_diagonals[particle_index] = -aii;
-        } else {
-            pseudo_diagonals[particle_index] = 0.0f;
-        }
+        // if (safe_divide(sum_mf_gradwif_mb_gradwib, self_denom) &&
+        //     safe_divide(sum_mf_gradwif_dot_gradwif, self_denom)) {
+        //     auto const aii =
+        //       (sum_mf_gradwif + sum_mb_gradwib)
+        //         .dot(sum_mf_gradwif / sqr(self_density) +
+        //              sum_mb_gradwib / sqr(self_density)) +
+        //       self_mass * sum_mf_gradwif_dot_gradwif / sqr(self_density);
 
-        density_stars[particle_index] = self_density + dt * divergence;
+        //     pseudo_diagonals[particle_index] = -aii;
+        // } else {
+        //     pseudo_diagonals[particle_index] = 0.0f;
+        // }
+
+        // CJH HACK? added the max
+        // It really should be the kernel0, but I don't want to bother with
+        // passing in the support
+        density_stars[particle_index] = std::max(0.0f, self_density + dt * divergence);
     });
 }
 

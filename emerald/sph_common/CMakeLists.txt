@@ -13,7 +13,7 @@ target_link_libraries(emerald_sph_common
                       PUBLIC
                       emerald_util
                       emerald_z_index
-                      openexr::openexr
+                      OpenEXR::OpenEXR
                       TBB::TBB
                       fmt::fmt)
 

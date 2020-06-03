@@ -32,7 +32,7 @@ target_link_libraries(emerald_sph2d_box
                       emerald_util
                       emerald_sph_common
                       cxxopts::cxxopts
-                      openexr::openexr
+                      OpenEXR::OpenEXR
                       TBB::TBB
                       fmt::fmt)
 

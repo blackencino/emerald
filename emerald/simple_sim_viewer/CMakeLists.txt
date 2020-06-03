@@ -27,7 +27,7 @@ target_link_libraries(emerald_simple_sim_viewer PUBLIC
                       emerald_geep_glfw
                       emerald_util
                       Alembic::Alembic
-                      openexr::openexr)
+                      OpenEXR::OpenEXR)
 
 add_subdirectory(tests)
 

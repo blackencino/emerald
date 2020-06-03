@@ -11,6 +11,6 @@ add_library(emerald_noise
     simplex_noise.cpp)
 
 target_include_directories(emerald_noise PUBLIC "${emerald_SOURCE_DIR}")
-target_link_libraries(emerald_noise PUBLIC emerald_util openexr::openexr)
+target_link_libraries(emerald_noise PUBLIC emerald_util OpenEXR::OpenEXR)
 
 add_subdirectory(tests)

@@ -21,7 +21,7 @@ add_library(emerald_util
 
 target_include_directories(emerald_util PUBLIC "${emerald_SOURCE_DIR}")
 target_link_libraries(emerald_util
-    openexr::openexr
+    OpenEXR::OpenEXR
     Alembic::Alembic
     fmt::fmt)
 
