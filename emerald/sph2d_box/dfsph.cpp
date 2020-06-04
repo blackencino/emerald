@@ -12,38 +12,6 @@ namespace emerald::sph2d_box {
 
 using namespace emerald::sph_common;
 
-flicks dfsph_cfl_maximum_time_step(size_t const particle_count,
-                                   float const support,
-                                   V2f const* const velocities) {
-    double const numer = 0.4 * support;
-    double const denom = std::sqrt(static_cast<double>(
-      max_vector_squared_magnitude(particle_count, velocities)));
-
-    return to_flicks(safe_divide(numer, denom).value_or(0.0f));
-}
-
-void dfsph_integrate_velocity_from_non_pressure_forces(
-  float const dt,
-  Simulation_config const& config,
-  State& state,
-  Solid_state const& solid_state,
-  Temp_data& temp) {
-    auto const count = state.positions.size();
-    accumulate(count,
-               dt / config.mass_per_particle,
-               state.velocities.data(),
-               temp.external_forces.data());
-}
-
-void dfsph_integrate_positions(float const dt,
-                               Simulation_config const& config,
-                               State& state,
-                               Solid_state const& solid_state,
-                               Temp_data& temp) {
-    auto const count = state.positions.size();
-    accumulate(count, dt, state.positions.data(), state.velocities.data());
-}
-
 void dfsph_compute_alphas(Simulation_config const& config,
                           State& state,
                           Solid_state const& solid_state,
@@ -194,38 +162,6 @@ void dfsph_compute_density_stars_from_densities_and_density_dots(
     });
 }
 
-void dfsph_compute_density_stars(float const dt,
-                                 Simulation_config const& config,
-                                 State& state,
-                                 Solid_state const& solid_state,
-                                 Temp_data& temp) {
-    auto const particle_count = state.positions.size();
-    dfsph_compute_density_dots(particle_count,
-                               config.mass_per_particle,
-                               temp.density_stars.data(),
-                               state.velocities.data(),
-                               temp.neighborhood.counts.data(),
-                               temp.neighborhood.indices.data(),
-                               temp.neighborhood.kernel_gradients.data());
-    dfsph_accumulate_density_dots_from_solids(
-      particle_count,
-      config.params.target_density,
-      temp.density_stars.data(),
-      state.velocities.data(),
-      solid_state.velocities.data(),
-      solid_state.volumes.data(),
-      temp.solid_neighborhood.counts.data(),
-      temp.solid_neighborhood.indices.data(),
-      temp.solid_neighborhood.kernel_gradients.data());
-
-    dfsph_compute_density_stars_from_densities_and_density_dots(
-      particle_count,
-      dt,
-      temp.density_stars.data(),
-      temp.density_stars.data(),
-      temp.densities.data());
-}
-
 void dfsph_correct_density_error(float const dt,
                                  Simulation_config const& config,
                                  State& state,
@@ -284,6 +220,8 @@ void dfsph_sub_step(float const dt,
     // dfsph_compute_alphas(config, state, solid_state, temp);
     // dfsph_correct_divergence_error(dt, config, state, solid_state, temp);
 
+    auto const count = state.positions.size();
+
     compute_all_neighbhorhoods(config, state, solid_state, temp);
     compute_all_neighborhood_kernels(config, temp);
     dfsph_compute_densities(
@@ -297,6 +235,8 @@ void dfsph_sub_step(float const dt,
     // HACK the 1.0f should be dt
     dfsph_correct_density_error(1.0f, config, state, solid_state, temp);
     dfsph_integrate_positions(dt, config, state, solid_state, temp);
+
+    integrate_positions_in_place(count, dt, state.positions, state.velocities);
 }
 
 void dfsph_resize_and_init_temp_arrays(size_t const particle_count,

@@ -29,4 +29,28 @@ void forward_euler_integrate_linear_values(size_t const entity_count,
     accumulate(entity_count, dt, value_nexts, value_dots);
 }
 
+void integrate_velocities_in_place(size_t const particle_count,
+                                   float const dt,
+                                   float const target_density,
+                                   V2f* const velocities,
+                                   float const* const volumes,
+                                   V2f const* const forces);
+
+void integrate_velocities_in_place(size_t const particle_count,
+                                   float const dt,
+                                   V2f* const velocities,
+                                   V2f const* const accelerations);
+
+void integrate_positions_in_place(size_t const particle_count,
+                                  float const dt,
+                                  V2f* const positions,
+                                  V2f const* const velocities);
+
+void integrate_velocities_and_positions_in_place(
+  size_t const particle_count,
+  float const dt,
+  V2f* const velocities,
+  V2f* const positions,
+  V2f const* const accelerations);
+
 }  // namespace emerald::sph_common

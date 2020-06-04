@@ -16,16 +16,6 @@ namespace emerald::sph2d_box {
 
 using namespace emerald::sph_common;
 
-flicks iisph_cfl_maximum_time_step(size_t const particle_count,
-                                   float const support,
-                                   V2f const* const velocities) {
-    // HACK should be 0.4
-    double const numer = 0.4 * support;
-    double const denom = std::sqrt(static_cast<double>(
-      max_vector_squared_magnitude(particle_count, velocities)));
-
-    return to_flicks(safe_divide(numer, denom).value_or(1.0f));
-}
 
 void iisph_sub_step(float const dt,
                     Simulation_config const& config,

@@ -1,13 +1,23 @@
 add_library(emerald_sph_common
+            cfl.h
             common.h
+            density.h
+            divergence.h
             dynamics.h
             kernels.h
             neighborhood.h
+            pressure.h
             types.h
+            volume.h
 
+            cfl.cpp
             common.cpp
+            density.cpp
+            divergence.cpp
             dynamics.cpp
-            neighborhood.cpp)
+            neighborhood.cpp
+            pressure.cpp
+            volume.cpp)
 target_include_directories(emerald_sph_common PUBLIC "${emerald_SOURCE_DIR}")
 target_link_libraries(emerald_sph_common
                       PUBLIC

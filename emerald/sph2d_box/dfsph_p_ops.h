@@ -20,30 +20,6 @@ void dfsph_p_compute_shared_coeffs(
   float const* const solid_volumes,
   Neighborhood_pointers const solid_neighborhood);
 
-void dfsph_p_compute_divergences(
-  size_t const particle_count,
-  float const target_density,
-  float* const divergences,
-  float const* const fluid_neighbor_volumes,
-  V2f const* const fluid_neighbor_velocities,
-  Neighborhood_pointers const fluid_neighborhood,
-  float const* const solid_neighbor_volumes,
-  V2f const* const solid_neighbor_velocities,
-  Neighborhood_pointers const solid_neighborhood);
-
-void dfsph_p_compute_density_stars(
-  size_t const particle_count,
-  float const dt,
-  float const target_density,
-  float* const density_stars,
-  float const* const densities,
-  float const* const fluid_neighbor_volumes,
-  V2f const* const fluid_neighbor_velocities,
-  Neighborhood_pointers const fluid_neighborhood,
-  float const* const solid_neighbor_volumes,
-  V2f const* const solid_neighbor_velocities,
-  Neighborhood_pointers const solid_neighborhood);
-
 void dfsph_p_compute_density_pseudo_pressures(
   size_t const particle_count,
   float const dt,

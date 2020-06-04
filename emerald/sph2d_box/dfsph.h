@@ -10,17 +10,6 @@
 
 namespace emerald::sph2d_box {
 
-flicks dfsph_cfl_maximum_time_step(size_t const particle_count,
-                                   float const support,
-                                   V2f const* const velocities);
-
-void dfsph_integrate_velocity_from_non_pressure_forces(
-  float const dt,
-  Simulation_config const& config,
-  State& state,
-  Solid_state const& solid_state,
-  Temp_data& temp);
-
 void dfsph_integrate_positions(float const dt,
                                Simulation_config const& config,
                                State& state,

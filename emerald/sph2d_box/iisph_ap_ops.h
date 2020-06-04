@@ -27,20 +27,6 @@ void iisph_ap_density_stars_and_diagonals(
   V2f const* const solid_velocities,
   Neighborhood_pointers const solid_neighborhood);
 
-void iisph_ap_compute_pressure_accelerations(
-  size_t const particle_count,
-  float const target_density,
-
-  V2f* const pressure_accelerations,
-
-  float const* const pressures,
-  float const* const densities,
-
-  float const* const fluid_volumes,
-  Neighborhood_pointers const fluid_neighborhood,
-  float const* const solid_volumes,
-  Neighborhood_pointers const solid_neighborhood);
-
 std::pair<float, float> iisph_ap_iterate_pressures_in_place(
   size_t const particle_count,
   float const dt,

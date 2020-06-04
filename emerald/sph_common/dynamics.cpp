@@ -20,4 +20,46 @@ void accumulate_linear_accelerations(size_t const entity_count,
     });
 }
 
+// Velocities with only external forces
+void integrate_velocities_in_place(size_t const particle_count,
+                                   float const dt,
+                                   float const target_density,
+                                   V2f* const velocities,
+                                   float const* const volumes,
+                                   V2f const* const forces) {
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        auto const denom = target_density * volumes[particle_index];
+        auto const numer = dt * forces[particle_index];
+        if (safe_divide(numer, denom)) {
+            velocities[particle_index] += numer / denom;
+        }
+    });
+}
+
+void integrate_velocities_in_place(size_t const particle_count,
+                                   float const dt,
+                                   V2f* const velocities,
+                                   V2f const* const accelerations) {
+    accumulate(particle_count, dt, velocities, accelerations);
+}
+
+void integrate_positions_in_place(size_t const particle_count,
+                                  float const dt,
+                                  V2f* const positions,
+                                  V2f const* const velocities) {
+    accumulate(particle_count, dt, positions, velocities);
+}
+
+void integrate_velocities_and_positions_in_place(
+  size_t const particle_count,
+  float const dt,
+  V2f* const velocities,
+  V2f* const positions,
+  V2f const* const accelerations) {
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        velocities[particle_index] += dt * accelerations[particle_index];
+        positions[particle_index] += dt * velocities[particle_index];
+    });
+}
+
 }  // namespace emerald::sph_common
