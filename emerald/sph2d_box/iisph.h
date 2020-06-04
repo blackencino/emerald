@@ -10,10 +10,6 @@
 
 namespace emerald::sph2d_box {
 
-flicks iisph_cfl_maximum_time_step(size_t const particle_count,
-                                   float const support,
-                                   V2f const* const velocities);
-
 void iisph_sub_step(float const dt,
                     Simulation_config const& config,
                     State& state,

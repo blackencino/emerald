@@ -1,14 +1,8 @@
 #pragma once
 
-#include <emerald/sph2d_box/iisph.h>
-#include <emerald/sph2d_box/iisph_pseudo_ap.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
 #include <emerald/sph2d_box/state.h>
-
-#include <emerald/util/flicks.h>
-
-#include <cstdint>
 
 namespace emerald::sph2d_box {
 

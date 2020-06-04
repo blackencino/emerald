@@ -192,7 +192,7 @@ std::pair<float, float> iisph_ap_iterate_pressures_in_place(
           auto const error = std::max(
             0.0f, safe_divide(Api - source, target_density).value_or(0.0f));
           // fmt::print("Error {}: {}\n", particle_index, error);
-          update_max(error_max, error);
+          update_atomic_max(error_max, error);
           integral_error_sum += static_cast<uint64_t>(error * 1000.0f);
 
           auto const old_pressure = pressures[particle_index];
@@ -204,20 +204,6 @@ std::pair<float, float> iisph_ap_iterate_pressures_in_place(
     auto const error_average_numer = static_cast<double>(integral_error_sum);
     auto const error_average_denom = static_cast<double>(1000 * particle_count);
     return {error_average_numer / error_average_denom, error_max};
-}
-
-//------------------------------------------------------------------------------
-void iisph_ap_integrate_velocities_and_positions_in_place(
-  size_t const particle_count,
-  float const dt,
-  V2f* const velocities,
-  V2f* const positions,
-  V2f const* const pressure_accelerations) {
-    for_each_iota(particle_count, [=](auto const particle_index) {
-        velocities[particle_index] +=
-          dt * pressure_accelerations[particle_index];
-        positions[particle_index] += dt * velocities[particle_index];
-    });
 }
 
 }  // namespace emerald::sph2d_box

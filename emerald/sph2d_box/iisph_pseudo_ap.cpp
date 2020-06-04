@@ -1,11 +1,13 @@
 #include <emerald/sph2d_box/iisph_pseudo_ap.h>
 
 #include <emerald/sph2d_box/iisph_ap.h>
-#include <emerald/sph2d_box/iisph_ap_ops.h>
-#include <emerald/sph2d_box/iisph_ops.h>
 #include <emerald/sph2d_box/iisph_pseudo_ap_ops.h>
-#include <emerald/sph2d_box/sim_ops.h>
+#include <emerald/sph2d_box/simulation.h>
+#include <emerald/sph_common/cfl.h>
 #include <emerald/sph_common/common.h>
+#include <emerald/sph_common/density.h>
+#include <emerald/sph_common/dynamics.h>
+#include <emerald/sph_common/volume.h>
 #include <emerald/util/assert.h>
 #include <emerald/util/flicks.h>
 #include <emerald/util/format.h>
@@ -28,21 +30,21 @@ void iisph_pseudo_ap_sub_step(float const dt,
     compute_all_neighborhood_kernels(config, temp);
     compute_all_external_forces(config, state, temp);
 
-    iisph_compute_densities(particle_count,
-                            config.params.support,
-                            config.params.target_density,
-                            temp.densities.data(),
-                            temp.fluid_volumes.data(),
-                            temp.neighborhood.pointers(),
-                            solid_state.volumes.data(),
-                            temp.solid_neighborhood.pointers());
+    compute_densities(particle_count,
+                      config.params.support,
+                      config.params.target_density,
+                      temp.densities.data(),
+                      temp.fluid_volumes.data(),
+                      temp.neighborhood.pointers(),
+                      solid_state.volumes.data(),
+                      temp.solid_neighborhood.pointers());
 
-    iisph_integrate_velocities_in_place(particle_count,
-                                        dt,
-                                        config.params.target_density,
-                                        state.velocities.data(),
-                                        temp.fluid_volumes.data(),
-                                        temp.external_forces.data());
+    integrate_velocities_in_place(particle_count,
+                                  dt,
+                                  config.params.target_density,
+                                  state.velocities.data(),
+                                  temp.fluid_volumes.data(),
+                                  temp.external_forces.data());
 
     iisph_pseudo_ap_density_stars_and_pseudo_diagonals(
       particle_count,
@@ -116,7 +118,7 @@ void iisph_pseudo_ap_sub_step(float const dt,
       solid_state.volumes.data(),
       temp.solid_neighborhood.pointers());
 
-    iisph_pseudo_ap_integrate_velocities_and_positions_in_place(
+    integrate_velocities_and_positions_in_place(
       particle_count,
       dt,
       state.velocities.data(),
@@ -132,10 +134,10 @@ State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
 
     auto const particle_count = state.positions.size();
     iisph_ap_resize_temp_arrays(particle_count, temp);
-    iisph_compute_fluid_volumes(particle_count,
-                                config.params.target_density,
-                                config.mass_per_particle,
-                                temp.fluid_volumes.data());
+    compute_constant_volumes(particle_count,
+                             config.params.target_density,
+                             config.mass_per_particle,
+                             temp.fluid_volumes.data());
 
     flicks const min_sub_time_step = config.params.time_per_step / 50;
     flicks const max_sub_time_step = config.params.time_per_step / 5;
@@ -145,9 +147,8 @@ State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
       config.params.time_per_step / remaining_sub_steps;
     int sub_steps = 0;
     while (remaining_sub_steps > 0) {
-        auto const cfl_step =
-          iisph_cfl_maximum_time_step(
-            particle_count, config.params.support, state.velocities.data());
+        auto const cfl_step = cfl_maximum_time_step(
+          particle_count, config.params.support, 0.4f, state.velocities.data());
 
         auto num_sub_steps = static_cast<int>(
           std::ceil(to_seconds(cfl_step) / to_seconds(time_per_sub_step)));

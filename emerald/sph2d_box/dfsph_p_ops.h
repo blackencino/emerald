@@ -36,17 +36,4 @@ void dfsph_p_compute_divergence_pseudo_pressures(
   float const* const divergences,
   float const* const shared_coeffs);
 
-void dfsph_p_integrate_pseudo_pressures(
-  size_t const particle_count,
-  float const dt,
-  float const target_density,
-  V2f* const velocity_stars,
-  V2f* const pressure_accelerations,
-  float const* const pseudo_pressures,
-  float const* const densities,
-  float const* const fluid_volumes,
-  Neighborhood_pointers const fluid_neighborhood,
-  float const* const solid_volumes,
-  Neighborhood_pointers const solid_neighborhood);
-
 }  // namespace emerald::sph2d_box

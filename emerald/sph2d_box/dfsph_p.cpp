@@ -1,15 +1,13 @@
 #include <emerald/sph2d_box/dfsph_p.h>
 
-#include <emerald/sph2d_box/dfsph.h>
-#include <emerald/sph2d_box/dfsph_ops.h>
 #include <emerald/sph2d_box/dfsph_p_ops.h>
-#include <emerald/sph2d_box/iisph.h>
-#include <emerald/sph2d_box/iisph_ap.h>
-#include <emerald/sph2d_box/iisph_ap_ops.h>
-#include <emerald/sph2d_box/iisph_ops.h>
-#include <emerald/sph2d_box/iisph_pseudo_ap_ops.h>
-#include <emerald/sph2d_box/sim_ops.h>
+#include <emerald/sph_common/cfl.h>
 #include <emerald/sph_common/common.h>
+#include <emerald/sph_common/density.h>
+#include <emerald/sph_common/divergence.h>
+#include <emerald/sph_common/dynamics.h>
+#include <emerald/sph_common/pressure.h>
+#include <emerald/sph_common/volume.h>
 #include <emerald/util/assert.h>
 #include <emerald/util/flicks.h>
 #include <emerald/util/format.h>
@@ -29,32 +27,30 @@ void dfsph_p_correct_density_error(float const dt,
     auto const particle_count = state.positions.size();
 
     // Warm start
-    dfsph_p_integrate_pseudo_pressures(particle_count,
-                                       dt,
-                                       config.params.target_density,
-
-                                       state.velocities.data(),
-                                       temp.pressure_accelerations.data(),
-                                       temp.density_kappas.data(),
-                                       temp.densities.data(),
-                                       temp.fluid_volumes.data(),
-                                       temp.neighborhood.pointers(),
-                                       solid_state.volumes.data(),
-                                       temp.solid_neighborhood.pointers());
+    apply_pressures_in_place(particle_count,
+                             dt,
+                             config.params.target_density,
+                             state.velocities.data(),
+                             temp.densities.data(),
+                             temp.density_kappas.data(),
+                             temp.fluid_volumes.data(),
+                             temp.neighborhood.pointers(),
+                             solid_state.volumes.data(),
+                             temp.solid_neighborhood.pointers());
 
     for (int iter = 0; iter < config.params.dfsph.max_correction_iterations;
          ++iter) {
-        dfsph_p_compute_density_stars(particle_count,
-                                      dt,
-                                      config.params.target_density,
-                                      temp.density_stars.data(),
-                                      temp.densities.data(),
-                                      temp.fluid_volumes.data(),
-                                      state.velocities.data(),
-                                      temp.neighborhood.pointers(),
-                                      solid_state.volumes.data(),
-                                      solid_state.velocities.data(),
-                                      temp.solid_neighborhood.pointers());
+        predict_density_stars(particle_count,
+                              dt,
+                              config.params.target_density,
+                              temp.density_stars.data(),
+                              temp.densities.data(),
+                              temp.fluid_volumes.data(),
+                              state.velocities.data(),
+                              temp.neighborhood.pointers(),
+                              solid_state.volumes.data(),
+                              solid_state.velocities.data(),
+                              temp.solid_neighborhood.pointers());
 
         dfsph_p_compute_density_pseudo_pressures(particle_count,
                                                  dt,
@@ -63,18 +59,16 @@ void dfsph_p_correct_density_error(float const dt,
                                                  temp.density_stars.data(),
                                                  temp.alphas.data());
 
-        dfsph_p_integrate_pseudo_pressures(particle_count,
-                                           dt,
-                                           config.params.target_density,
-
-                                           state.velocities.data(),
-                                           temp.pressure_accelerations.data(),
-                                           temp.density_kappas.data(),
-                                           temp.densities.data(),
-                                           temp.fluid_volumes.data(),
-                                           temp.neighborhood.pointers(),
-                                           solid_state.volumes.data(),
-                                           temp.solid_neighborhood.pointers());
+        apply_pressures_in_place(particle_count,
+                                 dt,
+                                 config.params.target_density,
+                                 state.velocities.data(),
+                                 temp.densities.data(),
+                                 temp.density_kappas.data(),
+                                 temp.fluid_volumes.data(),
+                                 temp.neighborhood.pointers(),
+                                 solid_state.volumes.data(),
+                                 temp.solid_neighborhood.pointers());
 
         if (iter > 1) {
             auto const [error_avg, error_max] =
@@ -108,30 +102,28 @@ void dfsph_p_correct_divergence_error(float const dt,
     auto const particle_count = state.positions.size();
 
     // Warm start
-    dfsph_p_integrate_pseudo_pressures(particle_count,
-                                       dt,
-                                       config.params.target_density,
-
-                                       state.velocities.data(),
-                                       temp.pressure_accelerations.data(),
-                                       temp.divergence_kappas.data(),
-                                       temp.densities.data(),
-                                       temp.fluid_volumes.data(),
-                                       temp.neighborhood.pointers(),
-                                       solid_state.volumes.data(),
-                                       temp.solid_neighborhood.pointers());
+    apply_pressures_in_place(particle_count,
+                             dt,
+                             config.params.target_density,
+                             state.velocities.data(),
+                             temp.densities.data(),
+                             temp.divergence_kappas.data(),
+                             temp.fluid_volumes.data(),
+                             temp.neighborhood.pointers(),
+                             solid_state.volumes.data(),
+                             temp.solid_neighborhood.pointers());
 
     for (int iter = 0; iter < config.params.dfsph.max_correction_iterations;
          ++iter) {
-        dfsph_p_compute_divergences(particle_count,
-                                    config.params.target_density,
-                                    temp.density_stars.data(),
-                                    temp.fluid_volumes.data(),
-                                    state.velocities.data(),
-                                    temp.neighborhood.pointers(),
-                                    solid_state.volumes.data(),
-                                    solid_state.velocities.data(),
-                                    temp.solid_neighborhood.pointers());
+        compute_divergences(particle_count,
+                            config.params.target_density,
+                            temp.density_stars.data(),
+                            temp.fluid_volumes.data(),
+                            state.velocities.data(),
+                            temp.neighborhood.pointers(),
+                            solid_state.volumes.data(),
+                            solid_state.velocities.data(),
+                            temp.solid_neighborhood.pointers());
 
         dfsph_p_compute_divergence_pseudo_pressures(
           particle_count,
@@ -141,17 +133,16 @@ void dfsph_p_correct_divergence_error(float const dt,
           temp.density_stars.data(),
           temp.alphas.data());
 
-        dfsph_p_integrate_pseudo_pressures(particle_count,
-                                           dt,
-                                           config.params.target_density,
-                                           state.velocities.data(),
-                                           temp.pressure_accelerations.data(),
-                                           temp.divergence_kappas.data(),
-                                           temp.densities.data(),
-                                           temp.fluid_volumes.data(),
-                                           temp.neighborhood.pointers(),
-                                           solid_state.volumes.data(),
-                                           temp.solid_neighborhood.pointers());
+        apply_pressures_in_place(particle_count,
+                                 dt,
+                                 config.params.target_density,
+                                 state.velocities.data(),
+                                 temp.densities.data(),
+                                 temp.divergence_kappas.data(),
+                                 temp.fluid_volumes.data(),
+                                 temp.neighborhood.pointers(),
+                                 solid_state.volumes.data(),
+                                 temp.solid_neighborhood.pointers());
 
         if (iter > 0) {
             auto const [error_avg, error_max] =
@@ -204,21 +195,21 @@ void dfsph_p_init(Simulation_config const& config,
                   Temp_data& temp) {
     auto const particle_count = state.positions.size();
     dfsph_p_resize_and_init_temp_arrays(particle_count, temp);
-    iisph_compute_fluid_volumes(particle_count,
-                                config.params.target_density,
-                                config.mass_per_particle,
-                                temp.fluid_volumes.data());
+    compute_constant_volumes(particle_count,
+                             config.params.target_density,
+                             config.mass_per_particle,
+                             temp.fluid_volumes.data());
     compute_all_neighbhorhoods(config, state, solid_state, temp);
     compute_all_neighborhood_kernels(config, temp);
 
-    iisph_compute_densities(particle_count,
-                            config.params.support,
-                            config.params.target_density,
-                            temp.densities.data(),
-                            temp.fluid_volumes.data(),
-                            temp.neighborhood.pointers(),
-                            solid_state.volumes.data(),
-                            temp.solid_neighborhood.pointers());
+    compute_densities(particle_count,
+                      config.params.support,
+                      config.params.target_density,
+                      temp.densities.data(),
+                      temp.fluid_volumes.data(),
+                      temp.neighborhood.pointers(),
+                      solid_state.volumes.data(),
+                      temp.solid_neighborhood.pointers());
 
     dfsph_p_compute_shared_coeffs(particle_count,
                                   config.params.target_density,
@@ -238,28 +229,28 @@ void dfsph_p_sub_step(float const dt,
     auto const particle_count = state.positions.size();
 
     // External forces passed in
-    iisph_integrate_velocities_in_place(particle_count,
-                                        dt,
-                                        config.params.target_density,
-                                        state.velocities.data(),
-                                        temp.fluid_volumes.data(),
-                                        temp.external_forces.data());
+    integrate_velocities_in_place(particle_count,
+                                  dt,
+                                  config.params.target_density,
+                                  state.velocities.data(),
+                                  temp.fluid_volumes.data(),
+                                  temp.external_forces.data());
 
     dfsph_p_correct_density_error(dt, config, state, solid_state, temp);
 
-    iisph_integrate_positions_in_place(
+    integrate_positions_in_place(
       particle_count, dt, state.positions.data(), state.velocities.data());
     compute_all_neighbhorhoods(config, state, solid_state, temp);
     compute_all_neighborhood_kernels(config, temp);
 
-    iisph_compute_densities(particle_count,
-                            config.params.support,
-                            config.params.target_density,
-                            temp.densities.data(),
-                            temp.fluid_volumes.data(),
-                            temp.neighborhood.pointers(),
-                            solid_state.volumes.data(),
-                            temp.solid_neighborhood.pointers());
+    compute_densities(particle_count,
+                      config.params.support,
+                      config.params.target_density,
+                      temp.densities.data(),
+                      temp.fluid_volumes.data(),
+                      temp.neighborhood.pointers(),
+                      solid_state.volumes.data(),
+                      temp.solid_neighborhood.pointers());
 
     dfsph_p_compute_shared_coeffs(particle_count,
                                   config.params.target_density,
@@ -283,10 +274,10 @@ State dfsph_p_simulation_step(Simulation_config const& config,
 
     auto const particle_count = state.positions.size();
     dfsph_p_resize_and_init_temp_arrays(particle_count, temp);
-    iisph_compute_fluid_volumes(particle_count,
-                                config.params.target_density,
-                                config.mass_per_particle,
-                                temp.fluid_volumes.data());
+    compute_constant_volumes(particle_count,
+                             config.params.target_density,
+                             config.mass_per_particle,
+                             temp.fluid_volumes.data());
 
     flicks const min_sub_time_step = config.params.time_per_step / 60;
     flicks const max_sub_time_step = config.params.time_per_step / 4;
@@ -296,8 +287,8 @@ State dfsph_p_simulation_step(Simulation_config const& config,
       config.params.time_per_step / remaining_sub_steps;
     int sub_steps = 0;
     while (remaining_sub_steps > 0) {
-        auto const cfl_step = iisph_cfl_maximum_time_step(
-          particle_count, config.params.support, state.velocities.data());
+        auto const cfl_step = cfl_maximum_time_step(
+          particle_count, config.params.support, 0.4f, state.velocities.data());
 
         auto num_sub_steps = static_cast<int>(
           std::ceil(to_seconds(cfl_step) / to_seconds(time_per_sub_step)));

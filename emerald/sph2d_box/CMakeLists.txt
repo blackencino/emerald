@@ -5,8 +5,6 @@ add_library(emerald_sph2d_box
             solids.h
             state.h
             tag.h
-            dfsph.h
-            dfsph_ops.h
             dfsph_p.h
             dfsph_p_ops.h
             iisph.h
@@ -20,8 +18,6 @@ add_library(emerald_sph2d_box
             sim_ops.cpp
             simulation.cpp
             solids.cpp
-            dfsph.cpp
-            dfsph_ops.cpp
             dfsph_p.cpp
             dfsph_p_ops.cpp
             iisph.cpp

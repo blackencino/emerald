@@ -1,4 +1,3 @@
-#include <emerald/sph2d_box/dfsph.h>
 #include <emerald/sph2d_box/dfsph_p.h>
 #include <emerald/sph2d_box/iisph.h>
 #include <emerald/sph2d_box/iisph_ap.h>
@@ -21,8 +20,6 @@ int main(int argc, char* argv[]) {
     for (int frame = 0; frame < num_batch_frames; ++frame) {
         auto const start = std::chrono::high_resolution_clock::now();
         // sim.step();
-        // sim.state = dfsph_simulation_step(sim.config, std::move(sim.state),
-        //                                   sim.solid_state, sim.temp_data);
         // sim.state = iisph_simulation_step(
         //   sim.config, std::move(sim.state), sim.solid_state, sim.temp_data);
         // sim.state = iisph_ap_simulation_step(

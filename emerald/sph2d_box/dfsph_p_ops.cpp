@@ -127,30 +127,4 @@ void dfsph_p_compute_divergence_pseudo_pressures(
     });
 }
 
-//------------------------------------------------------------------------------
-void dfsph_p_integrate_pseudo_pressures(
-  size_t const particle_count,
-  float const dt,
-  float const target_density,
-  V2f* const velocity_stars,
-  V2f* const pressure_accelerations,
-  float const* const pseudo_pressures,
-  float const* const densities,
-  float const* const fluid_volumes,
-  Neighborhood_pointers const fluid_neighborhood,
-  float const* const solid_volumes,
-  Neighborhood_pointers const solid_neighborhood) {
-    compute_pressure_accelerations(particle_count,
-                                            target_density,
-                                            pressure_accelerations,
-                                            pseudo_pressures,
-                                            densities,
-                                            fluid_volumes,
-                                            fluid_neighborhood,
-                                            solid_volumes,
-                                            solid_neighborhood);
-
-    integrate_velocities_in_place(particle_count, dt, velocity_stars, pressure_accelerations);
-}
-
 }  // namespace emerald::sph2d_box

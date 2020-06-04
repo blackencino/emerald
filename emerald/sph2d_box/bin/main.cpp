@@ -1,6 +1,5 @@
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/sph2d_box/bin/multi_scale_draw.h>
-#include <emerald/sph2d_box/dfsph.h>
 #include <emerald/sph2d_box/dfsph_p.h>
 #include <emerald/sph2d_box/iisph.h>
 #include <emerald/sph2d_box/iisph_ap.h>
@@ -67,11 +66,7 @@ public:
     }
 
     void step() override {
-        m_sim.step();
-        // m_sim.state = dfsph_simulation_step(m_sim.config,
-        //                                     std::move(m_sim.state),
-        //                                     m_sim.solid_state,
-        //                                     m_sim.temp_data);
+        // m_sim.step();
         // m_sim.state = iisph_simulation_step(m_sim.config,
         //                                     std::move(m_sim.state),
         //                                     m_sim.solid_state,
@@ -84,10 +79,10 @@ public:
         //                                               std::move(m_sim.state),
         //                                               m_sim.solid_state,
         //                                               m_sim.temp_data);
-        // m_sim.state = dfsph_p_simulation_step(m_sim.config,
-        //                                       std::move(m_sim.state),
-        //                                       m_sim.solid_state,
-        //                                       m_sim.temp_data);
+        m_sim.state = dfsph_p_simulation_step(m_sim.config,
+                                              std::move(m_sim.state),
+                                              m_sim.solid_state,
+                                              m_sim.temp_data);
 
         m_multi_scale_draw->update_scale(0,
                                          m_sim.config.draw_radius,
