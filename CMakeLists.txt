@@ -35,18 +35,20 @@ elseif( "${CMAKE_SYSTEM_NAME}" MATCHES "Linux" )
 endif()
 
 # Packages
-find_package(Alembic REQUIRED CONFIG)
+find_package(Alembic REQUIRED)
 find_package(OpenEXR REQUIRED)
 find_package(fmt REQUIRED)
 find_package(TBB REQUIRED)
-find_package(boost REQUIRED)
-find_package(fftw REQUIRED)
+#find_package(Boost REQUIRED)
+#find_package(fftw REQUIRED)
 find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
 find_package(GTest REQUIRED)
 
+set(EMERALD_GL_LIBS "")
 if (${EMERALD_BUILD_GUIS})
     find_package(glfw REQUIRED)
+    find_package(OpenGL REQUIRED)
 endif()
 #find_package(glm REQUIRED)
 
