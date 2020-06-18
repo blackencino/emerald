@@ -10,31 +10,6 @@ namespace emerald::sph2d_box {
 
 using namespace emerald::sph_common;
 
-void accumulate_gravity_forces(size_t const particle_count,
-                               float const mass_per_particle,
-                               float const gravity,
-                               V2f* const forces);
-
-void accumulate_constant_pole_attraction_forces(size_t const particle_count,
-                                                float const magnitude,
-                                                V2f const pole,
-                                                V2f* const forces,
-                                                V2f const* const positions);
-
-void accumulate_simple_drag_forces(size_t const particle_count,
-                                   float const magnitude,
-                                   float const particle_diameter,
-                                   V2f* const forces,
-                                   V2f const* const velocities);
-
-void accumulate_anti_coupling_repulsive_forces(
-  size_t const particle_count,
-  float const max_distance,
-  float const force_magnitude,
-  V2f* const forces,
-  uint8_t const* const neighbor_counts,
-  Neighbor_values<float> const* const neighbor_distances);
-
 void compute_densities(size_t const particle_count,
                        float const mass_per_particle,
                        float const support,
@@ -62,10 +37,5 @@ void accumulate_pressure_forces(
   V2f const* const velocities,
   float const* const pressures,
   float const* const densities);
-
-void compute_colors(size_t const particle_count,
-                    float const target_density,
-                    C4uc* const colors,
-                    float const* const densities);
 
 }  // namespace emerald::sph2d_box

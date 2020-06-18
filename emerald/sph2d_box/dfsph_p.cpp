@@ -179,8 +179,8 @@ void dfsph_p_resize_and_init_temp_arrays(size_t const particle_count,
     temp.neighborhood.resize(particle_count);
     temp.solid_neighborhood.resize(particle_count);
     temp.densities.resize(particle_count);
-    temp.divergence_kappas.resize(particle_count);
-    temp.density_kappas.resize(particle_count);
+    temp.divergence_kappas.resize(particle_count, 0.0f);
+    temp.density_kappas.resize(particle_count, 0.0f);
     temp.density_stars.resize(particle_count);
     temp.pressure_accelerations.resize(particle_count);
     temp.fluid_volumes.resize(particle_count);
@@ -269,7 +269,11 @@ void dfsph_p_sub_step(float const dt,
 State dfsph_p_simulation_step(Simulation_config const& config,
                               State&& state,
                               const Solid_state& solid_state,
-                              Temp_data& temp) {
+                              Temp_data& temp,
+                              std::function<void(Simulation_config const&,
+                                                 State const&,
+                                                 Solid_state const&,
+                                                 Temp_data&)> const& user_forces_function) {
     auto const start = std::chrono::high_resolution_clock::now();
 
     auto const particle_count = state.positions.size();
