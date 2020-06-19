@@ -165,18 +165,17 @@ Solid_state world_walls_initial_solid_state(Parameters const& params) {
 
     int const N = 4;
     for (int by = 0; by < N; ++by) {
-        float const byf = float(by + 1) / (N+1);
+        float const byf = float(by + 1) / (N + 1);
 
         for (int bx = 0; bx < N; ++bx) {
-            float const bxf = float(bx+1) / (N+1);
+            float const bxf = float(bx + 1) / (N + 1);
 
             // HACK
             tiny_block({bxf + dist(gen), byf + dist(gen)}, dist(gen));
         }
     }
 
-
-    //for (int i = 0; i < 21; ++i) { tiny_block({dist(gen), dist(gen)}); }
+    // for (int i = 0; i < 21; ++i) { tiny_block({dist(gen), dist(gen)}); }
 
     // tiny_block({0.75f, 0.25f});
     // tiny_block({0.75f, 0.5f});
@@ -204,74 +203,13 @@ Solid_state world_walls_initial_solid_state(Parameters const& params) {
     solid_state.positions.resize(emitted_count);
 
     solid_state.velocities.resize(emitted_count, V2f{0.0f, 0.0f});
-    solid_state.colors.resize(emitted_count, C4uc{200, 155, 20, 255});
+    solid_state.colors.resize(emitted_count, {0.784f, 0.608f, 0.078f, 1.0f});
 
     // do neighborhoods and volumes.
     solid_state =
       compute_neighbor_data_and_volumes(params, std::move(solid_state));
 
     return solid_state;
-}
-
-void accumulate_density_from_solids(
-  size_t const particle_count,
-  float const target_density,
-  float* const densities,
-  float const* const solid_volumes,
-  uint8_t const* const solid_neighbor_counts,
-  Neighbor_values<size_t> const* const solid_neighbor_indices,
-  Neighbor_values<float> const* const solid_neighbor_kernels) {
-    for_each_iota(particle_count, [=](auto const particle_index) {
-        auto const nbhd_count = solid_neighbor_counts[particle_index];
-        if (!nbhd_count) { return; }
-
-        float volume_fraction = 0.0f;
-        auto const& nbhd_indices = solid_neighbor_indices[particle_index];
-        auto const& nbhd_kernels = solid_neighbor_kernels[particle_index];
-        for (uint8_t j = 0; j < nbhd_count; ++j) {
-            auto const other_particle_index = nbhd_indices[j];
-            volume_fraction +=
-              solid_volumes[other_particle_index] * nbhd_kernels[j];
-        }
-
-        densities[particle_index] += target_density * volume_fraction;
-    });
-}
-
-void accumulate_pressure_forces_from_solids(
-  size_t const particle_count,
-  float const mass_per_particle,
-  float const target_density,
-  V2f* const pressure_forces,
-  float const* const solid_volumes,
-  uint8_t const* const solid_neighbor_counts,
-  Neighbor_values<size_t> const* const solid_neighbor_indices,
-  Neighbor_values<V2f> const* const solid_neighbor_kernel_gradients,
-  float const* const pressures,
-  float const* const densities) {
-    auto const M = mass_per_particle;
-
-    for_each_iota(particle_count, [=](auto const particle_index) {
-        auto const nbhd_count = solid_neighbor_counts[particle_index];
-        if (!nbhd_count) { return; }
-
-        auto const pressure = pressures[particle_index];
-        auto const density = densities[particle_index];
-        auto const& nbhd_indices = solid_neighbor_indices[particle_index];
-        auto const& nbhd_grads_w =
-          solid_neighbor_kernel_gradients[particle_index];
-        auto const p_over_rho_sqr = pressure / sqr(density);
-        V2f volume_gradient_sum{0.0f, 0.0f};
-        for (uint8_t j = 0; j < nbhd_count; ++j) {
-            auto const other_particle_index = nbhd_indices[j];
-            auto const grad_w = nbhd_grads_w[j];
-            auto const other_volume = solid_volumes[other_particle_index];
-            volume_gradient_sum += other_volume * grad_w;
-        }
-
-        pressure_forces[particle_index] +=
-          (-M * target_density * p_over_rho_sqr) * volume_gradient_sum;
-    });
 }
 
 }  // namespace emerald::sph2d_box

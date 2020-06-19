@@ -1,7 +1,5 @@
 #pragma once
 
-#include <emerald/sph2d_box/sim_ops.h>
-#include <emerald/sph2d_box/tag.h>
 #include <emerald/sph_common/neighborhood.h>
 #include <emerald/sph_common/types.h>
 
@@ -15,13 +13,13 @@ using namespace emerald::sph_common;
 struct State {
     std::vector<V2f> positions;
     std::vector<V2f> velocities;
-    std::vector<C4uc> colors;
+    std::vector<C4f> colors;
 };
 
 struct Solid_state {
     std::vector<V2f> positions;
     std::vector<V2f> velocities;
-    std::vector<C4uc> colors;
+    std::vector<C4f> colors;
 
     std::vector<V2i> grid_coords;
     std::vector<uint64_t> z_indices;
@@ -42,8 +40,6 @@ struct Temp_data {
     Block_map block_map;
 
     Neighborhood_vectors neighborhood;
-
-    std::vector<Tag> tags;
 
     std::vector<V2f> external_forces;
     std::vector<float> pressures;

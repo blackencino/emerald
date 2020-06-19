@@ -27,8 +27,8 @@ struct Parameters {
         float density_error_average_threshold = 0.0035f;
         float density_error_max_threshold = 0.03f;
 
-        float divergence_error_average_threshold = 0.0005f;
-        float divergence_error_max_threshold = 0.01f;
+        float divergence_error_average_threshold = 0.0035f;
+        float divergence_error_max_threshold = 0.03f;
     } dfsph;
 
     struct {

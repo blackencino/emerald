@@ -1,15 +1,18 @@
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/sph2d_box/bin/multi_scale_draw.h>
 #include <emerald/sph2d_box/dfsph_p.h>
-#include <emerald/sph2d_box/iisph.h>
-#include <emerald/sph2d_box/iisph_ap.h>
-#include <emerald/sph2d_box/iisph_pseudo_ap.h>
+// #include <emerald/sph2d_box/iisph.h>
+// #include <emerald/sph2d_box/iisph_ap.h>
+// #include <emerald/sph2d_box/iisph_pseudo_ap.h>
+#include <emerald/sph2d_box/colors.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
 #include <emerald/util/assert.h>
 #include <emerald/util/functions.h>
 
 #include <OpenEXR/ImathFrustum.h>
+
+#include <vector>
 
 using namespace emerald::simple_sim_viewer;
 using namespace emerald::util;
@@ -21,12 +24,11 @@ protected:
     void init_draw(int w, int h) override {
         Sim3D::init_draw(w, h);
 
-        m_multi_scale_draw = std::make_unique<Multi_scale_draw>(1, 2048);
-        m_multi_scale_draw->update_scale(0,
-                                         m_sim.config.draw_radius,
-                                         m_sim.state.positions.size(),
-                                         m_sim.state.positions.data(),
-                                         m_sim.state.colors.data());
+        // Solids -----------------------
+        m_converted_colors.resize(m_sim.solid_state.positions.size());
+        convert_colors(m_sim.solid_state.positions.size(),
+                       m_converted_colors.data(),
+                       m_sim.solid_state.colors.data());
 
         m_solids_multi_scale_draw = std::make_unique<Multi_scale_draw>(1, 2048);
         m_solids_multi_scale_draw->update_scale(
@@ -34,7 +36,20 @@ protected:
           m_sim.config.draw_radius,
           m_sim.solid_state.positions.size(),
           m_sim.solid_state.positions.data(),
-          m_sim.solid_state.colors.data());
+          m_converted_colors.data());
+
+        // Fluids -------------------------
+        m_converted_colors.resize(m_sim.state.positions.size());
+        convert_colors(m_sim.state.positions.size(),
+                       m_converted_colors.data(),
+                       m_sim.state.colors.data());
+
+        m_multi_scale_draw = std::make_unique<Multi_scale_draw>(1, 2048);
+        m_multi_scale_draw->update_scale(0,
+                                         m_sim.config.draw_radius,
+                                         m_sim.state.positions.size(),
+                                         m_sim.state.positions.data(),
+                                         m_converted_colors.data());
 
         m_updated = true;
     }
@@ -79,16 +94,29 @@ public:
         //                                               std::move(m_sim.state),
         //                                               m_sim.solid_state,
         //                                               m_sim.temp_data);
-        m_sim.state = dfsph_p_simulation_step(m_sim.config,
+        // m_sim.state = dfsph_p_simulation_step(m_sim.config,
+        //                                       std::move(m_sim.state),
+        //                                       m_sim.solid_state,
+        //                                       m_sim.temp_data);
+
+        m_sim.state = dfsph_p_simulation_step(m_sim.time,
+                                              m_sim.config,
                                               std::move(m_sim.state),
                                               m_sim.solid_state,
-                                              m_sim.temp_data);
+                                              m_sim.temp_data,
+                                              m_sim.user_forces,
+                                              m_sim.user_colors);
+
+        m_converted_colors.resize(m_sim.state.positions.size());
+        convert_colors(m_sim.state.positions.size(),
+                       m_converted_colors.data(),
+                       m_sim.state.colors.data());
 
         m_multi_scale_draw->update_scale(0,
                                          m_sim.config.draw_radius,
                                          m_sim.state.positions.size(),
                                          m_sim.state.positions.data(),
-                                         m_sim.state.colors.data());
+                                         m_converted_colors.data());
         m_updated = true;
     }
 
@@ -133,6 +161,7 @@ protected:
 
     std::unique_ptr<Multi_scale_draw> m_multi_scale_draw;
     std::unique_ptr<Multi_scale_draw> m_solids_multi_scale_draw;
+    std::vector<C4uc> m_converted_colors;
     bool m_updated = false;
 };
 

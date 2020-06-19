@@ -1,7 +1,7 @@
 #include <emerald/sph2d_box/dfsph_p.h>
-#include <emerald/sph2d_box/iisph.h>
-#include <emerald/sph2d_box/iisph_ap.h>
-#include <emerald/sph2d_box/iisph_pseudo_ap.h>
+// #include <emerald/sph2d_box/iisph.h>
+// #include <emerald/sph2d_box/iisph_ap.h>
+// #include <emerald/sph2d_box/iisph_pseudo_ap.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
 
@@ -25,8 +25,13 @@ int main(int argc, char* argv[]) {
         // sim.state = iisph_ap_simulation_step(
         //   sim.config, std::move(sim.state), sim.solid_state, sim.temp_data);
 
-        sim.state = dfsph_p_simulation_step(
-          sim.config, std::move(sim.state), sim.solid_state, sim.temp_data);
+        sim.state = dfsph_p_simulation_step(sim.time,
+                                            sim.config,
+                                            std::move(sim.state),
+                                            sim.solid_state,
+                                            sim.temp_data,
+                                            sim.user_forces,
+                                            sim.user_colors);
         auto const end = std::chrono::high_resolution_clock::now();
         auto const elapsed = end - start;
         fmt::print("Frame: {}, duration: {} ms\n",

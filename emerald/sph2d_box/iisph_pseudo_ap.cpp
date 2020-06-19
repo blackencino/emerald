@@ -128,7 +128,7 @@ void iisph_pseudo_ap_sub_step(float const dt,
 
 State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
                                       State&& state,
-                                      const Solid_state& solid_state,
+                                      Solid_state const& solid_state,
                                       Temp_data& temp) {
     auto const start = std::chrono::high_resolution_clock::now();
 

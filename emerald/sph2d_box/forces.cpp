@@ -8,7 +8,8 @@
 
 namespace emerald::sph2d_box {
 
-void compute_all_external_forces(float const dt,
+void compute_all_external_forces(float const global_time_in_seconds,
+                                 float const dt,
                                  Simulation_config const& config,
                                  State const& state,
                                  Solid_state const& solid_state,
@@ -17,7 +18,9 @@ void compute_all_external_forces(float const dt,
     auto const count = state.positions.size();
 
     temp.external_forces.resize(count);
+    fill_array(count, {0.0f, 0.0f}, temp.external_forces.data());
     user_forces(count,
+                global_time_in_seconds,
                 dt,
                 config.mass_per_particle,
                 config.draw_radius,
@@ -64,6 +67,19 @@ void accumulate_gravity_forces(size_t const particle_count,
     for_each_iota(particle_count, [=](auto const i) {
         forces[i][1] -= mass_per_particle * gravity;
     });
+}
+
+User_forces_function default_gravity_forces(float const gravity) {
+    return [gravity](size_t const count,             // count
+                     float const,                    // time (in seconds)
+                     float const,                    // dt
+                     float const mass_per_particle,  // mass per particle
+                     float const,                    // radius per particle
+                     V2f* const forces,              // forces
+                     V2f const* const,               // positions
+                     V2f const* const) {
+        accumulate_gravity_forces(count, mass_per_particle, gravity, forces);
+    };
 }
 
 void accumulate_constant_pole_attraction_forces(size_t const particle_count,

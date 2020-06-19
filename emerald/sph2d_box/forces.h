@@ -12,6 +12,7 @@ namespace emerald::sph2d_box {
 
 using User_forces_function =
   std::function<void(size_t const,        // count
+                     float const,         // time (in seconds)
                      float const,         // dt
                      float const,         // mass per particle
                      float const,         // radius per particle
@@ -19,7 +20,8 @@ using User_forces_function =
                      V2f const* const,    // positions
                      V2f const* const)>;  // velocities
 
-void compute_all_external_forces(float const dt,
+void compute_all_external_forces(float const global_time_in_seconds,
+                                 float const dt,
                                  Simulation_config const& config,
                                  State const& state,
                                  Solid_state const& solid_state,
@@ -27,6 +29,8 @@ void compute_all_external_forces(float const dt,
                                  User_forces_function const& user_forces);
 
 // These should no longer be used because of user forces, but just in case:
+
+User_forces_function default_gravity_forces(float const gravity);
 
 void accumulate_gravity_forces(size_t const particle_count,
                                float const mass_per_particle,

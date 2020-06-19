@@ -1,5 +1,7 @@
+#include <emerald/sph2d_box/config.h>
+#include <emerald/sph2d_box/initial_state.h>
+#include <emerald/sph2d_box/neighborhoods_from_state.h>
 #include <emerald/sph2d_box/parameters.h>
-#include <emerald/sph2d_box/simulation.h>
 #include <emerald/sph2d_box/solids.h>
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/neighborhood.h>
@@ -14,13 +16,13 @@ using namespace emerald::util;
 
 constexpr int REPEATABILITY_TEST_COUNT = 100;
 
-struct Simulation_test : public ::testing::Test {
+struct Repeatability_test : public ::testing::Test {
     Parameters params;
     Simulation_config config;
     Solid_state solid_state;
     State state;
 
-    Simulation_test()
+    Repeatability_test()
       : params()
       , config(params)
       , solid_state(world_walls_initial_solid_state(params))
@@ -28,7 +30,7 @@ struct Simulation_test : public ::testing::Test {
     }
 };
 
-TEST_F(Simulation_test, Simulation_config_constructor) {
+TEST_F(Repeatability_test, Simulation_config_constructor) {
     fmt::print(
       "seconds per sub step: {}\n"
       "mass per particle: {}\n"
@@ -40,7 +42,7 @@ TEST_F(Simulation_test, Simulation_config_constructor) {
       config.pressure_correction_denom);
 }
 
-TEST_F(Simulation_test, Dam_break_initial_state) {
+TEST_F(Repeatability_test, Dam_break_initial_state) {
     fmt::print("Num created: {}\n", state.positions.size());
 
     EXPECT_LT(0, state.positions.size());
@@ -48,7 +50,7 @@ TEST_F(Simulation_test, Dam_break_initial_state) {
     EXPECT_EQ(state.positions.size(), state.colors.size());
 }
 
-TEST_F(Simulation_test, Grid_coords_repeatability) {
+TEST_F(Repeatability_test, Grid_coords_repeatability) {
     auto const count = state.positions.size();
     auto const cell_size = config.params.support * 2.0f;
 
@@ -110,7 +112,7 @@ TEST_F(Simulation_test, Grid_coords_repeatability) {
 }
 
 #if 0
-TEST_F(Simulation_test, Neighborhood_repeatability) {
+TEST_F(Repeatability_test, Neighborhood_repeatability) {
     Temp_data temp;
     compute_all_neighbhorhoods(config, state, temp);
 
@@ -121,7 +123,7 @@ TEST_F(Simulation_test, Neighborhood_repeatability) {
     }
 }
 
-TEST_F(Simulation_test, Density_repeatability) {
+TEST_F(Repeatability_test, Density_repeatability) {
     auto const count = state.positions.size();
     Temp_data temp;
     temp.forces.resize(
@@ -166,7 +168,7 @@ TEST_F(Simulation_test, Density_repeatability) {
     }
 }
 
-TEST_F(Simulation_test, Pressure_repeatability) {
+TEST_F(Repeatability_test, Pressure_repeatability) {
     auto const count = state.positions.size();
     Temp_data temp;
     temp.forces.resize(
@@ -219,7 +221,7 @@ TEST_F(Simulation_test, Pressure_repeatability) {
     }
 }
 
-TEST_F(Simulation_test, Pressure_force_repeatability) {
+TEST_F(Repeatability_test, Pressure_force_repeatability) {
     auto const count = state.positions.size();
     Temp_data temp;
     temp.forces.resize(
@@ -289,7 +291,7 @@ TEST_F(Simulation_test, Pressure_force_repeatability) {
     }
 }
 
-TEST_F(Simulation_test, Sub_step_repeatability) {
+TEST_F(Repeatability_test, Sub_step_repeatability) {
     auto const count = state.positions.size();
     Temp_data temp;
     State next_state{state};

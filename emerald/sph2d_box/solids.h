@@ -23,26 +23,4 @@ Solid_state compute_neighbor_data_and_volumes(Parameters const& params,
 
 Solid_state world_walls_initial_solid_state(Parameters const& params);
 
-// Stuff related to solids
-void accumulate_density_from_solids(
-  size_t const particle_count,
-  float const target_density,
-  float* const densities,
-  float const* const solid_volumes,
-  uint8_t const* const solid_neighbor_counts,
-  Neighbor_values<size_t> const* const solid_neighbor_indices,
-  Neighbor_values<float> const* const solid_neighbor_kernels);
-
-void accumulate_pressure_forces_from_solids(
-  size_t const particle_count,
-  float const mass_per_particle,
-  float const target_density,
-  V2f* const pressure_forces,
-  float const* const solid_volumes,
-  uint8_t const* const solid_neighbor_counts,
-  Neighbor_values<size_t> const* const solid_neighbor_indices,
-  Neighbor_values<V2f> const* const solid_neighbor_kernel_gradients,
-  float const* const pressures,
-  float const* const densities);
-
 }  // namespace emerald::sph2d_box

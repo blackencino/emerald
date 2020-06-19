@@ -156,7 +156,7 @@ void iisph_resize_temp_arrays(size_t const particle_count, Temp_data& temp) {
 
 State iisph_simulation_step(Simulation_config const& config,
                             State&& state,
-                            const Solid_state& solid_state,
+                            Solid_state const& solid_state,
                             Temp_data& temp) {
     flicks const min_sub_time_step = config.params.time_per_step / 30;
     flicks const max_sub_time_step = config.params.time_per_step / 4;

@@ -18,7 +18,7 @@ void iisph_ap_resize_temp_arrays(size_t const particle_count, Temp_data& temp);
 
 State iisph_ap_simulation_step(Simulation_config const& config,
                                State&& state,
-                               const Solid_state& solid_state,
+                               Solid_state const& solid_state,
                                Temp_data& temp);
 
 }  // namespace emerald::sph2d_box

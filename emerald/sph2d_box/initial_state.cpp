@@ -84,7 +84,7 @@ State dam_break_initial_state(Parameters const& params,
     state.velocities.resize(post_kill_count, {0.0f, 0.0f});
 
     state.colors.clear();
-    state.colors.resize(post_kill_count, {128, 128, 255, 255});
+    state.colors.resize(post_kill_count, {0.5f, 0.5f, 1.0f, 1.0f});
 
     fmt::print("Initial dam break state particle count: {}\n",
                state.positions.size());
@@ -117,7 +117,7 @@ State dam_break_initial_state(Parameters const& params,
 //         y = vel_dist(gen);
 //     }
 
-//     state.colors.resize(count, C4uc{128, 128, 255, 255});
+//     state.colors.resize(count, {0.5f, 0.5f, 1.0f, 1.0f});
 //     return state;
 // }
 

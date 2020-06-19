@@ -1,10 +1,9 @@
-#include <emerald/sph2d_box/sim_ops.h>
+#include <emerald/sph2d_box/pcisph_ops.h>
 
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/kernels.h>
 #include <emerald/util/functions.h>
 #include <emerald/util/random.h>
-#include <emerald/z_index/z_index.h>
 
 #include <fmt/format.h>
 
@@ -16,12 +15,13 @@ namespace emerald::sph2d_box {
 
 using namespace emerald::util;
 
-void compute_densities(size_t const particle_count,
-                       float const mass_per_particle,
-                       float const support,
-                       float* const densities,
-                       uint8_t const* const neighbor_counts,
-                       Neighbor_values<float> const* const neighbor_kernels) {
+void pcisph_compute_densities(
+  size_t const particle_count,
+  float const mass_per_particle,
+  float const support,
+  float* const densities,
+  uint8_t const* const neighbor_counts,
+  Neighbor_values<float> const* const neighbor_kernels) {
     auto const w_0 = kernels::W(0.0f, support);
     for_each_iota(particle_count, [=](auto const i) {
         auto const nbhd_count = neighbor_counts[i];
@@ -37,11 +37,36 @@ void compute_densities(size_t const particle_count,
     });
 }
 
-void update_pressures(size_t const particle_count,
-                      float const target_density,
-                      float const pressure_correction_denom,
-                      float* const pressures,
-                      float const* const densities) {
+void pcisph_accumulate_density_from_solids(
+  size_t const particle_count,
+  float const target_density,
+  float* const densities,
+  float const* const solid_volumes,
+  uint8_t const* const solid_neighbor_counts,
+  Neighbor_values<size_t> const* const solid_neighbor_indices,
+  Neighbor_values<float> const* const solid_neighbor_kernels) {
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        auto const nbhd_count = solid_neighbor_counts[particle_index];
+        if (!nbhd_count) { return; }
+
+        float volume_fraction = 0.0f;
+        auto const& nbhd_indices = solid_neighbor_indices[particle_index];
+        auto const& nbhd_kernels = solid_neighbor_kernels[particle_index];
+        for (uint8_t j = 0; j < nbhd_count; ++j) {
+            auto const other_particle_index = nbhd_indices[j];
+            volume_fraction +=
+              solid_volumes[other_particle_index] * nbhd_kernels[j];
+        }
+
+        densities[particle_index] += target_density * volume_fraction;
+    });
+}
+
+void pcisph_update_pressures(size_t const particle_count,
+                             float const target_density,
+                             float const pressure_correction_denom,
+                             float* const pressures,
+                             float const* const densities) {
     for_each_iota(particle_count, [=](auto const i) {
         auto const density_error =
           std::max(densities[i] - target_density, 0.0f);
@@ -50,7 +75,7 @@ void update_pressures(size_t const particle_count,
     });
 }
 
-void accumulate_pressure_forces(
+void pcisph_accumulate_pressure_forces(
   size_t const particle_count,
   float const mass_per_particle,
   float const support,
@@ -116,5 +141,40 @@ void accumulate_pressure_forces(
     });
 }
 
+void pcisph_accumulate_pressure_forces_from_solids(
+  size_t const particle_count,
+  float const mass_per_particle,
+  float const target_density,
+  V2f* const pressure_forces,
+  float const* const solid_volumes,
+  uint8_t const* const solid_neighbor_counts,
+  Neighbor_values<size_t> const* const solid_neighbor_indices,
+  Neighbor_values<V2f> const* const solid_neighbor_kernel_gradients,
+  float const* const pressures,
+  float const* const densities) {
+    auto const M = mass_per_particle;
+
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        auto const nbhd_count = solid_neighbor_counts[particle_index];
+        if (!nbhd_count) { return; }
+
+        auto const pressure = pressures[particle_index];
+        auto const density = densities[particle_index];
+        auto const& nbhd_indices = solid_neighbor_indices[particle_index];
+        auto const& nbhd_grads_w =
+          solid_neighbor_kernel_gradients[particle_index];
+        auto const p_over_rho_sqr = pressure / sqr(density);
+        V2f volume_gradient_sum{0.0f, 0.0f};
+        for (uint8_t j = 0; j < nbhd_count; ++j) {
+            auto const other_particle_index = nbhd_indices[j];
+            auto const grad_w = nbhd_grads_w[j];
+            auto const other_volume = solid_volumes[other_particle_index];
+            volume_gradient_sum += other_volume * grad_w;
+        }
+
+        pressure_forces[particle_index] +=
+          (-M * target_density * p_over_rho_sqr) * volume_gradient_sum;
+    });
+}
 
 }  // namespace emerald::sph2d_box
