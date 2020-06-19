@@ -1,8 +1,7 @@
 #include <emerald/sph2d_box/iisph_pseudo_ap.h>
 
-#include <emerald/sph2d_box/iisph_ap.h>
 #include <emerald/sph2d_box/iisph_pseudo_ap_ops.h>
-#include <emerald/sph2d_box/simulation.h>
+#include <emerald/sph2d_box/neighborhoods_from_state.h>
 #include <emerald/sph_common/cfl.h>
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/density.h>
@@ -19,16 +18,24 @@
 
 namespace emerald::sph2d_box {
 
-void iisph_pseudo_ap_sub_step(float const dt,
+void iisph_pseudo_ap_sub_step(float const global_time_in_seconds,
+                              float const dt,
                               Simulation_config const& config,
                               State& state,
                               Solid_state const& solid_state,
-                              Temp_data& temp) {
+                              Temp_data& temp,
+                              User_forces_function const& user_forces) {
     auto const particle_count = state.positions.size();
 
     compute_all_neighbhorhoods(config, state, solid_state, temp);
     compute_all_neighborhood_kernels(config, temp);
-    compute_all_external_forces(config, state, temp);
+    compute_all_external_forces(global_time_in_seconds,
+                                dt,
+                                config,
+                                state,
+                                solid_state,
+                                temp,
+                                user_forces);
 
     compute_densities(particle_count,
                       config.params.support,
@@ -126,14 +133,30 @@ void iisph_pseudo_ap_sub_step(float const dt,
       temp.pressure_accelerations.data());
 }
 
-State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
+void iisph_pseudo_ap_resize_temp_arrays(size_t const particle_count,
+                                        Temp_data& temp) {
+    temp.external_forces.resize(particle_count);
+    temp.neighborhood.resize(particle_count);
+    temp.solid_neighborhood.resize(particle_count);
+    temp.densities.resize(particle_count);
+    temp.density_stars.resize(particle_count);
+    temp.fluid_volumes.resize(particle_count);
+    temp.aiis.resize(particle_count);
+    temp.pressures.resize(particle_count);
+    temp.pressure_accelerations.resize(particle_count);
+}
+
+State iisph_pseudo_ap_simulation_step(flicks const global_time,
+                                      Simulation_config const& config,
                                       State&& state,
                                       Solid_state const& solid_state,
-                                      Temp_data& temp) {
+                                      Temp_data& temp,
+                                      User_forces_function const& user_forces,
+                                      User_colors_function const& user_colors) {
     auto const start = std::chrono::high_resolution_clock::now();
 
     auto const particle_count = state.positions.size();
-    iisph_ap_resize_temp_arrays(particle_count, temp);
+    iisph_pseudo_ap_resize_temp_arrays(particle_count, temp);
     compute_constant_volumes(particle_count,
                              config.params.target_density,
                              config.mass_per_particle,
@@ -146,6 +169,7 @@ State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
     flicks const time_per_sub_step =
       config.params.time_per_step / remaining_sub_steps;
     int sub_steps = 0;
+    auto time = global_time;
     while (remaining_sub_steps > 0) {
         auto const cfl_step = cfl_maximum_time_step(
           particle_count, config.params.support, 0.4f, state.velocities.data());
@@ -162,18 +186,22 @@ State iisph_pseudo_ap_simulation_step(Simulation_config const& config,
             sub_time_step,
           "TIME DISCRETIZATION ERROR");
 
-        iisph_pseudo_ap_sub_step(
-          to_seconds(sub_time_step), config, state, solid_state, temp);
+        iisph_pseudo_ap_sub_step(to_seconds(time),
+                                 to_seconds(sub_time_step),
+                                 config,
+                                 state,
+                                 solid_state,
+                                 temp,
+                                 user_forces);
 
         remaining_sub_steps -= num_sub_steps;
         ++sub_steps;
+
+        time += sub_time_step;
     }
 
-    state.colors.resize(particle_count);
-    compute_colors(particle_count,
-                   config.params.target_density,
-                   state.colors.data(),
-                   temp.densities.data());
+    compute_colors(
+      to_seconds(time), config, state, solid_state, temp, user_colors);
 
     auto const end = std::chrono::high_resolution_clock::now();
 
