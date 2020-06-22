@@ -83,21 +83,21 @@ public:
     void step() override {
         // m_sim.step();
 
-        m_sim.state = iisph_ap_simulation_step(m_sim.time,
-                                               m_sim.config,
-                                               std::move(m_sim.state),
-                                               m_sim.solid_state,
-                                               m_sim.temp_data,
-                                               m_sim.user_forces,
-                                               m_sim.user_colors);
+        // m_sim.state = iisph_ap_simulation_step(m_sim.time,
+        //                                        m_sim.config,
+        //                                        std::move(m_sim.state),
+        //                                        m_sim.solid_state,
+        //                                        m_sim.temp_data,
+        //                                        m_sim.user_forces,
+        //                                        m_sim.user_colors);
 
-        // m_sim.state = iisph_pseudo_ap_simulation_step(m_sim.time,
-        //                                               m_sim.config,
-        //                                               std::move(m_sim.state),
-        //                                               m_sim.solid_state,
-        //                                               m_sim.temp_data,
-        //                                               m_sim.user_forces,
-        //                                               m_sim.user_colors);
+        m_sim.state = iisph_pseudo_ap_simulation_step(m_sim.time,
+                                                      m_sim.config,
+                                                      std::move(m_sim.state),
+                                                      m_sim.solid_state,
+                                                      m_sim.temp_data,
+                                                      m_sim.user_forces,
+                                                      m_sim.user_colors);
 
         // m_sim.state = dfsph_p_simulation_step(m_sim.time,
         //                                       m_sim.config,

@@ -54,4 +54,11 @@ std::pair<float, float> iisph_pseudo_ap_iterate_pseudo_pressures_in_place(
   float const* const solid_volumes,
   Neighborhood_pointers const solid_neighborhood);
 
+void iisph_pseudo_ap_integrate_velocities_and_positions_in_place(
+  size_t const particle_count,
+  float const dt,
+  V2f* const velocities,
+  V2f* const positions,
+  V2f const* const pseudo_pressure_displacements);
+
 }  // namespace emerald::sph2d_box
