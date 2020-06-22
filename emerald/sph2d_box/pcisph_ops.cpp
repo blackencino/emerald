@@ -1,10 +1,9 @@
-#include <emerald/sph2d_box/sim_ops.h>
+#include <emerald/sph2d_box/pcisph_ops.h>
 
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/kernels.h>
 #include <emerald/util/functions.h>
 #include <emerald/util/random.h>
-#include <emerald/z_index/z_index.h>
 
 #include <fmt/format.h>
 
@@ -16,83 +15,13 @@ namespace emerald::sph2d_box {
 
 using namespace emerald::util;
 
-void accumulate_gravity_forces(size_t const particle_count,
-                               float const mass_per_particle,
-                               float const gravity,
-                               V2f* const forces) {
-    for_each_iota(particle_count, [=](auto const i) {
-        forces[i][1] -= mass_per_particle * gravity;
-    });
-}
-
-void accumulate_constant_pole_attraction_forces(size_t const particle_count,
-                                                float const magnitude,
-                                                V2f const pole,
-                                                V2f* const forces,
-                                                V2f const* const positions) {
-    for_each_iota(particle_count, [=](auto const i) {
-        auto const r = positions[i] - pole;
-        auto const rN = r.normalized();
-
-        forces[i] -= magnitude * rN;
-
-        V3f const torque{
-          0.0f, 0.0f, 0.125f * magnitude /*/ (1.0f + r.dot(r))*/};
-        V3f const r3{rN[0], rN[1], 0.0f};
-        V3f const turn = torque.cross(r3);
-
-        forces[i] += V2f{turn[0], turn[1]};
-    });
-}
-
-// This isn't the best drag force, it needs to be conscious of timestep.
-void accumulate_simple_drag_forces(size_t const particle_count,
-                                   float const magnitude,
-                                   float const particle_diameter,
-                                   V2f* const forces,
-                                   V2f const* const velocities) {
-    accumulate(
-      particle_count, -magnitude * particle_diameter, forces, velocities);
-}
-
-void accumulate_anti_coupling_repulsive_forces(
+void pcisph_compute_densities(
   size_t const particle_count,
-  float const max_distance,
-  float const force_magnitude,
-  V2f* const forces,
+  float const mass_per_particle,
+  float const support,
+  float* const densities,
   uint8_t const* const neighbor_counts,
-  Neighbor_values<float> const* const neighbor_distances) {
-    for_each_iota(particle_count, [=](auto const i) {
-        auto const nbhd_count = neighbor_counts[i];
-        if (!nbhd_count) { return; }
-
-        auto const& distances = neighbor_distances[i];
-        std::uniform_real_distribution<float> angle_dist{float(-M_PI),
-                                                         float(M_PI)};
-
-        for (uint8_t j = 0; j < nbhd_count; ++j) {
-            if (distances[j] < max_distance) {
-                // add a random offset.
-                Lehmer_rand_gen_64 gen{i};
-                auto const angle = angle_dist(gen);
-
-                forces[i] +=
-                  force_magnitude * V2f{std::cos(angle), std::sin(angle)};
-            } else {
-                // Our distances are sorted from least to most,
-                // so once we find a distance that's too great we can bail.
-                return;
-            }
-        }
-    });
-}
-
-void compute_densities(size_t const particle_count,
-                       float const mass_per_particle,
-                       float const support,
-                       float* const densities,
-                       uint8_t const* const neighbor_counts,
-                       Neighbor_values<float> const* const neighbor_kernels) {
+  Neighbor_values<float> const* const neighbor_kernels) {
     auto const w_0 = kernels::W(0.0f, support);
     for_each_iota(particle_count, [=](auto const i) {
         auto const nbhd_count = neighbor_counts[i];
@@ -108,11 +37,36 @@ void compute_densities(size_t const particle_count,
     });
 }
 
-void update_pressures(size_t const particle_count,
-                      float const target_density,
-                      float const pressure_correction_denom,
-                      float* const pressures,
-                      float const* const densities) {
+void pcisph_accumulate_density_from_solids(
+  size_t const particle_count,
+  float const target_density,
+  float* const densities,
+  float const* const solid_volumes,
+  uint8_t const* const solid_neighbor_counts,
+  Neighbor_values<size_t> const* const solid_neighbor_indices,
+  Neighbor_values<float> const* const solid_neighbor_kernels) {
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        auto const nbhd_count = solid_neighbor_counts[particle_index];
+        if (!nbhd_count) { return; }
+
+        float volume_fraction = 0.0f;
+        auto const& nbhd_indices = solid_neighbor_indices[particle_index];
+        auto const& nbhd_kernels = solid_neighbor_kernels[particle_index];
+        for (uint8_t j = 0; j < nbhd_count; ++j) {
+            auto const other_particle_index = nbhd_indices[j];
+            volume_fraction +=
+              solid_volumes[other_particle_index] * nbhd_kernels[j];
+        }
+
+        densities[particle_index] += target_density * volume_fraction;
+    });
+}
+
+void pcisph_update_pressures(size_t const particle_count,
+                             float const target_density,
+                             float const pressure_correction_denom,
+                             float* const pressures,
+                             float const* const densities) {
     for_each_iota(particle_count, [=](auto const i) {
         auto const density_error =
           std::max(densities[i] - target_density, 0.0f);
@@ -121,7 +75,7 @@ void update_pressures(size_t const particle_count,
     });
 }
 
-void accumulate_pressure_forces(
+void pcisph_accumulate_pressure_forces(
   size_t const particle_count,
   float const mass_per_particle,
   float const support,
@@ -187,18 +141,39 @@ void accumulate_pressure_forces(
     });
 }
 
-void compute_colors(size_t const particle_count,
-                    float const target_density,
-                    C4uc* const colors,
-                    float const* const densities) {
-    for_each_iota(particle_count, [=](auto const i) {
-        auto const norm_d = densities[i] / (1.1f * target_density);
+void pcisph_accumulate_pressure_forces_from_solids(
+  size_t const particle_count,
+  float const mass_per_particle,
+  float const target_density,
+  V2f* const pressure_forces,
+  float const* const solid_volumes,
+  uint8_t const* const solid_neighbor_counts,
+  Neighbor_values<size_t> const* const solid_neighbor_indices,
+  Neighbor_values<V2f> const* const solid_neighbor_kernel_gradients,
+  float const* const pressures,
+  float const* const densities) {
+    auto const M = mass_per_particle;
 
-        colors[i] = {
-          static_cast<uint8_t>(255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
-          static_cast<uint8_t>(255.0f * std::clamp(1.0f - norm_d, 0.0f, 1.0f)),
-          255,
-          255};
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        auto const nbhd_count = solid_neighbor_counts[particle_index];
+        if (!nbhd_count) { return; }
+
+        auto const pressure = pressures[particle_index];
+        auto const density = densities[particle_index];
+        auto const& nbhd_indices = solid_neighbor_indices[particle_index];
+        auto const& nbhd_grads_w =
+          solid_neighbor_kernel_gradients[particle_index];
+        auto const p_over_rho_sqr = pressure / sqr(density);
+        V2f volume_gradient_sum{0.0f, 0.0f};
+        for (uint8_t j = 0; j < nbhd_count; ++j) {
+            auto const other_particle_index = nbhd_indices[j];
+            auto const grad_w = nbhd_grads_w[j];
+            auto const other_volume = solid_volumes[other_particle_index];
+            volume_gradient_sum += other_volume * grad_w;
+        }
+
+        pressure_forces[particle_index] +=
+          (-M * target_density * p_over_rho_sqr) * volume_gradient_sum;
     });
 }
 

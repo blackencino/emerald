@@ -1,4 +1,4 @@
-#include <emerald/sph2d_box/iisph_ap_ops.h>
+#include <emerald/sph2d_box/iisph_pseudo_ap_ops.h>
 
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/kernels.h>

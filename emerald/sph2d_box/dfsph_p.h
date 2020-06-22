@@ -1,10 +1,9 @@
 #pragma once
 
-#include <emerald/sph2d_box/iisph.h>
-#include <emerald/sph2d_box/iisph_ap.h>
-#include <emerald/sph2d_box/iisph_pseudo_ap.h>
+#include <emerald/sph2d_box/colors.h>
+#include <emerald/sph2d_box/config.h>
+#include <emerald/sph2d_box/forces.h>
 #include <emerald/sph2d_box/parameters.h>
-#include <emerald/sph2d_box/simulation.h>
 #include <emerald/sph2d_box/state.h>
 
 #include <emerald/util/flicks.h>
@@ -30,18 +29,23 @@ void dfsph_p_resize_and_init_temp_arrays(size_t const particle_count,
 
 void dfsph_p_init(Simulation_config const& config,
                   State const& state,
-                  const Solid_state& solid_state,
+                  Solid_state const& solid_state,
                   Temp_data& temp);
 
-void dfsph_p_sub_step(float const dt,
+void dfsph_p_sub_step(float const global_time_in_seconds,
+                      float const dt,
                       Simulation_config const& config,
                       State& state,
                       Solid_state const& solid_state,
-                      Temp_data& temp);
+                      Temp_data& temp,
+                      User_forces_function const& user_forces);
 
-State dfsph_p_simulation_step(Simulation_config const& config,
+State dfsph_p_simulation_step(flicks const global_time,
+                              Simulation_config const& config,
                               State&& state,
-                              const Solid_state& solid_state,
-                              Temp_data& temp);
+                              Solid_state const& solid_state,
+                              Temp_data& temp,
+                              User_forces_function const& user_forces,
+                              User_colors_function const& colors);
 
 }  // namespace emerald::sph2d_box
