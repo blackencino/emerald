@@ -1,71 +1,46 @@
 #pragma once
 
+#include <emerald/sph2d_box/colors.h>
+#include <emerald/sph2d_box/config.h>
+#include <emerald/sph2d_box/forces.h>
+#include <emerald/sph2d_box/initial_state.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/solids.h>
 #include <emerald/sph2d_box/state.h>
 
+#include <optional>
+
 namespace emerald::sph2d_box {
 
-struct Simulation_config {
-    Parameters params;
-    float seconds_per_sub_step = 1.0f;
-    float mass_per_particle = 1.0f;
-    float draw_radius = 1.0f;
-
-    // This is very PCI-SPH-specific
-    float pressure_correction_denom = 1.0f;
-
-    Simulation_config() = default;
-    explicit Simulation_config(Parameters const& in_params);
-};
-
-State dam_break_initial_state(Parameters const& params,
-                              Solid_state const& solid_state);
-
-// State random_initial_state(Parameters const& params);
-
-void compute_all_neighbhorhoods(Simulation_config const& config,
-                                State const& state,
-                                Solid_state const& solid_state,
-                                Temp_data& temp);
-
-void compute_all_neighborhood_kernels(Simulation_config const& config,
-                                      Temp_data& temp);
-
-void recompute_neighborhood_non_index_values(Simulation_config const& config,
-                                             Solid_state const& solid_state,
-                                             Temp_data& temp);
-
-void compute_all_external_forces(Simulation_config const& config,
-                                 State const& state,
-                                 Temp_data& temp);
-
-void sub_step(Simulation_config const& config,
-              State& state,
-              Solid_state const& solid_state,
-              Temp_data& temp);
-
-State simulation_step(Simulation_config const& config,
-                      State&& state,
-                      Solid_state const& solid_state,
-                      Temp_data& temp_data);
+//------------------------------------------------------------------------------
+// The goal of this class is not to be a simulation framework top,
+// but rather to demonstrate how the simulation tools might be used.
+// There are lots of different ways to calculate initial state,
+// and lots of different ways to update the state. For example, a
+// simulator running in a gRPC environment will want to copy the state
+// with each timestep so that it can communicate the results while it
+// has the next iteration computed in a separate thread or threads.
 
 struct EZ_EXAMPLE_SIM {
+    enum Method { PCISPH, IISPH, IISPH_AP, IISPH_PSEUDO_AP, DFSPH_P };
+
     Simulation_config config;
     Solid_state solid_state;
     State state;
     Temp_data temp_data;
+    User_forces_function user_forces;
+    User_colors_function user_colors;
+    flicks time = flicks{0};
+    Method method = Method::IISPH_PSEUDO_AP;
 
-    explicit EZ_EXAMPLE_SIM(Parameters const& params)
-      : config(params)
-      , solid_state(world_walls_initial_solid_state(params))
-      , state(dam_break_initial_state(params, solid_state)) {
-    }
+    explicit EZ_EXAMPLE_SIM(
+      Parameters const& params,
+      Solid_initial_state_function const& solid_initial_state,
+      Fluid_initial_state_function const& fluid_initial_state,
+      User_forces_function user_forces,
+      User_colors_function user_colors);
 
-    void step() {
-        state =
-          simulation_step(config, std::move(state), solid_state, temp_data);
-    }
+    void step(std::optional<Method> const method_override = std::nullopt);
 };
 
 }  // namespace emerald::sph2d_box

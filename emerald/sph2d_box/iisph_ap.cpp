@@ -1,16 +1,17 @@
 #include <emerald/sph2d_box/iisph_ap.h>
 
+#include <emerald/sph2d_box/adaptive_time_step.h>
 #include <emerald/sph2d_box/iisph_ap_ops.h>
-#include <emerald/sph2d_box/simulation.h>
+#include <emerald/sph2d_box/neighborhoods_from_state.h>
 #include <emerald/sph_common/cfl.h>
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/density.h>
 #include <emerald/sph_common/dynamics.h>
 #include <emerald/sph_common/pressure.h>
 #include <emerald/sph_common/volume.h>
+#include <emerald/util/assert.h>
 #include <emerald/util/flicks.h>
 #include <emerald/util/format.h>
-#include <emerald/util/safe_divide.h>
 
 #include <fmt/format.h>
 
@@ -18,16 +19,46 @@
 
 namespace emerald::sph2d_box {
 
-void iisph_ap_sub_step(float const dt,
-                       Simulation_config const& config,
-                       State& state,
-                       Solid_state const& solid_state,
-                       Temp_data& temp) {
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// This solver is an implementation of the Implicit Incompressible SPH method
+// originally published in:
+// Implicit Incompressible SPH"
+// by Markus Ihmsen, Jens Cornelis, Barbara Solenthaler, Christopher Horvath,
+// and Matthias Teschner
+// IEEE Transactions on Visualization and Computer Graphics, 2013
+//
+// That original paper was written in terms of forces, and a more elegant
+// formulation written instead in terms of "acceleration due to pressure"
+// was presented in:
+//"Smoothed Particle Hydrodynamics Techniques for the Physics Based Simulation
+// of Fluids and Solids", by Dan Koschier, Jan Bender,
+// Barbara Solenthaler, and Matthias Teschner,
+// Eurographics Proceedings 2019
+//
+// This solver implements the acceleration due to pressure IISPH formulation,
+// hence the name "IISPH_AP".
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+static void iisph_ap_sub_step(float const global_time_in_seconds,
+                              float const dt,
+                              Simulation_config const& config,
+                              State& state,
+                              Solid_state const& solid_state,
+                              Temp_data& temp,
+                              User_forces_function const& user_forces) {
     auto const particle_count = state.positions.size();
 
     compute_all_neighbhorhoods(config, state, solid_state, temp);
     compute_all_neighborhood_kernels(config, temp);
-    compute_all_external_forces(config, state, temp);
+    compute_all_external_forces(global_time_in_seconds,
+                                dt,
+                                config,
+                                state,
+                                solid_state,
+                                temp,
+                                user_forces);
 
     compute_densities(particle_count,
                       config.params.support,
@@ -87,22 +118,22 @@ void iisph_ap_sub_step(float const dt,
             solid_state.volumes.data(),
             temp.solid_neighborhood.pointers());
 
-        fmt::print("\t Pressure iter: {}, error avg: {}, max: {}\n",
-                   iter,
-                   error_average,
-                   error_max);
+        // fmt::print("\t Pressure iter: {}, error avg: {}, max: {}\n",
+        //            iter,
+        //            error_average,
+        //            error_max);
 
         if (iter > 1 &&
             error_average <= config.params.iisph.error_average_threshold &&
             error_max <= config.params.iisph.error_max_threshold) {
-            fmt::print(
-              "IISPH AP pressure solve early exit. err avg: {}, max: {}\n",
-              error_average,
-              error_max);
+            // fmt::print(
+            //   "IISPH AP pressure solve early exit. err avg: {}, max: {}\n",
+            //   error_average,
+            //   error_max);
             break;
         }
     }
-    fmt::print("IISPH AP pressure iters: {}\n", iter);
+    // fmt::print("IISPH AP pressure iters: {}\n", iter);
 
     compute_pressure_accelerations(particle_count,
                                    config.params.target_density,
@@ -122,7 +153,8 @@ void iisph_ap_sub_step(float const dt,
       temp.pressure_accelerations.data());
 }
 
-void iisph_ap_resize_temp_arrays(size_t const particle_count, Temp_data& temp) {
+static void iisph_ap_resize_temp_arrays(size_t const particle_count,
+                                        Temp_data& temp) {
     temp.external_forces.resize(particle_count);
     temp.neighborhood.resize(particle_count);
     temp.solid_neighborhood.resize(particle_count);
@@ -134,65 +166,26 @@ void iisph_ap_resize_temp_arrays(size_t const particle_count, Temp_data& temp) {
     temp.pressure_accelerations.resize(particle_count);
 }
 
-State iisph_ap_simulation_step(Simulation_config const& config,
+State iisph_ap_simulation_step(flicks const global_time,
+                               Simulation_config const& config,
                                State&& state,
-                               const Solid_state& solid_state,
-                               Temp_data& temp) {
-    flicks const min_time_step = config.params.time_per_step / 1000;
-
-    auto const particle_count = state.positions.size();
-    iisph_ap_resize_temp_arrays(particle_count, temp);
-    compute_constant_volumes(particle_count,
-                             config.params.target_density,
-                             config.mass_per_particle,
-                             temp.fluid_volumes.data());
-
-    // for (auto const vel : state.velocities) {
-    //     fmt::print("Velocity: {}\n", vel);
-    // }
-
-    int sub_steps = 0;
-    flicks remaining_time_step = config.params.time_per_step;
-    while (remaining_time_step.count() > 0) {
-        auto const cfl_step = cfl_maximum_time_step(
-          particle_count, config.params.support, 0.4f, state.velocities.data());
-
-        auto const cfl_ratio =
-          to_seconds(config.params.time_per_step) / to_seconds(cfl_step);
-        fmt::print("CFL RATIO: {}\n", cfl_ratio);
-        // CJH HACK
-        // if (cfl_step < min_time_step) {
-        //     fmt::print(stderr,
-        //                "WARNING: CFL max time step is too small: {}\n",
-        //                to_seconds(cfl_step));
-        // }
-        // auto sub_time_step =
-        //   std::clamp(cfl_step, min_time_step, remaining_time_step);
-        // if ((remaining_time_step - sub_time_step) < min_time_step) {
-        //     sub_time_step = flicks{(remaining_time_step.count() + 1) / 2};
-        // }
-        // auto const sub_time_step = std::min(cfl_step, remaining_time_step);
-        // auto const sub_time_step = remaining_time_step;
-        auto const sub_time_step = config.params.time_per_step / 10;
-        fmt::print("Remaining time step: {}, sub time step: {}\n",
-                   to_seconds(remaining_time_step),
-                   to_seconds(sub_time_step));
-        iisph_ap_sub_step(
-          to_seconds(sub_time_step), config, state, solid_state, temp);
-
-        remaining_time_step -= sub_time_step;
-        ++sub_steps;
-    }
-
-    state.colors.resize(particle_count);
-    compute_colors(particle_count,
-                   config.params.target_density,
-                   state.colors.data(),
-                   temp.densities.data());
-
-    fmt::print("IISPH AP frame complete, sub_steps: {}\n", sub_steps);
-
-    return std::move(state);
+                               Solid_state const& solid_state,
+                               Temp_data& temp,
+                               User_forces_function const& user_forces,
+                               User_colors_function const& user_colors) {
+    return std_adaptive_time_step("IISPH AP",
+                                  iisph_ap_resize_temp_arrays,
+                                  iisph_ap_sub_step,
+                                  60,
+                                  4,
+                                  0.4f,
+                                  global_time,
+                                  config,
+                                  std::move(state),
+                                  solid_state,
+                                  temp,
+                                  user_forces,
+                                  user_colors);
 }
 
 }  // namespace emerald::sph2d_box

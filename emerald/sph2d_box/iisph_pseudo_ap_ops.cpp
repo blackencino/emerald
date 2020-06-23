@@ -93,33 +93,23 @@ void iisph_pseudo_ap_density_stars_and_pseudo_diagonals(
             }
         }
 
-        auto const denom = sqr(self_density);
-        auto const sum_all = sum_mf_gradwif + sum_mb_gradwib;
-        auto const sum_all_dot_sum_all = sum_all.dot(sum_all);
-        auto const numer =
-          sum_all_dot_sum_all + (self_mass * sum_mf_gradwif_dot_gradwif);
+        auto const self_denom = sqr(self_density);
 
-        pseudo_diagonals[particle_index] =
-          -safe_divide(numer, denom).value_or(0.0f);
+        if (is_safe_divide(sum_mf_gradwif, self_denom) &&
+            is_safe_divide(sum_mb_gradwib, self_denom) &&
+            is_safe_divide(sum_mf_gradwif_dot_gradwif, self_denom)) {
+            auto const aii =
+              (sum_mf_gradwif + sum_mb_gradwib)
+                .dot(sum_mf_gradwif / sqr(self_density) +
+                     sum_mb_gradwib / sqr(self_density)) +
+              self_mass * sum_mf_gradwif_dot_gradwif / sqr(self_density);
 
-        // if (safe_divide(sum_mf_gradwif_mb_gradwib, self_denom) &&
-        //     safe_divide(sum_mf_gradwif_dot_gradwif, self_denom)) {
-        //     auto const aii =
-        //       (sum_mf_gradwif + sum_mb_gradwib)
-        //         .dot(sum_mf_gradwif / sqr(self_density) +
-        //              sum_mb_gradwib / sqr(self_density)) +
-        //       self_mass * sum_mf_gradwif_dot_gradwif / sqr(self_density);
+            pseudo_diagonals[particle_index] = -aii;
+        } else {
+            pseudo_diagonals[particle_index] = 0.0f;
+        }
 
-        //     pseudo_diagonals[particle_index] = -aii;
-        // } else {
-        //     pseudo_diagonals[particle_index] = 0.0f;
-        // }
-
-        // CJH HACK? added the max
-        // It really should be the kernel0, but I don't want to bother with
-        // passing in the support
-        density_stars[particle_index] =
-          std::max(0.0f, self_density + dt * divergence);
+        density_stars[particle_index] = self_density + dt * divergence;
     });
 }
 
@@ -327,6 +317,26 @@ std::pair<float, float> iisph_pseudo_ap_iterate_pseudo_pressures_in_place(
     auto const error_average_numer = static_cast<double>(integral_error_sum);
     auto const error_average_denom = static_cast<double>(1000 * particle_count);
     return {error_average_numer / error_average_denom, error_max};
+}
+
+//------------------------------------------------------------------------------
+// Remember that this one is special! Don't replace it with the common version!!
+void iisph_pseudo_ap_integrate_velocities_and_positions_in_place(
+  size_t const particle_count,
+  float const dt,
+  V2f* const velocities,
+  V2f* const positions,
+  V2f const* const pseudo_pressure_displacements) {
+    for_each_iota(particle_count, [=](auto const particle_index) {
+        auto const velocity_star = velocities[particle_index];
+        auto const old_position = positions[particle_index];
+        auto const displacement = pseudo_pressure_displacements[particle_index];
+        positions[particle_index] =
+          old_position + (dt * velocity_star) + displacement;
+        if (safe_divide(velocity_star, dt)) {
+            velocities[particle_index] = velocity_star + (displacement / dt);
+        }
+    });
 }
 
 }  // namespace emerald::sph2d_box

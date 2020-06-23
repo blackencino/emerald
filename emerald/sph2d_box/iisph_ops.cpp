@@ -142,7 +142,7 @@ static void iisph_compute_aiis_and_density_stars_partial(
                   densities[neighbor_particle_index];
                 auto const numer = -sqr(dt) * mass * grad_w;
                 auto const denom = sqr(neighbor_density);
-                if (safe_divide(numer, denom)) {
+                if (is_safe_divide(numer, denom)) {
                     auto const dij = numer / denom;
                     auto const dji = -dij;
                     aii += mass * ((dii - dji).dot(grad_w));
@@ -250,7 +250,7 @@ void iisph_compute_sum_dij_pjs(size_t const particle_count,
 
             auto const numer = -sqr(dt) * mass * pressure * grad_w;
             auto const denom = sqr(density);
-            if (safe_divide(numer, denom)) { sum_dij_pj += numer / denom; }
+            if (is_safe_divide(numer, denom)) { sum_dij_pj += numer / denom; }
         }
 
         sum_dij_pjs[particle_index] = sum_dij_pj;
@@ -382,7 +382,7 @@ std::pair<float, float> iisph_compute_new_pressures(
           auto const beta = betas_in_new_pressures_out[particle_index];
 
           auto const numer = target_density - density_star - beta;
-          if (!safe_divide(numer, alpha)) {
+          if (!is_safe_divide(numer, alpha)) {
               betas_in_new_pressures_out[particle_index] = old_pressure;
               fmt::print(
                 "ERROR: safe_divide fail in compute new pressures. numer: {}, "

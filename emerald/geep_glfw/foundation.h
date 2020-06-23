@@ -6,7 +6,7 @@
 
 // This is a temporary fix that gets around us not currently using GLEW
 // for binding the GL function pointers. This is not completely safe.
-#define GL_EXT_PROTOTYPES 1
+#define GL_GLEXT_PROTOTYPES 1
 
 #include <GLFW/glfw3.h>
 

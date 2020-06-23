@@ -1,6 +1,8 @@
 #include <emerald/sph2d_box/dfsph_p.h>
 
+#include <emerald/sph2d_box/adaptive_time_step.h>
 #include <emerald/sph2d_box/dfsph_p_ops.h>
+#include <emerald/sph2d_box/neighborhoods_from_state.h>
 #include <emerald/sph_common/cfl.h>
 #include <emerald/sph_common/common.h>
 #include <emerald/sph_common/density.h>
@@ -19,11 +21,48 @@
 
 namespace emerald::sph2d_box {
 
-void dfsph_p_correct_density_error(float const dt,
-                                   Simulation_config const& config,
-                                   State& state,
-                                   Solid_state const& solid_state,
-                                   Temp_data& temp) {
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// This solver is an implementation of the Divergence Free SPH method originally
+// published in:
+// "Divergence-Free SPH for Incompressible and Viscous Fluids"
+// by Jan Bender and Dan Koschier,
+// IEEE Transactions on Visualization and Computer Graphics, 2016
+// The method described in this paper involves computing "stiffness"
+// coefficients, which the paper uses the greek letter "kappa" for. These
+// stiffnesses can be interpreted as pressures, and then normal pressure
+// solver tools brought to bear.
+//
+// The magnificent paper,
+// "Smoothed Particle Hydrodynamics Techniques for the Physics Based Simulation
+// of Fluids and Solids", by Dan Koschier, Jan Bender,
+// Barbara Solenthaler, and Matthias Teschner,
+// Eurographics Proceedings 2019
+// contains a reformulation of
+// DFSPH written in terms of pressure instead of stiffness, and the code
+// here uses that formulation, hence the prefix DFSPH_P.
+//
+// We've made one other change here, in order to adapt to our simulation
+// framework. The DFSPH paper and its reformulation above has a weird split
+// timestep, where the position update takes place in the middle of the
+// simulation step. This causes several problems - firstly, it requires
+// a "pre-init" step before the first iteration. Secondly, it requires that
+// any updates of external state, such as rigid body positions, be done
+// internally, which is problematic. It also makes emission and deletion of
+// new particles really challenging, requiring a whole bunch of assumptions
+// that entangle the solver. So, as noted in the substep below, we rotate
+// the steps of the sub-step such that position update is last, and
+// neighborhood computation is first. We've noticed no discernable problems
+// with this approach.
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
+static void dfsph_p_correct_density_error(float const dt,
+                                          Simulation_config const& config,
+                                          State& state,
+                                          Solid_state const& solid_state,
+                                          Temp_data& temp) {
     auto const particle_count = state.positions.size();
 
     // Warm start
@@ -94,11 +133,11 @@ void dfsph_p_correct_density_error(float const dt,
     }
 }
 
-void dfsph_p_correct_divergence_error(float const dt,
-                                      Simulation_config const& config,
-                                      State& state,
-                                      Solid_state const& solid_state,
-                                      Temp_data& temp) {
+static void dfsph_p_correct_divergence_error(float const dt,
+                                             Simulation_config const& config,
+                                             State& state,
+                                             Solid_state const& solid_state,
+                                             Temp_data& temp) {
     auto const particle_count = state.positions.size();
 
     // Warm start
@@ -172,15 +211,15 @@ void dfsph_p_correct_divergence_error(float const dt,
     }
 }
 
-void dfsph_p_resize_and_init_temp_arrays(size_t const particle_count,
-                                         Temp_data& temp) {
+static void dfsph_p_resize_and_init_temp_arrays(size_t const particle_count,
+                                                Temp_data& temp) {
     temp.external_forces.resize(particle_count);
     temp.alphas.resize(particle_count);
     temp.neighborhood.resize(particle_count);
     temp.solid_neighborhood.resize(particle_count);
     temp.densities.resize(particle_count);
-    temp.divergence_kappas.resize(particle_count);
-    temp.density_kappas.resize(particle_count);
+    temp.divergence_kappas.resize(particle_count, 0.0f);
+    temp.density_kappas.resize(particle_count, 0.0f);
     temp.density_stars.resize(particle_count);
     temp.pressure_accelerations.resize(particle_count);
     temp.fluid_volumes.resize(particle_count);
@@ -189,44 +228,64 @@ void dfsph_p_resize_and_init_temp_arrays(size_t const particle_count,
     fill_array(particle_count, 0.0f, temp.density_kappas.data());
 }
 
-void dfsph_p_init(Simulation_config const& config,
-                  State const& state,
-                  const Solid_state& solid_state,
-                  Temp_data& temp) {
+//------------------------------------------------------------------------------
+// NOT NEEDED because we rotated the timestep, see comment below.
+// static void dfsph_p_init(Simulation_config const& config,
+//                   State const& state,
+//                   Solid_state const& solid_state,
+//                   Temp_data& temp) {
+//     auto const particle_count = state.positions.size();
+//     dfsph_p_resize_and_init_temp_arrays(particle_count, temp);
+//     compute_constant_volumes(particle_count,
+//                              config.params.target_density,
+//                              config.mass_per_particle,
+//                              temp.fluid_volumes.data());
+//     compute_all_neighbhorhoods(config, state, solid_state, temp);
+//     compute_all_neighborhood_kernels(config, temp);
+
+//     compute_densities(particle_count,
+//                       config.params.support,
+//                       config.params.target_density,
+//                       temp.densities.data(),
+//                       temp.fluid_volumes.data(),
+//                       temp.neighborhood.pointers(),
+//                       solid_state.volumes.data(),
+//                       temp.solid_neighborhood.pointers());
+
+//     dfsph_p_compute_shared_coeffs(particle_count,
+//                                   config.params.target_density,
+//                                   temp.alphas.data(),
+//                                   temp.densities.data(),
+//                                   temp.fluid_volumes.data(),
+//                                   temp.neighborhood.pointers(),
+//                                   solid_state.volumes.data(),
+//                                   temp.solid_neighborhood.pointers());
+// }
+
+static void dfsph_p_sub_step(float const global_time_in_seconds,
+                             float const dt,
+                             Simulation_config const& config,
+                             State& state,
+                             Solid_state const& solid_state,
+                             Temp_data& temp,
+                             User_forces_function const& user_forces) {
     auto const particle_count = state.positions.size();
-    dfsph_p_resize_and_init_temp_arrays(particle_count, temp);
-    compute_constant_volumes(particle_count,
-                             config.params.target_density,
-                             config.mass_per_particle,
-                             temp.fluid_volumes.data());
-    compute_all_neighbhorhoods(config, state, solid_state, temp);
-    compute_all_neighborhood_kernels(config, temp);
 
-    compute_densities(particle_count,
-                      config.params.support,
-                      config.params.target_density,
-                      temp.densities.data(),
-                      temp.fluid_volumes.data(),
-                      temp.neighborhood.pointers(),
-                      solid_state.volumes.data(),
-                      temp.solid_neighborhood.pointers());
+// The DFSPH paper calls for the ordering of substeps as below.
+// However, this is weird. It places the position update in the
+// middle of the timestep, where it is difficult to synchronize
+// with another solver, such as a rigid body solver. Instead we rotate
+// the timestep so that the position update comes last and the
+// neighborhood computation comes first.
+#if 0
 
-    dfsph_p_compute_shared_coeffs(particle_count,
-                                  config.params.target_density,
-                                  temp.alphas.data(),
-                                  temp.densities.data(),
-                                  temp.fluid_volumes.data(),
-                                  temp.neighborhood.pointers(),
-                                  solid_state.volumes.data(),
-                                  temp.solid_neighborhood.pointers());
-}
-
-void dfsph_p_sub_step(float const dt,
-                      Simulation_config const& config,
-                      State& state,
-                      Solid_state const& solid_state,
-                      Temp_data& temp) {
-    auto const particle_count = state.positions.size();
+    compute_all_external_forces(global_time_in_seconds,
+                                dt,
+                                config,
+                                state,
+                                solid_state,
+                                temp,
+                                user_forces);
 
     // External forces passed in
     integrate_velocities_in_place(particle_count,
@@ -263,67 +322,77 @@ void dfsph_p_sub_step(float const dt,
 
     dfsph_p_correct_divergence_error(dt, config, state, solid_state, temp);
 
+#else
+
+    compute_all_neighbhorhoods(config, state, solid_state, temp);
+    compute_all_neighborhood_kernels(config, temp);
+
+    compute_densities(particle_count,
+                      config.params.support,
+                      config.params.target_density,
+                      temp.densities.data(),
+                      temp.fluid_volumes.data(),
+                      temp.neighborhood.pointers(),
+                      solid_state.volumes.data(),
+                      temp.solid_neighborhood.pointers());
+
+    dfsph_p_compute_shared_coeffs(particle_count,
+                                  config.params.target_density,
+                                  temp.alphas.data(),
+                                  temp.densities.data(),
+                                  temp.fluid_volumes.data(),
+                                  temp.neighborhood.pointers(),
+                                  solid_state.volumes.data(),
+                                  temp.solid_neighborhood.pointers());
+
+    dfsph_p_correct_divergence_error(dt, config, state, solid_state, temp);
+
+    compute_all_external_forces(global_time_in_seconds + dt,
+                                dt,
+                                config,
+                                state,
+                                solid_state,
+                                temp,
+                                user_forces);
+
+    // External forces passed in
+    integrate_velocities_in_place(particle_count,
+                                  dt,
+                                  config.params.target_density,
+                                  state.velocities.data(),
+                                  temp.fluid_volumes.data(),
+                                  temp.external_forces.data());
+
+    dfsph_p_correct_density_error(dt, config, state, solid_state, temp);
+
+    integrate_positions_in_place(
+      particle_count, dt, state.positions.data(), state.velocities.data());
+
     // Velocity is updated in place.
+
+#endif
 }
 
-State dfsph_p_simulation_step(Simulation_config const& config,
+State dfsph_p_simulation_step(flicks const global_time,
+                              Simulation_config const& config,
                               State&& state,
-                              const Solid_state& solid_state,
-                              Temp_data& temp) {
-    auto const start = std::chrono::high_resolution_clock::now();
-
-    auto const particle_count = state.positions.size();
-    dfsph_p_resize_and_init_temp_arrays(particle_count, temp);
-    compute_constant_volumes(particle_count,
-                             config.params.target_density,
-                             config.mass_per_particle,
-                             temp.fluid_volumes.data());
-
-    flicks const min_sub_time_step = config.params.time_per_step / 60;
-    flicks const max_sub_time_step = config.params.time_per_step / 4;
-
-    int remaining_sub_steps = 60;
-    flicks const time_per_sub_step =
-      config.params.time_per_step / remaining_sub_steps;
-    int sub_steps = 0;
-    while (remaining_sub_steps > 0) {
-        auto const cfl_step = cfl_maximum_time_step(
-          particle_count, config.params.support, 0.4f, state.velocities.data());
-
-        auto num_sub_steps = static_cast<int>(
-          std::ceil(to_seconds(cfl_step) / to_seconds(time_per_sub_step)));
-        num_sub_steps = std::clamp(num_sub_steps, 1, 15);
-        num_sub_steps = std::min(num_sub_steps, remaining_sub_steps);
-
-        auto const sub_time_step = num_sub_steps * time_per_sub_step;
-
-        EMLD_ASSERT(
-          std::clamp(sub_time_step, min_sub_time_step, max_sub_time_step) ==
-            sub_time_step,
-          "TIME DISCRETIZATION ERROR");
-
-        compute_all_external_forces(config, state, temp);
-
-        dfsph_p_sub_step(
-          to_seconds(sub_time_step), config, state, solid_state, temp);
-
-        remaining_sub_steps -= num_sub_steps;
-        ++sub_steps;
-    }
-
-    state.colors.resize(particle_count);
-    compute_colors(particle_count,
-                   config.params.target_density,
-                   state.colors.data(),
-                   temp.densities.data());
-
-    auto const end = std::chrono::high_resolution_clock::now();
-
-    fmt::print("DFSPH P frame complete, sub_steps: {}, ms: {}\n",
-               sub_steps,
-               std::chrono::duration<double>{end - start}.count() * 1000.0);
-
-    return std::move(state);
+                              Solid_state const& solid_state,
+                              Temp_data& temp,
+                              User_forces_function const& user_forces,
+                              User_colors_function const& user_colors) {
+    return std_adaptive_time_step("DFSPH P",
+                                  dfsph_p_resize_and_init_temp_arrays,
+                                  dfsph_p_sub_step,
+                                  60,
+                                  4,
+                                  0.4f,
+                                  global_time,
+                                  config,
+                                  std::move(state),
+                                  solid_state,
+                                  temp,
+                                  user_forces,
+                                  user_colors);
 }
 
 }  // namespace emerald::sph2d_box
