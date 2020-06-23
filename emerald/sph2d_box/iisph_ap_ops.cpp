@@ -45,9 +45,8 @@ void iisph_ap_density_stars_and_diagonals(
         auto const self_density = densities[particle_index];
         auto const self_velocity = fluid_velocities[particle_index];
 
-        V2f sum_mf_gradwif{0.0f, 0.0f};
+        V2f sum_m_gradw{0.0f, 0.0f};
         float sum_mf_gradwif_dot_gradwif = 0.0f;
-        V2f sum_mb_gradwib{0.0f, 0.0f};
 
         float divergence = 0.0f;
 
@@ -63,7 +62,7 @@ void iisph_ap_density_stars_and_diagonals(
                 auto const neighbor_mass =
                   fluid_volumes[neighbor_particle_index] * target_density;
 
-                sum_mf_gradwif += neighbor_mass * grad_w;
+                sum_m_gradw += neighbor_mass * grad_w;
                 sum_mf_gradwif_dot_gradwif +=
                   neighbor_mass * grad_w.dot(grad_w);
 
@@ -85,7 +84,7 @@ void iisph_ap_density_stars_and_diagonals(
                 auto const neighbor_mass =
                   solid_volumes[neighbor_particle_index] * target_density;
 
-                sum_mb_gradwib += neighbor_mass * grad_w;
+                sum_m_gradw += neighbor_mass * grad_w;
 
                 auto const delta_vel =
                   self_velocity - solid_velocities[neighbor_particle_index];
@@ -94,23 +93,11 @@ void iisph_ap_density_stars_and_diagonals(
         }
 
         auto const self_denom = sqr(self_density);
-        auto const target_denom = sqr(target_density);
+        auto const numer = -sqr(dt) * (sum_m_gradw.dot(sum_m_gradw) +
+                                       self_mass * sum_mf_gradwif_dot_gradwif);
 
-        if (safe_divide(sum_mf_gradwif, self_denom) &&
-            safe_divide(sum_mb_gradwib, self_denom) &&
-            safe_divide(sum_mb_gradwib, target_denom) &&
-            safe_divide(sum_mf_gradwif_dot_gradwif, self_denom)) {
-            auto const aii =
-              (sum_mf_gradwif + sum_mb_gradwib)
-                .dot(sum_mf_gradwif / sqr(self_density) +
-                     sum_mb_gradwib / sqr(self_density)) +
-              self_mass * sum_mf_gradwif_dot_gradwif / sqr(self_density);
-
-            diagonals[particle_index] = -(sqr(dt) * aii);
-        } else {
-            diagonals[particle_index] = 0.0f;
-        }
-
+        diagonals[particle_index] =
+          safe_divide(numer, self_denom).value_or(0.0f);
         density_stars[particle_index] = self_density + dt * divergence;
     });
 }

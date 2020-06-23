@@ -1,13 +1,16 @@
 #include <emerald/sph2d_box/iisph.h>
 
+#include <emerald/sph2d_box/adaptive_time_step.h>
 #include <emerald/sph2d_box/iisph_ops.h>
 #include <emerald/sph2d_box/neighborhoods_from_state.h>
 #include <emerald/sph_common/cfl.h>
 #include <emerald/sph_common/common.h>
+#include <emerald/sph_common/density.h>
+#include <emerald/sph_common/dynamics.h>
+#include <emerald/sph_common/pressure.h>
 #include <emerald/util/assert.h>
 #include <emerald/util/flicks.h>
 #include <emerald/util/format.h>
-#include <emerald/util/safe_divide.h>
 
 #include <fmt/format.h>
 
@@ -36,24 +39,24 @@ static void iisph_sub_step(float const global_time_in_seconds,
                                 temp,
                                 user_forces);
 
-    iisph_compute_densities(particle_count,
-                            config.params.support,
-                            config.params.target_density,
-                            temp.densities.data(),
-                            temp.fluid_volumes.data(),
-                            temp.neighborhood.pointers(),
-                            solid_state.volumes.data(),
-                            temp.solid_neighborhood.pointers());
+    compute_densities(particle_count,
+                      config.params.support,
+                      config.params.target_density,
+                      temp.densities.data(),
+                      temp.fluid_volumes.data(),
+                      temp.neighborhood.pointers(),
+                      solid_state.volumes.data(),
+                      temp.solid_neighborhood.pointers());
 
-    // HACK
-    iisph_integrate_velocities_in_place(particle_count,
-                                        dt,
-                                        config.params.target_density,
-                                        state.velocities.data(),
-                                        temp.fluid_volumes.data(),
-                                        temp.external_forces.data());
+    integrate_velocities_in_place(particle_count,
+                                  dt,
+                                  config.params.target_density,
+                                  state.velocities.data(),
+                                  temp.fluid_volumes.data(),
+                                  temp.external_forces.data());
 
     iisph_compute_diis(particle_count,
+
                        dt,
                        config.params.target_density,
                        temp.diis.data(),
@@ -132,17 +135,18 @@ static void iisph_sub_step(float const global_time_in_seconds,
     }
     // fmt::print("IISPH pressure iters: {}\n", iter);
 
-    iisph_apply_pressures_in_place(particle_count,
-                                   dt,
-                                   config.params.target_density,
-                                   state.velocities.data(),
-                                   temp.densities.data(),
-                                   temp.pressures.data(),
-                                   temp.fluid_volumes.data(),
-                                   temp.neighborhood.pointers(),
-                                   solid_state.volumes.data(),
-                                   temp.solid_neighborhood.pointers());
-    iisph_integrate_positions_in_place(
+    apply_pressures_in_place(particle_count,
+                             dt,
+                             config.params.target_density,
+                             state.velocities.data(),
+                             temp.densities.data(),
+                             temp.pressures.data(),
+                             temp.fluid_volumes.data(),
+                             temp.neighborhood.pointers(),
+                             solid_state.volumes.data(),
+                             temp.solid_neighborhood.pointers());
+
+    integrate_positions_in_place(
       particle_count, dt, state.positions.data(), state.velocities.data());
 }
 
@@ -168,65 +172,19 @@ State iisph_simulation_step(flicks const global_time,
                             Temp_data& temp,
                             User_forces_function const& user_forces,
                             User_colors_function const& user_colors) {
-    flicks const min_sub_time_step = config.params.time_per_step / 30;
-    flicks const max_sub_time_step = config.params.time_per_step / 4;
-
-    auto const particle_count = state.positions.size();
-    iisph_resize_temp_arrays(particle_count, temp);
-    iisph_compute_fluid_volumes(particle_count,
-                                config.params.target_density,
-                                config.mass_per_particle,
-                                temp.fluid_volumes.data());
-
-    int sub_steps = 0;
-    flicks remaining_time_step = config.params.time_per_step;
-    auto time = global_time;
-    while (remaining_time_step.count() > 0) {
-        auto const cfl_step = cfl_maximum_time_step(
-          particle_count, config.params.support, 0.4f, state.velocities.data());
-        // CJH HACK
-        // if (cfl_step < min_time_step) {
-        //     fmt::print(stderr,
-        //                "WARNING: CFL max time step is too small: {}\n",
-        //                to_seconds(cfl_step));
-        // }
-        // auto sub_time_step =
-        //   std::clamp(cfl_step, min_time_step, remaining_time_step);
-        //
-        auto sub_time_step =
-          std::clamp(cfl_step, min_sub_time_step, max_sub_time_step);
-        sub_time_step = std::min(sub_time_step, remaining_time_step);
-        if ((remaining_time_step - sub_time_step) < min_sub_time_step) {
-            sub_time_step = remaining_time_step;
-        }
-        // HACK
-        sub_time_step = min_sub_time_step;
-        EMLD_ASSERT(
-          std::clamp(sub_time_step, min_sub_time_step, max_sub_time_step) ==
-            sub_time_step,
-          "TIME DISCRETIZATION ERROR");
-        // fmt::print("Remaining time step: {}, sub time step: {}\n",
-        //            to_seconds(remaining_time_step),
-        //            to_seconds(sub_time_step));
-        iisph_sub_step(to_seconds(time),
-                       to_seconds(sub_time_step),
-                       config,
-                       state,
-                       solid_state,
-                       temp,
-                       user_forces);
-
-        time += sub_time_step;
-        remaining_time_step -= sub_time_step;
-        ++sub_steps;
-    }
-
-    compute_colors(
-      to_seconds(time), config, state, solid_state, temp, user_colors);
-
-    fmt::print("IISPH frame complete, sub_steps: {}\n", sub_steps);
-
-    return std::move(state);
+    return std_adaptive_time_step("IISPH",
+                                  iisph_resize_temp_arrays,
+                                  iisph_sub_step,
+                                  60,
+                                  6,
+                                  0.2f,
+                                  global_time,
+                                  config,
+                                  std::move(state),
+                                  solid_state,
+                                  temp,
+                                  user_forces,
+                                  user_colors);
 }
 
 }  // namespace emerald::sph2d_box

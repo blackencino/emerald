@@ -30,7 +30,7 @@ void integrate_velocities_in_place(size_t const particle_count,
     for_each_iota(particle_count, [=](auto const particle_index) {
         auto const denom = target_density * volumes[particle_index];
         auto const numer = dt * forces[particle_index];
-        if (safe_divide(numer, denom)) {
+        if (is_safe_divide(numer, denom)) {
             velocities[particle_index] += numer / denom;
         }
     });

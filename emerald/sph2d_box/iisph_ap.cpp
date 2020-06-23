@@ -12,7 +12,6 @@
 #include <emerald/util/assert.h>
 #include <emerald/util/flicks.h>
 #include <emerald/util/format.h>
-#include <emerald/util/safe_divide.h>
 
 #include <fmt/format.h>
 

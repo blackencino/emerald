@@ -16,102 +16,6 @@ using namespace emerald::sph_common;
 using namespace emerald::util;
 
 //------------------------------------------------------------------------------
-// Fluid volumes
-void iisph_compute_fluid_volumes(size_t const particle_count,
-                                 float const target_density,
-                                 float const mass_per_particle,
-                                 float* const fluid_volumes) {
-    // mass = volume * density,
-    // volume = mass / density
-    fill_array(
-      particle_count, mass_per_particle / target_density, fluid_volumes);
-}
-
-//------------------------------------------------------------------------------
-// Densities
-static void iisph_compute_densities_partial(
-  size_t const particle_count,
-  bool const boundary,
-  float const support,
-  float const target_density,
-  float* const densities,
-  float const* const self_volumes,
-  float const* const neighbor_volumes,
-  Neighborhood_pointers const neighborhood) {
-    auto const w0 = kernels::W(0.0f, support);
-    for_each_iota(particle_count, [=](auto const particle_index) {
-        float density = 0.0f;
-        if (!boundary) {
-            density = self_volumes[particle_index] * target_density * w0;
-        }
-        auto const nbhd_count = neighborhood.counts[particle_index];
-        if (!nbhd_count) {
-            if (!boundary) { densities[particle_index] = density; }
-            return;
-        }
-
-        auto const& nbhd_indices = neighborhood.indices[particle_index];
-        auto const& nbhd_kernels = neighborhood.kernels[particle_index];
-        for (uint8_t j = 0; j < nbhd_count; ++j) {
-            auto const neighbor_particle_index = nbhd_indices[j];
-            auto const mass =
-              target_density * neighbor_volumes[neighbor_particle_index];
-            density += nbhd_kernels[j] * mass;
-        }
-
-        if (boundary) {
-            densities[particle_index] += density;
-        } else {
-            densities[particle_index] = density;
-        }
-    });
-}
-
-void iisph_compute_densities(size_t const particle_count,
-                             float const support,
-                             float const target_density,
-                             float* const densities,
-                             float const* const fluid_volumes,
-                             Neighborhood_pointers const fluid_neighborhood,
-                             float const* const solid_volumes,
-                             Neighborhood_pointers const solid_neighborhood) {
-    iisph_compute_densities_partial(particle_count,
-                                    false,
-                                    support,
-                                    target_density,
-                                    densities,
-                                    fluid_volumes,
-                                    fluid_volumes,
-                                    fluid_neighborhood);
-
-    iisph_compute_densities_partial(particle_count,
-                                    true,
-                                    support,
-                                    target_density,
-                                    densities,
-                                    fluid_volumes,
-                                    solid_volumes,
-                                    solid_neighborhood);
-}
-
-//------------------------------------------------------------------------------
-// Velocities with only external forces
-void iisph_integrate_velocities_in_place(size_t const particle_count,
-                                         float const dt,
-                                         float const target_density,
-                                         V2f* const velocities,
-                                         float const* const volumes,
-                                         V2f const* const forces) {
-    for_each_iota(particle_count, [=](auto const particle_index) {
-        auto const denom = target_density * volumes[particle_index];
-        auto const numer = dt * forces[particle_index];
-        if (safe_divide(numer, denom)) {
-            velocities[particle_index] += numer / denom;
-        }
-    });
-}
-
-//------------------------------------------------------------------------------
 // Compute Diis
 static void iisph_compute_diis_partial(
   size_t const particle_count,
@@ -238,7 +142,7 @@ static void iisph_compute_aiis_and_density_stars_partial(
                   densities[neighbor_particle_index];
                 auto const numer = -sqr(dt) * mass * grad_w;
                 auto const denom = sqr(neighbor_density);
-                if (safe_divide(numer, denom)) {
+                if (is_safe_divide(numer, denom)) {
                     auto const dij = numer / denom;
                     auto const dji = -dij;
                     aii += mass * ((dii - dji).dot(grad_w));
@@ -346,7 +250,7 @@ void iisph_compute_sum_dij_pjs(size_t const particle_count,
 
             auto const numer = -sqr(dt) * mass * pressure * grad_w;
             auto const denom = sqr(density);
-            if (safe_divide(numer, denom)) { sum_dij_pj += numer / denom; }
+            if (is_safe_divide(numer, denom)) { sum_dij_pj += numer / denom; }
         }
 
         sum_dij_pjs[particle_index] = sum_dij_pj;
@@ -448,13 +352,6 @@ void iisph_compute_betas(size_t const particle_count,
                                 solid_neighborhood);
 }
 
-template <typename T>
-static inline void update_max(std::atomic<T>& atom, T const val) {
-    for (T atom_val = atom;
-         atom_val < val && !atom.compare_exchange_weak(
-                             atom_val, val, std::memory_order_relaxed);) {}
-}
-
 //------------------------------------------------------------------------------
 // Returns error average and max
 std::pair<float, float> iisph_compute_new_pressures(
@@ -485,7 +382,7 @@ std::pair<float, float> iisph_compute_new_pressures(
           auto const beta = betas_in_new_pressures_out[particle_index];
 
           auto const numer = target_density - density_star - beta;
-          if (!safe_divide(numer, alpha)) {
+          if (!is_safe_divide(numer, alpha)) {
               betas_in_new_pressures_out[particle_index] = old_pressure;
               fmt::print(
                 "ERROR: safe_divide fail in compute new pressures. numer: {}, "
@@ -510,7 +407,7 @@ std::pair<float, float> iisph_compute_new_pressures(
           auto const error =
             std::max(0.0f, -(numer - (alpha * old_pressure)) / target_density);
           // fmt::print("Error {}: {}\n", particle_index, error);
-          update_max(error_max, error);
+          update_atomic_max(error_max, error);
           integral_error_sum += static_cast<uint64_t>(error * 1000.0f);
 
           auto const new_pressure = numer / alpha;
@@ -525,96 +422,6 @@ std::pair<float, float> iisph_compute_new_pressures(
     auto const error_average_numer = static_cast<double>(integral_error_sum);
     auto const error_average_denom = static_cast<double>(1000 * particle_count);
     return {error_average_numer / error_average_denom, error_max};
-}
-
-//------------------------------------------------------------------------------
-static void iisph_apply_pressures_in_place_partial(
-  size_t const particle_count,
-  bool const boundary,
-  float const dt,
-  float const target_density,
-  V2f* const velocities,
-
-  float const* const densities,
-  float const* const pressures,
-
-  float const* const neighbor_volumes,
-  Neighborhood_pointers const neighborhood) {
-    for_each_iota(particle_count, [=](auto const particle_index) {
-        auto const nbhd_count = neighborhood.counts[particle_index];
-        if (!nbhd_count) { return; }
-
-        auto const p_over_rho_sqr =
-          safe_divide(pressures[particle_index], sqr(densities[particle_index]))
-            .value_or(0.0f);
-
-        V2f acceleration{0.0f, 0.0f};
-        auto const& nbhd_indices = neighborhood.indices[particle_index];
-        auto const& nbhd_kernel_gradients =
-          neighborhood.kernel_gradients[particle_index];
-        for (uint8_t j = 0; j < nbhd_count; ++j) {
-            auto const neighbor_particle_index = nbhd_indices[j];
-            auto const mass =
-              target_density * neighbor_volumes[neighbor_particle_index];
-            auto const grad_w = nbhd_kernel_gradients[j];
-            if (boundary) {
-                acceleration += -mass * p_over_rho_sqr * grad_w;
-            } else {
-                auto const nbr_p_over_rho_sqr =
-                  safe_divide(pressures[neighbor_particle_index],
-                              sqr(densities[neighbor_particle_index]))
-                    .value_or(0.0f);
-                acceleration +=
-                  -mass * (p_over_rho_sqr + nbr_p_over_rho_sqr) * grad_w;
-            }
-        }
-
-        velocities[particle_index] += dt * acceleration;
-    });
-}
-
-void iisph_apply_pressures_in_place(
-  size_t const particle_count,
-  float const dt,
-  float const target_density,
-  V2f* const velocities,
-
-  float const* const densities,
-  float const* const pressures,
-
-  float const* const fluid_volumes,
-  Neighborhood_pointers const fluid_neighborhood,
-
-  float const* const solid_volumes,
-  Neighborhood_pointers const solid_neighborhood) {
-    iisph_apply_pressures_in_place_partial(particle_count,
-                                           false,
-                                           dt,
-                                           target_density,
-                                           velocities,
-                                           densities,
-                                           pressures,
-                                           fluid_volumes,
-                                           fluid_neighborhood);
-    iisph_apply_pressures_in_place_partial(particle_count,
-                                           true,
-                                           dt,
-                                           target_density,
-                                           velocities,
-                                           densities,
-                                           pressures,
-                                           solid_volumes,
-                                           solid_neighborhood);
-}
-
-//------------------------------------------------------------------------------
-void iisph_integrate_positions_in_place(size_t const particle_count,
-                                        float const dt,
-                                        V2f* const positions,
-                                        V2f const* const velocities) {
-    for_each_iota(particle_count, [=](auto const particle_index) {
-        positions[particle_index] += dt * velocities[particle_index];
-    });
 }
 
 }  // namespace emerald::sph2d_box

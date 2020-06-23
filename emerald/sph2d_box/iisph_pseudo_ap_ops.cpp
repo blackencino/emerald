@@ -94,12 +94,10 @@ void iisph_pseudo_ap_density_stars_and_pseudo_diagonals(
         }
 
         auto const self_denom = sqr(self_density);
-        auto const target_denom = sqr(target_density);
 
-        if (safe_divide(sum_mf_gradwif, self_denom) &&
-            safe_divide(sum_mb_gradwib, self_denom) &&
-            safe_divide(sum_mb_gradwib, target_denom) &&
-            safe_divide(sum_mf_gradwif_dot_gradwif, self_denom)) {
+        if (is_safe_divide(sum_mf_gradwif, self_denom) &&
+            is_safe_divide(sum_mb_gradwib, self_denom) &&
+            is_safe_divide(sum_mf_gradwif_dot_gradwif, self_denom)) {
             auto const aii =
               (sum_mf_gradwif + sum_mb_gradwib)
                 .dot(sum_mf_gradwif / sqr(self_density) +
