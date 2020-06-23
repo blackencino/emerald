@@ -1,9 +1,9 @@
-#include <emerald/sph2d_box/dfsph_p.h>
-// #include <emerald/sph2d_box/iisph.h>
-#include <emerald/sph2d_box/iisph_ap.h>
-#include <emerald/sph2d_box/iisph_pseudo_ap.h>
+#include <emerald/sph2d_box/colors.h>
+#include <emerald/sph2d_box/forces.h>
+#include <emerald/sph2d_box/initial_state.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
+#include <emerald/sph2d_box/solids.h>
 
 #include <fmt/format.h>
 
@@ -12,44 +12,21 @@
 int main(int argc, char* argv[]) {
     using namespace emerald::sph2d_box;
 
-    auto const [params, num_batch_frames] = parse_parameters(argc, argv);
+    auto const params = parse_parameters(argc, argv);
 
-    EZ_EXAMPLE_SIM sim{params};
-    //dfsph_p_init(sim.config, sim.state, sim.solid_state, sim.temp_data);
-
-    for (int frame = 0; frame < num_batch_frames; ++frame) {
+    EZ_EXAMPLE_SIM sim{params,
+                       world_walls_initial_solid_state,
+                       dam_break_initial_state,
+                       default_gravity_forces(params.gravity),
+                       default_target_density_colors(params.target_density)};
+    for (int step = 0; step < params.num_batch_steps; ++step) {
         auto const start = std::chrono::high_resolution_clock::now();
-        // sim.step();
-        // sim.state = iisph_simulation_step(
-        //   sim.config, std::move(sim.state), sim.solid_state, sim.temp_data);
-
-        sim.state = iisph_ap_simulation_step(sim.time,
-                                                    sim.config,
-                                                    std::move(sim.state),
-                                                    sim.solid_state,
-                                                    sim.temp_data,
-                                                    sim.user_forces,
-                                                    sim.user_colors);
-
-        // sim.state = iisph_pseudo_ap_simulation_step(sim.time,
-        //                                             sim.config,
-        //                                             std::move(sim.state),
-        //                                             sim.solid_state,
-        //                                             sim.temp_data,
-        //                                             sim.user_forces,
-        //                                             sim.user_colors);
-
-        // sim.state = dfsph_p_simulation_step(sim.time,
-        //                                     sim.config,
-        //                                     std::move(sim.state),
-        //                                     sim.solid_state,
-        //                                     sim.temp_data,
-        //                                     sim.user_forces,
-        //                                     sim.user_colors);
+        sim.step();
         auto const end = std::chrono::high_resolution_clock::now();
         auto const elapsed = end - start;
-        fmt::print("Frame: {}, duration: {} ms\n",
-                   frame,
+        fmt::print("{} Step: {}, duration: {} ms\n",
+                   params.method,
+                   step,
                    std::chrono::duration<double, std::milli>{elapsed}.count());
     }
     return 0;

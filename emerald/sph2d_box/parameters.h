@@ -3,7 +3,7 @@
 #include <emerald/util/flicks.h>
 
 #include <cstdint>
-#include <tuple>
+#include <string>
 
 namespace emerald::sph2d_box {
 
@@ -20,6 +20,13 @@ struct Parameters {
     float target_density = 1000.0f;
 
     struct {
+        int max_pressure_iterations = 30;
+        float error_average_threshold = 0.005f;
+        float error_max_threshold = 0.05f;
+        float omega = 0.5f;
+    } iisph;
+
+    struct {
         int max_correction_iterations = 15;
 
         float density_error_average_threshold = 0.0035f;
@@ -29,14 +36,10 @@ struct Parameters {
         float divergence_error_max_threshold = 0.03f;
     } dfsph;
 
-    struct {
-        int max_pressure_iterations = 30;
-        float error_average_threshold = 0.005f;
-        float error_max_threshold = 0.05f;
-        float omega = 0.5f;
-    } iisph;
+    int num_batch_steps = 100;
+    std::string method = "dfsph_p";
 };
 
-std::tuple<Parameters, int> parse_parameters(int argc, char* argv[]);
+Parameters parse_parameters(int argc, char* argv[]);
 
 }  // namespace emerald::sph2d_box

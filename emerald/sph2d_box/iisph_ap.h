@@ -8,16 +8,6 @@
 
 namespace emerald::sph2d_box {
 
-void iisph_ap_sub_step(float const global_time_in_seconds,
-                       float const dt,
-                       Simulation_config const& config,
-                       State& state,
-                       Solid_state const& solid_state,
-                       Temp_data& temp,
-                       User_forces_function const& user_forces);
-
-void iisph_ap_resize_temp_arrays(size_t const particle_count, Temp_data& temp);
-
 State iisph_ap_simulation_step(flicks const time,
                                Simulation_config const& config,
                                State&& state,

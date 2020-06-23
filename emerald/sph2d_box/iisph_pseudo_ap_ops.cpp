@@ -322,6 +322,7 @@ std::pair<float, float> iisph_pseudo_ap_iterate_pseudo_pressures_in_place(
 }
 
 //------------------------------------------------------------------------------
+// Remember that this one is special! Don't replace it with the common version!!
 void iisph_pseudo_ap_integrate_velocities_and_positions_in_place(
   size_t const particle_count,
   float const dt,

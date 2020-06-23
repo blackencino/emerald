@@ -54,6 +54,9 @@ std::pair<float, float> iisph_pseudo_ap_iterate_pseudo_pressures_in_place(
   float const* const solid_volumes,
   Neighborhood_pointers const solid_neighborhood);
 
+//------------------------------------------------------------------------------
+// Don't replace this with the common/dynamics integration! PSEUDO AP
+// uses the displacements to compute the velocity change, which is different.
 void iisph_pseudo_ap_integrate_velocities_and_positions_in_place(
   size_t const particle_count,
   float const dt,

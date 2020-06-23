@@ -3,6 +3,8 @@
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/state.h>
 
+#include <functional>
+
 namespace emerald::sph2d_box {
 
 size_t estimate_solid_box_emission_count(Box2f const box, float const R);
@@ -22,5 +24,8 @@ Solid_state compute_neighbor_data_and_volumes(Parameters const& params,
                                               Solid_state&& solid_state);
 
 Solid_state world_walls_initial_solid_state(Parameters const& params);
+
+using Solid_initial_state_function =
+  std::function<Solid_state(Parameters const&)>;
 
 }  // namespace emerald::sph2d_box

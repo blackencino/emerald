@@ -1,12 +1,11 @@
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/sph2d_box/bin/multi_scale_draw.h>
-#include <emerald/sph2d_box/dfsph_p.h>
-// #include <emerald/sph2d_box/iisph.h>
 #include <emerald/sph2d_box/colors.h>
-#include <emerald/sph2d_box/iisph_ap.h>
-#include <emerald/sph2d_box/iisph_pseudo_ap.h>
+#include <emerald/sph2d_box/forces.h>
+#include <emerald/sph2d_box/initial_state.h>
 #include <emerald/sph2d_box/parameters.h>
 #include <emerald/sph2d_box/simulation.h>
+#include <emerald/sph2d_box/solids.h>
 #include <emerald/util/assert.h>
 #include <emerald/util/functions.h>
 
@@ -57,7 +56,11 @@ protected:
 public:
     explicit Sph2d_box_sim(emerald::sph2d_box::Parameters const& params)
       : Sim3D()
-      , m_sim(params) {
+      , m_sim(params,
+              world_walls_initial_solid_state,
+              dam_break_initial_state,
+              default_gravity_forces(params.gravity),
+              default_target_density_colors(params.target_density)) {
         auto const border_size = params.support * 3.0f;
 
         Imath::Frustumf frustum;
@@ -71,41 +74,14 @@ public:
 
         m_modelview.makeIdentity();
         m_projection = frustum.projectionMatrix();
-
-        // dfsph_p_init(
-        //   m_sim.config, m_sim.state, m_sim.solid_state, m_sim.temp_data);
     }
 
     std::string name() const override {
-        return "Sph2d Box Sim";
+        return "Sph2d Box Sim: " + m_sim.config.params.method;
     }
 
     void step() override {
-        // m_sim.step();
-
-        // m_sim.state = iisph_ap_simulation_step(m_sim.time,
-        //                                        m_sim.config,
-        //                                        std::move(m_sim.state),
-        //                                        m_sim.solid_state,
-        //                                        m_sim.temp_data,
-        //                                        m_sim.user_forces,
-        //                                        m_sim.user_colors);
-
-        m_sim.state = iisph_pseudo_ap_simulation_step(m_sim.time,
-                                                      m_sim.config,
-                                                      std::move(m_sim.state),
-                                                      m_sim.solid_state,
-                                                      m_sim.temp_data,
-                                                      m_sim.user_forces,
-                                                      m_sim.user_colors);
-
-        // m_sim.state = dfsph_p_simulation_step(m_sim.time,
-        //                                       m_sim.config,
-        //                                       std::move(m_sim.state),
-        //                                       m_sim.solid_state,
-        //                                       m_sim.temp_data,
-        //                                       m_sim.user_forces,
-        //                                       m_sim.user_colors);
+        m_sim.step();
 
         m_converted_colors.resize(m_sim.state.positions.size());
         convert_colors(m_sim.state.positions.size(),
@@ -167,7 +143,7 @@ protected:
 
 //------------------------------------------------------------------------------
 int main(int argc, char* argv[]) {
-    auto const [params, num_batch_frames] = parse_parameters(argc, argv);
+    auto const params = parse_parameters(argc, argv);
     SimPtr sptr = std::make_shared<Sph2d_box_sim>(params);
     SimpleViewSim(sptr, false);
     return 0;

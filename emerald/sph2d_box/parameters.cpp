@@ -7,9 +7,8 @@
 
 namespace emerald::sph2d_box {
 
-std::tuple<Parameters, int> parse_parameters(int argc, char* argv[]) {
+Parameters parse_parameters(int argc, char* argv[]) {
     Parameters params;
-    int num_batch_frames = 100;
     try {
         // clang-format off
         cxxopts::Options options{argv[0], " - sph2d box simulation options"};
@@ -23,7 +22,9 @@ std::tuple<Parameters, int> parse_parameters(int argc, char* argv[]) {
             ("gravity", "Gravity (m/s^2)", cxxopts::value<float>(params.gravity))
             ("viscosity", "Viscosity", cxxopts::value<float>(params.viscosity))
             ("density", "Density", cxxopts::value<float>(params.target_density))
-            ("n,num_frames", "Num frames to simulate", cxxopts::value<int>(num_batch_frames))
+            ("n,num_steps", "Num steps to simulate", cxxopts::value<int>(params.num_batch_steps))
+            ("method", "Method: pcisph, iisph, iisph_ap, iisph_pseudo_ap, or dfsph_p",
+             cxxopts::value<std::string>(params.method))
             ("help", "Print help")
             ;
         // clang-format on
@@ -39,7 +40,7 @@ std::tuple<Parameters, int> parse_parameters(int argc, char* argv[]) {
         std::exit(-1);
     }
 
-    return {params, num_batch_frames};
+    return params;
 }
 
 }  // namespace emerald::sph2d_box

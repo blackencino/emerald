@@ -96,29 +96,4 @@ State dam_break_initial_state(Parameters const& params,
     return state;
 }
 
-// State random_initial_state(Parameters const& params) {
-//     constexpr size_t count = 1000;
-
-//     State state;
-
-//     std::mt19937_64 gen{params.seed};
-//     std::uniform_real_distribution<float> pos_dist{0.0f, params.length};
-//     state.positions.resize(count);
-//     for (auto& [x, y] : state.positions) {
-//         x = pos_dist(gen);
-//         y = pos_dist(gen);
-//     }
-
-//     std::uniform_real_distribution<float> vel_dist{-0.5f * params.length,
-//                                                    0.5f * params.length};
-//     state.velocities.resize(count);
-//     for (auto& [x, y] : state.velocities) {
-//         x = vel_dist(gen);
-//         y = vel_dist(gen);
-//     }
-
-//     state.colors.resize(count, {0.5f, 0.5f, 1.0f, 1.0f});
-//     return state;
-// }
-
 }  // namespace emerald::sph2d_box

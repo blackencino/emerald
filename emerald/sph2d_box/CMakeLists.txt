@@ -5,10 +5,10 @@ add_library(emerald_sph2d_box
             dfsph_p.h
             dfsph_p_ops.h
             forces.h
-            # iisph.h
+            iisph.h
             iisph_ap.h
             iisph_ap_ops.h
-            # iisph_ops.h
+            iisph_ops.h
             iisph_pseudo_ap.h
             iisph_pseudo_ap_ops.h
             initial_state.h
@@ -25,10 +25,10 @@ add_library(emerald_sph2d_box
             dfsph_p.cpp
             dfsph_p_ops.cpp
             forces.cpp
-            # iisph.cpp
+            iisph.cpp
             iisph_ap.cpp
             iisph_ap_ops.cpp
-            # iisph_ops.cpp
+            iisph_ops.cpp
             iisph_pseudo_ap.cpp
             iisph_pseudo_ap_ops.cpp
             initial_state.cpp

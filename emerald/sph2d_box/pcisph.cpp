@@ -17,13 +17,29 @@
 
 namespace emerald::sph2d_box {
 
-void pcisph_sub_step(float const global_time_in_seconds,
-                     float const dt,
-                     Simulation_config const& config,
-                     State& state,
-                     Solid_state const& solid_state,
-                     Temp_data& temp,
-                     User_forces_function const& user_forces) {
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// This solver is an implementation of the PCI SPH method described in
+// "Predictive-Corrective Incompressible SPH"
+// by B. Solenthaler and R. Pajarola,
+// ACM Transactions on Graphics 28, 3 (2009)
+//
+// PCISPH is slower than later methods because it requires neighborhoods to
+// be recomputed over and over with each predictor-corrector step, and it
+// also precomputes a "standard" pressure correction denominator term that
+// has a baked-in timestep. These are all changes that later variations such
+// as IISPH, DFSPH, and PBD addressed in various ways. The solver is preserved
+// here because of its groundbreaking contribution and clear exposition.
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+static void pcisph_sub_step(float const global_time_in_seconds,
+                            float const dt,
+                            Simulation_config const& config,
+                            State& state,
+                            Solid_state const& solid_state,
+                            Temp_data& temp,
+                            User_forces_function const& user_forces) {
     auto const count = state.positions.size();
 
     compute_all_neighbhorhoods(config, state, solid_state, temp);
