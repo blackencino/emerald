@@ -31,7 +31,7 @@ struct EZ_EXAMPLE_SIM {
     User_forces_function user_forces;
     User_colors_function user_colors;
     flicks time = flicks{0};
-    Method method = Method::DFSPH_P;
+    Method method = Method::IISPH_PSEUDO_AP;
 
     explicit EZ_EXAMPLE_SIM(
       Parameters const& params,

@@ -37,7 +37,7 @@ struct Parameters {
     } dfsph;
 
     int num_batch_steps = 100;
-    std::string method = "dfsph_p";
+    std::string method = "iisph_pseudo_ap";
 };
 
 Parameters parse_parameters(int argc, char* argv[]);
