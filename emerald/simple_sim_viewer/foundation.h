@@ -22,17 +22,6 @@
 namespace emerald {
 namespace simple_sim_viewer {
 
-//-*****************************************************************************
-#ifdef PLATFORM_DARWIN
-
-#define OSX_GLFW_VIEWPORT_BUG 1
-
-#else
-
-#define OSX_GLFW_VIEWPORT_BUG 0
-
-#endif
-
 using namespace emerald::util;
 using namespace emerald::geep_glfw;
 

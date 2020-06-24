@@ -57,12 +57,7 @@ void Sim3D::rotate_camera(float dx, float dy) {
 }
 
 void Sim3D::outer_draw() {
-#if OSX_GLFW_VIEWPORT_BUG
-    glViewport(
-        0, 0, 2 * (GLsizei)m_camera.size.x, 2 * (GLsizei)m_camera.size.y);
-#else
     glViewport(0, 0, (GLsizei)m_camera.size.x, (GLsizei)m_camera.size.y);
-#endif
 
     auto const optional_clipping = override_clipping();
     if (optional_clipping.has_value()) {
@@ -94,11 +89,7 @@ void SimSlab::reshape(int w, int h) {
 }
 
 void SimSlab::outer_draw() {
-#if OSX_GLFW_VIEWPORT_BUG
-    glViewport(0, 0, 2 * (GLsizei)m_width, 2 * (GLsizei)m_height);
-#else
     glViewport(0, 0, (GLsizei)m_width, (GLsizei)m_height);
-#endif
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     util_gl::CheckErrors("outerDraw glClearColor");

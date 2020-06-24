@@ -89,7 +89,7 @@ static std::unique_ptr<GLFWGlobal> g_glfwGlobal;
 //-*****************************************************************************
 
 //-*****************************************************************************
-void g_reshape(GLFWwindow* i_window, int i_width, int i_height) {
+void g_framebuffer_size(GLFWwindow* i_window, int i_width, int i_height) {
     EMLD_ASSERT(i_window != nullptr, "nullptr Viewer");
     EMLD_ASSERT(g_glfwGlobal.get() != nullptr, "NO GLFW GLOBAL");
 
@@ -112,7 +112,7 @@ void g_character(GLFWwindow* i_window, unsigned int i_char) {
 
 //-*****************************************************************************
 void g_keyboard(
-    GLFWwindow* i_window, int i_key, int i_scancode, int i_action, int i_mods) {
+  GLFWwindow* i_window, int i_key, int i_scancode, int i_action, int i_mods) {
     EMLD_ASSERT(i_window != nullptr, "nullptr Viewer");
     EMLD_ASSERT(g_glfwGlobal.get() != nullptr, "NO GLFW GLOBAL");
 
@@ -192,6 +192,8 @@ void Viewer::run() {
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // Turn this on to make OSX not use oversized framebuffer for retina displays
+    // glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
 
     // Make a window for this sim!
     auto const preferred_window_size = m_sim->preferred_window_size();
@@ -217,7 +219,7 @@ void Viewer::run() {
     glfwSetCharCallback(m_window, g_character);
     glfwSetCursorPosCallback(m_window, g_mouse_drag);
     glfwSetMouseButtonCallback(m_window, g_mouse);
-    glfwSetWindowSizeCallback(m_window, g_reshape);
+    glfwSetFramebufferSizeCallback(m_window, g_framebuffer_size);
 
     // Main loop.
     // This is not a good main loop design, it interleaves the sim thread
@@ -241,7 +243,7 @@ void Viewer::run() {
         auto const stop = std::chrono::high_resolution_clock::now();
         auto const elapsed = stop - start;
         constexpr std::chrono::duration<uint64_t, std::ratio<1, 60>>
-            min_interval{1};
+          min_interval{1};
         if (elapsed < min_interval) {
             std::this_thread::sleep_for(min_interval - elapsed);
         }
@@ -272,8 +274,9 @@ void Viewer::init(void) {
 
     m_buttonMask = 0;
 
-    V2i pws = m_sim->preferred_window_size();
-    m_sim->init_draw(pws.x, pws.y);
+    int width, height;
+    glfwGetFramebufferSize(m_window, &width, &height);
+    m_sim->init_draw(width, height);
 }
 
 //-*****************************************************************************
@@ -423,7 +426,7 @@ void Viewer::mouse(int i_button, int i_action, int i_mods) {
         }
     }
     m_sim->mouse(
-        i_button, i_action, i_mods, m_mouseX, m_mouseY, m_lastX, m_lastY);
+      i_button, i_action, i_mods, m_mouseX, m_mouseY, m_lastX, m_lastY);
 }
 
 //-*****************************************************************************
