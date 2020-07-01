@@ -76,6 +76,9 @@ if [[ $SRC_DIR == $CWD ]]; then
     exit -1
 fi
 
+export CC=`which clang`
+export CXX=`which clang++`
+
 ################################
 # Set the build root
 DEBUG_BUILD_DIR="${CWD}/${BUILD_SUBDIR}/Debug"

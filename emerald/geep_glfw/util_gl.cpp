@@ -11,7 +11,12 @@ namespace util_gl {
 
 //-*****************************************************************************
 void Init(bool const experimental) {
-    CheckErrors("GeepGLFW::init before anything");
+    // CheckErrors("GeepGLFW::init before anything");
+
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+    {
+        EMLD_FAIL("Failed to initialize OpenGL context");
+    }
 
     // On Mac, GLEW stuff is not necessary.
     //#ifndef PLATFORM_DARWIN
