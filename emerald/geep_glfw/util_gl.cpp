@@ -10,42 +10,27 @@ namespace geep_glfw {
 namespace util_gl {
 
 //-*****************************************************************************
-void Init(bool const experimental) {
-    // CheckErrors("GeepGLFW::init before anything");
-
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
-    {
+void Init() {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         EMLD_FAIL("Failed to initialize OpenGL context");
     }
-
-    // On Mac, GLEW stuff is not necessary.
-    //#ifndef PLATFORM_DARWIN
-    //    glewExperimental = experimental ? GL_TRUE : GL_FALSE;
-    //    glewInit();
-    //#endif
-    // Reset errors.
-    glGetError();
-
     std::cout << "OPEN GL VERSION: " << glGetString(GL_VERSION) << std::endl;
-
     CheckErrors("GeepGLFW::init glGetString");
 }
 
 //-*****************************************************************************
 void CheckErrors(std::string const& label) {
     auto const errCode = glGetError();
-
     EMLD_ASSERT(errCode == GL_NO_ERROR,
                 "OpenGL Error: "
-                    << "Code = " << static_cast<int>(errCode)
-                    << std::endl
-                    << " ( Label: " << label << " )");
+                  << "Code = " << static_cast<int>(errCode) << std::endl
+                  << " ( Label: " << label << " )");
 }
 
 //-*****************************************************************************
 void CheckFramebuffer() {
     auto const status =
-        static_cast<GLenum>(glCheckFramebufferStatus(GL_FRAMEBUFFER));
+      static_cast<GLenum>(glCheckFramebufferStatus(GL_FRAMEBUFFER));
     switch (status) {
     case GL_FRAMEBUFFER_COMPLETE: return;
     case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
