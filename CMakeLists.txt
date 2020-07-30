@@ -46,6 +46,12 @@ find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
 find_package(GTest REQUIRED)
 
+
+# find_package(LLVM REQUIRED CONFIG)
+
+# message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+# message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
 set(EMERALD_GL_LIBS "")
 if (${EMERALD_BUILD_GUIS})
     find_package(glfw REQUIRED)
