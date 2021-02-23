@@ -91,19 +91,26 @@ void iisph_pseudo_ap_density_stars_and_pseudo_diagonals(
             }
         }
 
-        auto const self_density_sqr = sqr(self_density);
-        sum_m_gradw_dot_gradw *= self_mass;
+        auto const numer =
+          -(sum_m_gradw.dot(sum_m_gradw) + self_mass * sum_m_gradw_dot_gradw);
+        auto const denom = sqr(self_density);
 
-        if (is_safe_divide(sum_m_gradw, self_density) &&
-            is_safe_divide(sum_m_gradw_dot_gradw, self_density_sqr)) {
-            sum_m_gradw /= self_density;
-            sum_m_gradw_dot_gradw /= self_density_sqr;
-            auto const aii =
-              sum_m_gradw.dot(sum_m_gradw) + sum_m_gradw_dot_gradw;
-            pseudo_diagonals[particle_index] = -aii;
-        } else {
-            pseudo_diagonals[particle_index] = 0.0f;
-        }
+        pseudo_diagonals[particle_index] =
+          safe_divide(numer, denom).value_or(0.0);
+
+        // auto const self_density_sqr = sqr(self_density);
+        // sum_m_gradw_dot_gradw *= self_mass;
+
+        // if (is_safe_divide(sum_m_gradw, self_density) &&
+        //     is_safe_divide(sum_m_gradw_dot_gradw, self_density_sqr)) {
+        //     sum_m_gradw /= self_density;
+        //     sum_m_gradw_dot_gradw /= self_density_sqr;
+        //     auto const aii =
+        //       sum_m_gradw.dot(sum_m_gradw) + sum_m_gradw_dot_gradw;
+        //     pseudo_diagonals[particle_index] = -aii;
+        // } else {
+        //     pseudo_diagonals[particle_index] = 0.0f;
+        // }
 
         density_stars[particle_index] = self_density + dt * divergence;
     });
@@ -329,7 +336,7 @@ void iisph_pseudo_ap_integrate_velocities_and_positions_in_place(
         auto const displacement = pseudo_pressure_displacements[particle_index];
         positions[particle_index] =
           old_position + (dt * velocity_star) + displacement;
-        if (safe_divide(velocity_star, dt)) {
+        if (is_safe_divide(velocity_star, dt)) {
             velocities[particle_index] = velocity_star + (displacement / dt);
         }
     });
