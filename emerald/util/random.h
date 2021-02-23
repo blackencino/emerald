@@ -104,6 +104,8 @@ protected:
     std::normal_distribution<double> m_distribution;
 };
 
+#if !defined(WIN32)
+
 //------------------------------------------------------------------------------
 struct Lehmer_rand_gen_64 {
     using result_type = uint64_t;
@@ -128,6 +130,8 @@ struct Lehmer_rand_gen_64 {
 
     __uint128_t state;
 };
+
+#endif
 
 }  // End namespace util
 }  // End namespace emerald

@@ -29,15 +29,15 @@
 ##-*****************************************************************************
 
 # Recurse into all the subdirectories
-ADD_SUBDIRECTORY( Util )
-ADD_SUBDIRECTORY( ParallelUtil )
-ADD_SUBDIRECTORY( ElutMesh )
-ADD_SUBDIRECTORY( GeepGLFW )
-ADD_SUBDIRECTORY( Noise )
-ADD_SUBDIRECTORY( SpatialSubd )
-ADD_SUBDIRECTORY( TriMesh )
-ADD_SUBDIRECTORY( MeshEdit )
-ADD_SUBDIRECTORY( SimpleSimViewer )
-ADD_SUBDIRECTORY( CompactHashMap )
-ADD_SUBDIRECTORY( AbcMeshesScene )
+add_subdirectory(Util)
+# ADD_SUBDIRECTORY( ParallelUtil )
+# ADD_SUBDIRECTORY( ElutMesh )
+# ADD_SUBDIRECTORY( GeepGLFW )
+# ADD_SUBDIRECTORY( Noise )
+# ADD_SUBDIRECTORY( SpatialSubd )
+# ADD_SUBDIRECTORY( TriMesh )
+# ADD_SUBDIRECTORY( MeshEdit )
+# ADD_SUBDIRECTORY( SimpleSimViewer )
+# ADD_SUBDIRECTORY( CompactHashMap )
+# ADD_SUBDIRECTORY( AbcMeshesScene )
 

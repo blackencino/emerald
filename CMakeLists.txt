@@ -5,19 +5,39 @@ cmake_minimum_required(VERSION 3.11.2)
 
 cmake_policy(SET CMP0042 NEW)
 
-project(emerald CXX)
-
-enable_testing()
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+project(emerald 
+        LANGUAGES CXX
+        VERSION 0.0.1)
 
 option(EMERALD_BUILD_GUIS "Build Emerald Graphical UIs" ON)
+option(EMERALD_DO_TESTS "Do unit tests" ON)
 
 if (${EMERALD_BUILD_GUIS})
     add_definitions( "-DGL_SILENCE_DEPRECATION=1" )
+    set(EMLD_CONAN_OPTIONS "enable_guis=True")
+else()
+    set(EMLD_CONAN_OPTIONS "enable_guis=False")
+endif()
+
+message(STATUS "DO TESTS?: ${EMERALD_DO_TESTS}")
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    set(CMAKE_CXX_STANDARD  17)
+    set(CMAKE_CXX_EXTENSIONS    OFF)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    if (EMERALD_DO_TESTS)
+        message(STATUS "I'm enabling testing")
+        include(GoogleTest)
+        enable_testing()
+    endif()
+
+    message(STATUS "about to do conan cmake run")
+    include(cmake/conan.cmake)
+    conan_cmake_run(CONANFILE conanfile.py
+                    BASIC_SETUP
+                    BUILD missing
+                    OPTIONS ${EMLD_CONAN_OPTIONS})
+    include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 endif()
 
 # Platform
@@ -46,19 +66,14 @@ find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
 find_package(GTest REQUIRED)
 
-
-# find_package(LLVM REQUIRED CONFIG)
-
-# message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-# message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-
 set(EMERALD_GL_LIBS "")
 if (${EMERALD_BUILD_GUIS})
     find_package(glfw REQUIRED)
     find_package(OpenGL REQUIRED)
     find_package(glad REQUIRED)
 endif()
-#find_package(glm REQUIRED)
+
+include(cmake/emerald_utils.cmake)
 
 add_subdirectory(emerald)
 

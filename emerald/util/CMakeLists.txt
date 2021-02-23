@@ -1,4 +1,10 @@
-add_library(emerald_util
+emerald_define_library(util
+  SOURCES
+    assert.cpp
+    murmur3.cpp
+    random.cpp
+    vector_util.cpp
+  HEADERS
     all.h
     assert.h
     flicks.h
@@ -12,17 +18,10 @@ add_library(emerald_util
     storage_traits.h
     timer.h
     vector_util.h
-
-    assert.cpp
-    murmur3.cpp
-    random.cpp
-    vector_util.cpp
-)
-
-target_include_directories(emerald_util PUBLIC "${emerald_SOURCE_DIR}")
-target_link_libraries(emerald_util
+  DEPENDENCIES
     OpenEXR::OpenEXR
     Alembic::Alembic
-    fmt::fmt)
+    fmt::fmt
+  )
 
 add_subdirectory(tests)
