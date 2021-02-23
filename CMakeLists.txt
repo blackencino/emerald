@@ -68,9 +68,24 @@ find_package(GTest REQUIRED)
 
 set(EMERALD_GL_LIBS "")
 if (${EMERALD_BUILD_GUIS})
-    find_package(glfw REQUIRED)
+    find_package(glfw3 REQUIRED)
     find_package(OpenGL REQUIRED)
     find_package(glad REQUIRED)
+endif()
+
+# This is necessary because of weird skew in the gsl-lite repo.
+if(NOT TARGET gsl-lite::gsl-lite)
+    add_library(gsl-lite::gsl-lite INTERFACE IMPORTED)
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                          "${gsl_gsl-lite_INCLUDE_DIRS}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_LINK_DIRECTORIES
+                          "${gsl_gsl-lite_LIB_DIRS}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_LINK_LIBRARIES
+                          "${gsl_gsl-lite_LINK_LIBS};${gsl_gsl-lite_LINKER_FLAGS_LIST}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_COMPILE_DEFINITIONS
+                          "${gsl_gsl-lite_COMPILE_DEFINITIONS}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_COMPILE_OPTIONS
+                          "${gsl_gsl-lite_COMPILE_OPTIONS_C};${gsl_gsl-lite_COMPILE_OPTIONS_CXX}")
 endif()
 
 include(cmake/emerald_utils.cmake)

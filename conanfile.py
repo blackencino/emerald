@@ -28,7 +28,8 @@ class EmeraldConan(ConanFile):
 
     def requirements(self):
         self.options["tbb"].tbbmalloc = True
-        self.options["tbb"].tbbproxy = True
+        self.options["tbb"].tbbproxy = False
+        self.options["tbb"].shared = False
 
         if self.options.enable_guis:
             self.requires.add("glfw/3.3.2")
@@ -39,7 +40,7 @@ class EmeraldConan(ConanFile):
             #self.options["imgui"].fPIC = True
 
             self.options["glad"].shared = False
-            self.options["glad"].fPIC = True
+            #self.options["glad"].fPIC = True
             self.options["glad"].spec = "gl"
             self.options["glad"].no_loader = False
             self.options["glad"].gl_profile = "core"

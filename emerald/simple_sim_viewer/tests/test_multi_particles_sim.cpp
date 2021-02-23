@@ -1,4 +1,4 @@
-#include <emerald/simple_sim_viewer/tests/multi_scale_draw.h>
+#include "multi_scale_draw.h"
 
 #include <emerald/simple_sim_viewer/viewer.h>
 #include <emerald/util/assert.h>
@@ -31,7 +31,7 @@ struct Single_scale_particles {
       : radius(_radius) {
         std::uniform_real_distribution<float> angle_dist{0.0f,
                                                          radians(360.0f)};
-        std::uniform_int_distribution<uint8_t> color_dist{64, 255};
+        std::uniform_int_distribution<int> color_dist{64, 255};
 
         centers.reserve(count);
         angles.reserve(count);
@@ -40,7 +40,9 @@ struct Single_scale_particles {
             centers.push_back({center_dist(gen), center_dist(gen)});
             angles.push_back(angle_dist(gen));
             rgbas.push_back(
-                {color_dist(gen), color_dist(gen), color_dist(gen), 255});
+                {static_cast<uint8_t>(color_dist(gen)), 
+                    static_cast<uint8_t>(color_dist(gen)), 
+                    static_cast<uint8_t>(color_dist(gen)), 255});
         }
     }
 
