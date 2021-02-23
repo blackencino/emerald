@@ -12,6 +12,7 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(EMERALD_BUILD_GUIS "Build Emerald Graphical UIs" ON)
 
@@ -45,10 +46,17 @@ find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
 find_package(GTest REQUIRED)
 
+
+# find_package(LLVM REQUIRED CONFIG)
+
+# message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+# message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
 set(EMERALD_GL_LIBS "")
 if (${EMERALD_BUILD_GUIS})
     find_package(glfw REQUIRED)
     find_package(OpenGL REQUIRED)
+    find_package(glad REQUIRED)
 endif()
 #find_package(glm REQUIRED)
 

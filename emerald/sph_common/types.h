@@ -15,6 +15,7 @@ namespace emerald::sph_common {
 using C3f = Imath::Color3<float>;
 using C4f = Imath::Color4<float>;
 using C4uc = Imath::Color4<uint8_t>;
+using C4d = Imath::Color4<double>;
 
 using V3f = Imath::Vec3<float>;
 using V3i = Imath::Vec3<int32_t>;

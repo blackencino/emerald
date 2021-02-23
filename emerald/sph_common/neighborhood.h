@@ -188,7 +188,13 @@ inline void sort_neighbors_in_place(Neighbors& neighbors, uint8_t const count) {
 //------------------------------------------------------------------------------
 // Pass in an accept function that takes two indices and determines whether the
 // particle at the second index can be a neighbor (of this type) of the particle
-// at the first index
+// at the first index.
+// This would be NOT the case if you were making rigid bodies that needed to
+// distinguish between particles in the same body as themselves vs. particles
+// not in the same body as themselves. The rigid solver has essentially three
+// particle groupings - solid self, solid other, fluid.
+// For simulations with just solids or fluids, the degenerate
+// "true" can be done.
 template <typename AcceptConditionFunction>
 void create_neighborhoods(
   size_t const particle_count,

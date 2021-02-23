@@ -12,7 +12,8 @@ target_link_libraries(emerald_geep_glfw PUBLIC
                       emerald_util
                       OpenEXR::OpenEXR
                       glfw::glfw
-                      OpenGL::GL)
+                      OpenGL::GL
+                      glad::glad)
 
 add_subdirectory(tests)
 
