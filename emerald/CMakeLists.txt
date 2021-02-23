@@ -1,6 +1,6 @@
 add_subdirectory(util)
-#add_subdirectory(z_index)
-#add_subdirectory(noise)
+add_subdirectory(z_index)
+add_subdirectory(noise)
 #if (${EMERALD_BUILD_GUIS})
 #    add_subdirectory(geep_glfw)
 #    add_subdirectory(simple_sim_viewer)

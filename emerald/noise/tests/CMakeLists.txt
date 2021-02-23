@@ -1,7 +1,14 @@
-add_executable(test_noise test_noise.cpp)
-target_link_libraries(test_noise PUBLIC emerald_noise)
-add_test(TEST_emerald_noise_test_noise test_noise)
+##------------------------------------------------------------------------------
+# TESTS
+foreach(_test
+        noise
+        cell_noise)
+    emerald_define_gtest(noise_test_${_test}
+        SOURCES test_${_test}.cpp
+        DEPENDENCIES 
+            emerald::noise 
+            emerald::util 
+            fmt::fmt
+        )
+endforeach()
 
-add_executable(test_cell_noise test_cell_noise.cpp)
-target_link_libraries(test_cell_noise PUBLIC emerald_noise)
-add_test(TEST_emerald_noise_test_cell_noise test_cell_noise)
