@@ -14,7 +14,7 @@ static void error_callback(int error, const char* description) {
 }
 
 static void key_callback(
-    GLFWwindow* window, int key, int scancode, int action, int mods) {
+  GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
@@ -35,7 +35,7 @@ int main(int, char*[]) {
     glfwMakeContextCurrent(window);
 
     // CJH: This is the only part I added.
-    emerald::geep_glfw::util_gl::Init(true);
+    emerald::geep_glfw::util_gl::Init();
 
     glfwSetKeyCallback(window, key_callback);
     while (!glfwWindowShouldClose(window)) {

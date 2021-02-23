@@ -16,7 +16,7 @@ namespace util_gl {
 //! OpenGL does not need extension initialization on Mac OSX, but does
 //! require initialization via glewInit on non-mac systems. This function
 //! abstracts that.
-void Init(bool const experimental = true);
+void Init();
 
 //-*****************************************************************************
 //! This function will throw an exception with an attached label if the OpenGL

@@ -211,7 +211,7 @@ void Viewer::run() {
     glfwMakeContextCurrent(m_window);
 
     // Init GLEW and other stuff.
-    emerald::geep_glfw::util_gl::Init(true);
+    emerald::geep_glfw::util_gl::Init();
     init();
 
     // Register callbacks.

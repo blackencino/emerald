@@ -23,7 +23,7 @@ int main(int, char*[]) {
     glfwMakeContextCurrent(window);
 
     /* Init GLEW */
-    emerald::geep_glfw::util_gl::Init(true);
+    emerald::geep_glfw::util_gl::Init();
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
