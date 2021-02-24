@@ -1,11 +1,11 @@
 emerald_define_library(geep_glfw
-  SOURCES
-    program.cpp
-    util_gl.cpp
   HEADERS
     foundation.h
     program.h
     util_gl.h
+  SOURCES
+    program.cpp
+    util_gl.cpp
   DEPENDENCIES
     emerald::util
     OpenEXR::OpenEXR

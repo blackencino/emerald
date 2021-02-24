@@ -130,7 +130,11 @@ void accumulate_anti_coupling_repulsive_forces(
         for (uint8_t j = 0; j < nbhd_count; ++j) {
             if (distances[j] < max_distance) {
                 // add a random offset.
+                #ifdef WIN32
+                std::minstd_rand gen{static_cast<std::minstd_rand::result_type>(i)};
+                #else
                 Lehmer_rand_gen_64 gen{i};
+                #endif
                 auto const angle = angle_dist(gen);
 
                 forces[i] +=

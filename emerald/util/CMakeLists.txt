@@ -1,9 +1,4 @@
 emerald_define_library(util
-  SOURCES
-    assert.cpp
-    murmur3.cpp
-    random.cpp
-    vector_util.cpp
   HEADERS
     all.h
     assert.h
@@ -18,6 +13,11 @@ emerald_define_library(util
     storage_traits.h
     timer.h
     vector_util.h
+  SOURCES
+    assert.cpp
+    murmur3.cpp
+    random.cpp
+    vector_util.cpp
   DEPENDENCIES
     OpenEXR::OpenEXR
     Alembic::Alembic

@@ -1,17 +1,18 @@
-add_library(emerald_wisp
+emerald_define_library(wisp
+  HEADERS
     foundation.h
     simulation.h
     simulation_old.h
     state.h
-
+  SOURCES
     simulation.cpp
-    simulation_old.cpp)
-target_include_directories(emerald_wisp PUBLIC "${emerald_SOURCE_DIR}")
-target_link_libraries(emerald_wisp PUBLIC
-                      emerald_shallow_weaver
-                      emerald_util
-                      emerald_noise
-                      gsl-lite::gsl-lite
-                      TBB::TBB)
+    simulation_old.cpp
+  DEPENDENCIES
+    emerald::shallow_weaver
+    emerald::util 
+    emerald::noise 
+    gsl-lite::gsl-lite 
+    TBB::TBB
+  )
 
 add_subdirectory(bin)

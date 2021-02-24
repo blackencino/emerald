@@ -1,8 +1,4 @@
 emerald_define_library(shallow_weaver
-  SOURCES
-    simulation.cpp
-    simulation_old.cpp
-    slab_ops.cpp
   HEADERS
     foundation.h
     simulation.h
@@ -10,6 +6,10 @@ emerald_define_library(shallow_weaver
     slab.h
     slab_ops.h
     state.h
+  SOURCES
+    simulation.cpp
+    simulation_old.cpp
+    slab_ops.cpp
   DEPENDENCIES
     emerald::util 
     emerald::noise 

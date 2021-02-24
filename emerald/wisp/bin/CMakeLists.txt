@@ -1,21 +1,25 @@
-add_executable(wisp_headless
-               parse_parameters.h
-               parse_parameters.cpp
-               headless_main.cpp)
-target_link_libraries(wisp_headless
-                      PUBLIC
-                      emerald_wisp
-                      cxxopts::cxxopts)
+emerald_define_executable(wisp_headless
+    SOURCES 
+        parse_parameters.h
+        parse_parameters.cpp
+        headless_main.cpp
+    DEPENDENCIES 
+        emerald::wisp
+        cxxopts::cxxopts
+    )
 
-if (${EMERALD_BUILD_GUIS})
-    add_executable(wisp
-                   parse_parameters.h
-                   parse_parameters.cpp
-                   main.cpp)
-    target_link_libraries(wisp
-                          PUBLIC
-                          emerald_wisp
-                          emerald_simple_sim_viewer
-                          cxxopts::cxxopts)
+
+if (EMERALD_BUILD_GUIS)
+    emerald_define_executable(wisp_gui
+        SOURCES 
+            parse_parameters.h
+            parse_parameters.cpp
+            main.cpp
+        DEPENDENCIES 
+            emerald::wisp
+            emerald::simple_sim_viewer 
+            emerald::geep_glfw 
+            cxxopts::cxxopts
+        )
 endif()
 

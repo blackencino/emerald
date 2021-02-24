@@ -3,10 +3,10 @@ target_include_directories(emerald_z_index PUBLIC "${emerald_SOURCE_DIR}")
 target_link_libraries(emerald_z_index PUBLIC fmt::fmt)
 
 emerald_define_library(z_index
-  SOURCES
-    z_index.cpp
   HEADERS
     z_index.h
+  SOURCES
+    z_index.cpp
   DEPENDENCIES
     fmt::fmt
   )

@@ -9,6 +9,8 @@ namespace kernels {
 
 using namespace emerald::util;
 
+static constexpr float _pi = 3.14159274101257324218750f;
+
 // These are the standard SPH composite curves for kernels
 
 inline constexpr float _wa(float const q) {
@@ -22,7 +24,7 @@ inline constexpr float _wb(float const q_in) {
 
 inline constexpr float W(float const r, float const h) {
     float const q = r / h;
-    float const k = h * h * h * M_PI;
+    float const k = h * h * h * _pi;
     if (q <= 1) {
         return _wa(q) / k;
     } else if (q <= 2) {
@@ -42,7 +44,7 @@ inline constexpr float _dwb(float const r, float const h) {
 
 inline constexpr float dW(float const r, float const h) {
     float const q = r / h;
-    float const k = h * h * h * M_PI;
+    float const k = h * h * h * _pi;
     if (q <= 1) {
         return _dwa(r, h) / k;
     } else if (q <= 2) {
