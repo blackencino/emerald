@@ -1,37 +1,14 @@
-//-*****************************************************************************
-// Copyright (c) 2001-2013, Christopher Jon Horvath. All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// 1. Redistributions of source code must retain the above copyright notice,
-// this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright notice,
-// this list of conditions and the following disclaimer in the documentation
-// and/or other materials provided with the distribution.
-//
-// 3. Neither the name of Christopher Jon Horvath nor the names of his
-// contributors may be used to endorse or promote products derived from this
-// software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//-*****************************************************************************
-
 #ifndef _EmldCore_SpatialSubd_KdTree3_h_
 #define _EmldCore_SpatialSubd_KdTree3_h_
 
 #include "Foundation.h"
+
+#include <OpenEXR/ImathBox.h>
+#include <OpenEXR/ImathVec.h>
+
+#include <algorithm>
+#include <cassert>
+#include <vector>
 
 namespace EmldCore {
 namespace SpatialSubd {
@@ -88,97 +65,88 @@ namespace SpatialSubd {
 //-*****************************************************************************
 //-*****************************************************************************
 template <class T, class LEAF, class BOUNDS, class SORT_PT>
-class KdTree3
-{
+class KdTree3 {
 public:
-    typedef T                           value_type;
-    typedef LEAF                        leaf_type;
-    typedef BOUNDS                      bounds_type;
-    typedef SORT_PT                     sort_point_type;
-    
-    typedef typename Imath::Vec3<T>     V3T;
-    typedef typename Imath::Box<V3T>    B3T;
+    typedef T value_type;
+    typedef LEAF leaf_type;
+    typedef BOUNDS bounds_type;
+    typedef SORT_PT sort_point_type;
 
-    typedef LEAF*                       iterator;
-    typedef const LEAF*                 const_iterator;
+    typedef typename Imath::Vec3<T> V3T;
+    typedef typename Imath::Box<V3T> B3T;
 
-    typedef KdTree3<T,LEAF,BOUNDS,SORT_PT> this_type;
+    typedef LEAF* iterator;
+    typedef const LEAF* const_iterator;
 
-    KdTree3( iterator Begin, iterator End,
-             const BOUNDS &bounder,
-             const SORT_PT &sorter,
-             int maxPerLeaf = 4, int maxSubDivs = 32 )
-    {
-        init( Begin, End, bounder, sorter, maxPerLeaf, maxSubDivs );
+    typedef KdTree3<T, LEAF, BOUNDS, SORT_PT> this_type;
+
+    KdTree3(iterator Begin,
+            iterator End,
+            const BOUNDS& bounder,
+            const SORT_PT& sorter,
+            int maxPerLeaf = 4,
+            int maxSubDivs = 32) {
+        init(Begin, End, bounder, sorter, maxPerLeaf, maxSubDivs);
     }
 
-    KdTree3( std::vector<LEAF> &vec,
-             const BOUNDS &bounder,
-             const SORT_PT &sorter,
-             int maxPerLeaf = 4, int maxSubDivs = 32 )
-    {
-        LEAF *begin = NULL;
-        LEAF *end = NULL;
-        if ( vec.size() > 0 )
-        {
-            begin = &( vec.front() );
+    KdTree3(std::vector<LEAF>& vec,
+            const BOUNDS& bounder,
+            const SORT_PT& sorter,
+            int maxPerLeaf = 4,
+            int maxSubDivs = 32) {
+        LEAF* begin = NULL;
+        LEAF* end = NULL;
+        if (vec.size() > 0) {
+            begin = &(vec.front());
             end = begin + vec.size();
         }
-        init( begin, end, bounder, sorter,
-              maxPerLeaf, maxSubDivs );
+        init(begin, end, bounder, sorter, maxPerLeaf, maxSubDivs);
     }
 
     ~KdTree3();
 
     // Basic Data Access.
-    bool isLeaf() const { return m_isLeaf; }
-    iterator begin()
-    {
-        assert( m_isLeaf );
+    bool isLeaf() const {
+        return m_isLeaf;
+    }
+    iterator begin() {
+        assert(m_isLeaf);
         return m_data.leaf.begin;
     }
-    const_iterator begin() const
-    {
-        assert( m_isLeaf );
+    const_iterator begin() const {
+        assert(m_isLeaf);
         return m_data.leaf.begin;
     }
-    iterator end()
-    {
-        assert( m_isLeaf );
+    iterator end() {
+        assert(m_isLeaf);
         return m_data.leaf.end;
     }
-    const_iterator end() const
-    {
-        assert( m_isLeaf );
+    const_iterator end() const {
+        assert(m_isLeaf);
         return m_data.leaf.end;
     }
 
-    const B3T &bounds() const
-    {
+    const B3T& bounds() const {
         return m_bounds;
     }
 
     // Left and right access. These are named
     // obscurely so that derived classes can use the left_and_right
     // class to provide upcasted pointers.
-    this_type *left()
-    {
-        assert( !m_isLeaf );
+    this_type* left() {
+        assert(!m_isLeaf);
         return m_data.branch.left;
     }
-    const this_type *left() const
-    {
-        assert( !m_isLeaf );
+    const this_type* left() const {
+        assert(!m_isLeaf);
         return m_data.branch.left;
     }
-    this_type *right()
-    {
-        assert( !m_isLeaf );
+    this_type* right() {
+        assert(!m_isLeaf);
         return m_data.branch.right;
     }
-    const this_type *right() const
-    {
-        assert( !m_isLeaf );
+    const this_type* right() const {
+        assert(!m_isLeaf);
         return m_data.branch.right;
     }
 
@@ -191,11 +159,10 @@ public:
     //-*************************************************************************
     //-*************************************************************************
     template <class CHECKER>
-    void gatherByBounds( const B3T &bnds, CHECKER &check ) const;
+    void gatherByBounds(const B3T& bnds, CHECKER& check) const;
 
     template <class CHECKER>
-    void gatherByPoint ( const V3T &pnt, CHECKER &check ) const;
-
+    void gatherByPoint(const V3T& pnt, CHECKER& check) const;
 
     //-*************************************************************************
     //-*************************************************************************
@@ -225,63 +192,63 @@ public:
     // There will be a few handy traversals down below.
     //-*************************************************************************
     template <class TRAVERSER>
-    void constTraverse( TRAVERSER &trav ) const;
+    void constTraverse(TRAVERSER& trav) const;
 
     template <class TRAVERSER>
-    void traverse( TRAVERSER &trav );
+    void traverse(TRAVERSER& trav);
 
 protected:
     // Sorters.
-    struct LeafCompX
-    {
-        LeafCompX( const SORT_PT &sp ) : sortPt( sp ) {}
-        bool operator()( const LEAF &a, const LEAF &b ) const
-        {
-            return sortPt( a ).x < sortPt( b ).x;
+    struct LeafCompX {
+        LeafCompX(const SORT_PT& sp)
+          : sortPt(sp) {
         }
-        const SORT_PT &sortPt;
+        bool operator()(const LEAF& a, const LEAF& b) const {
+            return sortPt(a).x < sortPt(b).x;
+        }
+        const SORT_PT& sortPt;
     };
 
-    struct LeafCompY
-    {
-        LeafCompY( const SORT_PT &sp ) : sortPt( sp ) {}
-        bool operator()( const LEAF &a, const LEAF &b ) const
-        {
-            return sortPt( a ).y < sortPt( b ).y;
+    struct LeafCompY {
+        LeafCompY(const SORT_PT& sp)
+          : sortPt(sp) {
         }
-        const SORT_PT &sortPt;
+        bool operator()(const LEAF& a, const LEAF& b) const {
+            return sortPt(a).y < sortPt(b).y;
+        }
+        const SORT_PT& sortPt;
     };
 
-    struct LeafCompZ
-    {
-        LeafCompZ( const SORT_PT &sp ) : sortPt( sp ) {}
-        bool operator()( const LEAF &a, const LEAF &b ) const
-        {
-            return sortPt( a ).z < sortPt( b ).z;
+    struct LeafCompZ {
+        LeafCompZ(const SORT_PT& sp)
+          : sortPt(sp) {
         }
-        const SORT_PT &sortPt;
+        bool operator()(const LEAF& a, const LEAF& b) const {
+            return sortPt(a).z < sortPt(b).z;
+        }
+        const SORT_PT& sortPt;
     };
 
     // Init function
-    void init( iterator Begin, iterator End,
-               const BOUNDS &bnd, const SORT_PT &srt,
-               int maxPerLeaf, int maxSubDivs );
+    void init(iterator Begin,
+              iterator End,
+              const BOUNDS& bnd,
+              const SORT_PT& srt,
+              int maxPerLeaf,
+              int maxSubDivs);
 
     // Data
     B3T m_bounds;
 
-    union
-    {
-        struct
-        {
+    union {
+        struct {
             iterator begin;
             iterator end;
         } leaf;
 
-        struct
-        {
-            this_type *left;
-            this_type *right;
+        struct {
+            this_type* left;
+            this_type* right;
         } branch;
     } m_data;
 
@@ -296,61 +263,49 @@ protected:
 //-*****************************************************************************
 //-*****************************************************************************
 template <class T, class LEAF, class BND, class SP>
-void KdTree3<T,LEAF,BND,SP>::init( iterator Begin,
-                                   iterator End,
-                                   const BND &bnd,
-                                   const SP &sp,
-                                   int maxPerLeaf,
-                                   int maxSubDivs )
-{
+void KdTree3<T, LEAF, BND, SP>::init(iterator Begin,
+                                     iterator End,
+                                     const BND& bnd,
+                                     const SP& sp,
+                                     int maxPerLeaf,
+                                     int maxSubDivs) {
     // Fix inputs.
-    maxPerLeaf = std::max( maxPerLeaf, 2 );
+    maxPerLeaf = std::max(maxPerLeaf, 2);
 
     // Get bounds.
     m_bounds.makeEmpty();
-    for ( iterator iter = Begin; iter != End; ++iter )
-    {
-        m_bounds.extendBy( bnd( (*iter) ) );
+    for (iterator iter = Begin; iter != End; ++iter) {
+        m_bounds.extendBy(bnd((*iter)));
     }
 
     // Decide whether or not to split.
-    int N = ( int )( End - Begin );
-    if ( N > maxPerLeaf && maxSubDivs > 0 )
-    {
-        int halfN = N/2;
+    int N = (int)(End - Begin);
+    if (N > maxPerLeaf && maxSubDivs > 0) {
+        int halfN = N / 2;
         iterator nthIter = Begin + halfN;
 
         // Split along the largest axis of the bounds.
         // Do this by median sorting based on the appropriate axis.
         V3T bsze = m_bounds.size();
-        if ( bsze.x > bsze.y )
-        {
-            if ( bsze.x > bsze.z )
-            {
+        if (bsze.x > bsze.y) {
+            if (bsze.x > bsze.z) {
                 // X is the biggest axis.
-                LeafCompX lc( sp );
-                std::nth_element( Begin, nthIter, End, lc );
-            }
-            else
-            {
+                LeafCompX lc(sp);
+                std::nth_element(Begin, nthIter, End, lc);
+            } else {
                 // Z is the biggest axis.
-                LeafCompZ lc( sp );
-                std::nth_element( Begin, nthIter, End, lc );
+                LeafCompZ lc(sp);
+                std::nth_element(Begin, nthIter, End, lc);
             }
-        }
-        else
-        {
-            if ( bsze.y > bsze.z )
-            {
+        } else {
+            if (bsze.y > bsze.z) {
                 // Y is the biggest axis.
-                LeafCompY lc( sp );
-                std::nth_element( Begin, nthIter, End, lc );
-            }
-            else
-            {
+                LeafCompY lc(sp);
+                std::nth_element(Begin, nthIter, End, lc);
+            } else {
                 // Z is the biggest axis.
-                LeafCompZ lc( sp );
-                std::nth_element( Begin, nthIter, End, lc );
+                LeafCompZ lc(sp);
+                std::nth_element(Begin, nthIter, End, lc);
             }
         }
 
@@ -358,16 +313,12 @@ void KdTree3<T,LEAF,BND,SP>::init( iterator Begin,
         // point, based on the axes.
         // Make children.
         m_isLeaf = false;
-        m_data.branch.left = new this_type( Begin, nthIter, bnd, sp,
-                                            maxPerLeaf,
-                                            maxSubDivs - 1 );
+        m_data.branch.left =
+          new this_type(Begin, nthIter, bnd, sp, maxPerLeaf, maxSubDivs - 1);
 
-        m_data.branch.right = new this_type( nthIter, End, bnd, sp,
-                                             maxPerLeaf,
-                                             maxSubDivs - 1 );
-    }
-    else
-    {
+        m_data.branch.right =
+          new this_type(nthIter, End, bnd, sp, maxPerLeaf, maxSubDivs - 1);
+    } else {
         // We're a leaf! Yay!
         m_isLeaf = true;
         m_data.leaf.begin = Begin;
@@ -377,68 +328,48 @@ void KdTree3<T,LEAF,BND,SP>::init( iterator Begin,
 
 //-*****************************************************************************
 template <class T, class LEAF, class BND, class SP>
-KdTree3<T,LEAF,BND,SP>::~KdTree3()
-{
-    if ( !m_isLeaf )
-    {
+KdTree3<T, LEAF, BND, SP>::~KdTree3() {
+    if (!m_isLeaf) {
         delete m_data.branch.left;
         delete m_data.branch.right;
     }
 }
 
-
 //-*****************************************************************************
 template <class T, class LEAF, class BND, class SP>
 template <class CHECKER>
-void KdTree3<T,LEAF,BND,SP>::gatherByBounds( const B3T &bnds,
-                                             CHECKER &chk ) const
-{
+void KdTree3<T, LEAF, BND, SP>::gatherByBounds(const B3T& bnds,
+                                               CHECKER& chk) const {
     // Check intersection first.
-    if ( !m_bounds.intersects( bnds ) )
-    {
-        return;
-    }
+    if (!m_bounds.intersects(bnds)) { return; }
 
-    if ( m_isLeaf )
-    {
-        for ( const_iterator iter = m_data.leaf.begin;
-              iter != m_data.leaf.end; ++iter )
-        {
-            chk( (*iter) );
+    if (m_isLeaf) {
+        for (const_iterator iter = m_data.leaf.begin; iter != m_data.leaf.end;
+             ++iter) {
+            chk((*iter));
         }
-    }
-    else
-    {
-        m_data.branch.left->gatherByBounds( bnds, chk );
-        m_data.branch.right->gatherByBounds( bnds, chk );
+    } else {
+        m_data.branch.left->gatherByBounds(bnds, chk);
+        m_data.branch.right->gatherByBounds(bnds, chk);
     }
 }
 
-
 //-*****************************************************************************
 template <class T, class LEAF, class BND, class SP>
 template <class CHECKER>
-void KdTree3<T,LEAF,BND,SP>::gatherByPoint( const V3T &pnt,
-                                            CHECKER &chk ) const
-{
+void KdTree3<T, LEAF, BND, SP>::gatherByPoint(const V3T& pnt,
+                                              CHECKER& chk) const {
     // Check intersection first.
-    if ( !m_bounds.intersects( pnt ) )
-    {
-        return;
-    }
+    if (!m_bounds.intersects(pnt)) { return; }
 
-    if ( m_isLeaf )
-    {
-        for ( const_iterator iter = m_data.leaf.begin;
-              iter != m_data.leaf.end; ++iter )
-        {
-            chk( (*iter) );
+    if (m_isLeaf) {
+        for (const_iterator iter = m_data.leaf.begin; iter != m_data.leaf.end;
+             ++iter) {
+            chk((*iter));
         }
-    }
-    else
-    {
-        m_data.branch.left->gatherByPoint( pnt, chk );
-        m_data.branch.right->gatherByPoint( pnt, chk );
+    } else {
+        m_data.branch.left->gatherByPoint(pnt, chk);
+        m_data.branch.right->gatherByPoint(pnt, chk);
     }
 }
 
@@ -451,21 +382,22 @@ void KdTree3<T,LEAF,BND,SP>::gatherByPoint( const V3T &pnt,
 //
 // Note that it still requires a leaf function and a bool operator.
 template <class T>
-class BoundsTraverser3
-{
+class BoundsTraverser3 {
 public:
-    typedef T                   value_type;
-    typedef Imath::Vec3<T>      V3T;
-    typedef Imath::Box<V3T>     B3T;
-    
-    BoundsTraverser3( const B3T &testBnds )
-      : m_testBounds( testBnds ) {}
+    typedef T value_type;
+    typedef Imath::Vec3<T> V3T;
+    typedef Imath::Box<V3T> B3T;
 
-    const B3T &testBounds() const { return m_testBounds; }
+    BoundsTraverser3(const B3T& testBnds)
+      : m_testBounds(testBnds) {
+    }
 
-    bool validBounds( const B3T &bnds ) const
-    {
-        return m_testBounds.intersects( bnds );
+    const B3T& testBounds() const {
+        return m_testBounds;
+    }
+
+    bool validBounds(const B3T& bnds) const {
+        return m_testBounds.intersects(bnds);
     }
 
 protected:
@@ -474,84 +406,67 @@ protected:
 
 //-*****************************************************************************
 template <class T>
-class PointTraverser3
-{
+class PointTraverser3 {
 public:
-    typedef T                   value_type;
-    typedef Imath::Vec3<T>      V3T;
-    typedef Imath::Box<V3T>     B3T;
-    
-    PointTraverser3( const V3T &testPt )
-      : m_testPoint( testPt ) {}
+    typedef T value_type;
+    typedef Imath::Vec3<T> V3T;
+    typedef Imath::Box<V3T> B3T;
 
-    const V3T &testPoint() const { return m_testPoint; }
+    PointTraverser3(const V3T& testPt)
+      : m_testPoint(testPt) {
+    }
 
-    bool validBounds( const B3T &bnds ) const
-    {
-        return bnds.intersects( m_testPoint );
+    const V3T& testPoint() const {
+        return m_testPoint;
+    }
+
+    bool validBounds(const B3T& bnds) const {
+        return bnds.intersects(m_testPoint);
     }
 
 protected:
     V3T m_testPoint;
 };
 
+//-*****************************************************************************
+// The great thing is that traversal is so easy!!!
+template <class T, class LEAF, class BND, class SP>
+template <class TRAVERSER>
+void KdTree3<T, LEAF, BND, SP>::constTraverse(TRAVERSER& trav) const {
+    if (!trav.validBounds(m_bounds)) { return; }
+
+    if (m_isLeaf) {
+        for (const_iterator iter = m_data.leaf.begin;
+             trav.unfinished() && iter != m_data.leaf.end;
+             ++iter) {
+            trav.leaf((*iter));
+        }
+    } else {
+        if (trav.unfinished()) { m_data.branch.left->constTraverse(trav); }
+        if (trav.unfinished()) { m_data.branch.right->constTraverse(trav); }
+    }
+}
 
 //-*****************************************************************************
 // The great thing is that traversal is so easy!!!
 template <class T, class LEAF, class BND, class SP>
 template <class TRAVERSER>
-void KdTree3<T,LEAF,BND,SP>::constTraverse( TRAVERSER &trav ) const
-{
-    if ( !trav.validBounds( m_bounds ) )
-    {
-        return;
-    }
+void KdTree3<T, LEAF, BND, SP>::traverse(TRAVERSER& trav) {
+    if (!trav.validBounds(m_bounds)) { return; }
 
-    if ( m_isLeaf )
-    {
-        for ( const_iterator iter = m_data.leaf.begin;
-              trav.unfinished() &&
-                  iter != m_data.leaf.end; ++iter )
-        {
-            trav.leaf( (*iter) );
+    if (m_isLeaf) {
+        for (iterator iter = m_data.leaf.begin;
+             trav.unfinished() && iter != m_data.leaf.end;
+             ++iter) {
+            trav.leaf((*iter));
         }
-    }
-    else
-    {
-        if ( trav.unfinished() ) { m_data.branch.left->constTraverse( trav ); }
-        if ( trav.unfinished() ) { m_data.branch.right->constTraverse( trav ); }
+    } else {
+        if (trav.unfinished()) { m_data.branch.left->traverse(trav); }
+        if (trav.unfinished()) { m_data.branch.right->traverse(trav); }
     }
 }
 
-
-//-*****************************************************************************
-// The great thing is that traversal is so easy!!!
-template <class T, class LEAF, class BND, class SP>
-template <class TRAVERSER>
-void KdTree3<T,LEAF,BND,SP>::traverse( TRAVERSER &trav )
-{
-    if ( !trav.validBounds( m_bounds ) )
-    {
-        return;
-    }
-
-    if ( m_isLeaf )
-    {
-        for ( iterator iter = m_data.leaf.begin;
-              trav.unfinished() &&
-                  iter != m_data.leaf.end; ++iter )
-        {
-            trav.leaf( (*iter) );
-        }
-    }
-    else
-    {
-        if ( trav.unfinished() ) { m_data.branch.left->traverse( trav ); }
-        if ( trav.unfinished() ) { m_data.branch.right->traverse( trav ); }
-    }
-}
-
-} // End namespace SpatialSubd
-} // End namespace EmldCore
+}  // End namespace SpatialSubd
+}  // End namespace EmldCore
 
 #endif

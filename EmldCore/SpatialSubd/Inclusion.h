@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,6 +33,12 @@
 
 #include "Foundation.h"
 
+#include <OpenEXR/ImathFun.h>
+#include <OpenEXR/ImathInterval.h>
+
+#include <algorithm>
+#include <utility>
+
 namespace EmldCore {
 namespace SpatialSubd {
 
@@ -46,11 +52,11 @@ namespace SpatialSubd {
 //
 // This one returns the inclusion (range) of squared distances from a point
 // to a range of points (box)
-// 
+//
 // template <class T>
 // Imath::Interval<T> PointBoxSquaredDistanceInclusion
 // ( const Imath::Vec2<T> &point, const Imath::Box<Imath::Vec2<T> > &box );
-// 
+//
 // template <class T>
 // Imath::Interval<T> PointBoxSquaredDistanceInclusion
 // ( const Imath::Vec3<T> &point, const Imath::Box<Imath::Vec3<T> > &box );
@@ -78,18 +84,14 @@ namespace {
 //-*****************************************************************************
 // This function adds a range to an existing range.
 template <class T>
-inline void __incHelp( T bestDpMin, T bestDpMax, Imath::Interval<T> &rslt )
-{
-    if ( Imath::sign( bestDpMin ) != Imath::sign( bestDpMax ) )
-    {
-        bestDpMax = std::max( bestDpMin*bestDpMin, bestDpMax*bestDpMax );
+inline void __incHelp(T bestDpMin, T bestDpMax, Imath::Interval<T>& rslt) {
+    if (Imath::sign(bestDpMin) != Imath::sign(bestDpMax)) {
+        bestDpMax = std::max(bestDpMin * bestDpMin, bestDpMax * bestDpMax);
         bestDpMin = ((T)0);
-    }
-    else
-    {
+    } else {
         bestDpMax *= bestDpMax;
         bestDpMin *= bestDpMin;
-        if ( bestDpMin > bestDpMax ) { std::swap( bestDpMin, bestDpMax ); }
+        if (bestDpMin > bestDpMax) { std::swap(bestDpMin, bestDpMax); }
     }
 
     rslt.min += bestDpMin;
@@ -100,17 +102,13 @@ inline void __incHelp( T bestDpMin, T bestDpMax, Imath::Interval<T> &rslt )
 // Returns the minimum of the interval obtained by squaring the given
 // interval.
 template <class T>
-inline T __minDist2( T bestDpMin, T bestDpMax )
-{
-    if ( Imath::sign( bestDpMin ) != Imath::sign( bestDpMax ) )
-    {
+inline T __minDist2(T bestDpMin, T bestDpMax) {
+    if (Imath::sign(bestDpMin) != Imath::sign(bestDpMax)) {
         return ((T)0);
-    }
-    else
-    {
+    } else {
         bestDpMax *= bestDpMax;
         bestDpMin *= bestDpMin;
-        return ( bestDpMin < bestDpMax ) ? bestDpMin : bestDpMax;
+        return (bestDpMin < bestDpMax) ? bestDpMin : bestDpMax;
     }
 }
 
@@ -118,14 +116,13 @@ inline T __minDist2( T bestDpMin, T bestDpMax )
 // Returns the maximum of the interval obtained by squaring the given
 // interval.
 template <class T>
-inline T __maxDist2( T bestDpMin, T bestDpMax )
-{
+inline T __maxDist2(T bestDpMin, T bestDpMax) {
     bestDpMin *= bestDpMin;
     bestDpMax *= bestDpMax;
-    return ( bestDpMin < bestDpMax ) ? bestDpMax : bestDpMin;
+    return (bestDpMin < bestDpMax) ? bestDpMax : bestDpMin;
 }
 
-} // End anonymous namespace
+}  // End anonymous namespace
 
 //-*****************************************************************************
 // This is an "inclusion function", in the pure interval arithmetic
@@ -136,33 +133,25 @@ inline T __maxDist2( T bestDpMin, T bestDpMax )
 
 //-*****************************************************************************
 template <class T>
-inline Imath::Interval<T> PointBoxSquaredDistanceInclusion
-(
-    const Imath::Vec2<T> &point,
-    const Imath::Box<Imath::Vec2<T> > &range
-    )
-{
-    Imath::Interval<T> rslt( ((T)0), ((T)0) );
+inline Imath::Interval<T> PointBoxSquaredDistanceInclusion(
+  const Imath::Vec2<T>& point, const Imath::Box<Imath::Vec2<T> >& range) {
+    Imath::Interval<T> rslt(((T)0), ((T)0));
 
-    __incHelp( point.x - range.max.x, point.x - range.min.x, rslt );
-    __incHelp( point.y - range.max.y, point.y - range.min.y, rslt );
+    __incHelp(point.x - range.max.x, point.x - range.min.x, rslt);
+    __incHelp(point.y - range.max.y, point.y - range.min.y, rslt);
 
     return rslt;
 }
 
 //-*****************************************************************************
 template <class T>
-inline Imath::Interval<T> PointBoxSquaredDistanceInclusion
-(
-    const Imath::Vec3<T> &point,
-    const Imath::Box<Imath::Vec3<T> > &range
-    )
-{
-    Imath::Interval<T> rslt( ((T)0), ((T)0) );
+inline Imath::Interval<T> PointBoxSquaredDistanceInclusion(
+  const Imath::Vec3<T>& point, const Imath::Box<Imath::Vec3<T> >& range) {
+    Imath::Interval<T> rslt(((T)0), ((T)0));
 
-    __incHelp( point.x - range.max.x, point.x - range.min.x, rslt );
-    __incHelp( point.y - range.max.y, point.y - range.min.y, rslt );
-    __incHelp( point.z - range.max.z, point.z - range.min.z, rslt );
+    __incHelp(point.x - range.max.x, point.x - range.min.x, rslt);
+    __incHelp(point.y - range.max.y, point.y - range.min.y, rslt);
+    __incHelp(point.z - range.max.z, point.z - range.min.z, rslt);
 
     return rslt;
 }
@@ -172,37 +161,27 @@ inline Imath::Interval<T> PointBoxSquaredDistanceInclusion
 // distance between a point and any point within a bounds could possibly
 // be less than some given value.
 template <class T>
-inline bool PointBoxMinimumSquaredDistanceLessThan
-(
-    const Imath::Vec2<T> &point,
-    const Imath::Box<Imath::Vec2<T> > &range,
-    T d2
-    )
-{
-    T md2 = __minDist2( point.x - range.max.x, point.x - range.min.x );
-    if ( md2 >= d2 ) { return false; }
-    md2 += __minDist2( point.y - range.max.y, point.y - range.min.y );
-    return ( md2 < d2 );
+inline bool PointBoxMinimumSquaredDistanceLessThan(
+  const Imath::Vec2<T>& point, const Imath::Box<Imath::Vec2<T> >& range, T d2) {
+    T md2 = __minDist2(point.x - range.max.x, point.x - range.min.x);
+    if (md2 >= d2) { return false; }
+    md2 += __minDist2(point.y - range.max.y, point.y - range.min.y);
+    return (md2 < d2);
 }
 
 //-*****************************************************************************
 template <class T>
-inline bool PointBoxMinimumSquaredDistanceLessThan
-(
-    const Imath::Vec3<T> &point,
-    const Imath::Box<Imath::Vec3<T> > &range,
-    T d2
-    )
-{
-    T md2 = __minDist2( point.x - range.max.x, point.x - range.min.x );
-    if ( md2 >= d2 ) { return false; }
-    md2 += __minDist2( point.y - range.max.y, point.y - range.min.y );
-    if ( md2 >= d2 ) { return false; }
-    md2 += __minDist2( point.z - range.max.z, point.z - range.min.z );
-    return ( md2 < d2 );
+inline bool PointBoxMinimumSquaredDistanceLessThan(
+  const Imath::Vec3<T>& point, const Imath::Box<Imath::Vec3<T> >& range, T d2) {
+    T md2 = __minDist2(point.x - range.max.x, point.x - range.min.x);
+    if (md2 >= d2) { return false; }
+    md2 += __minDist2(point.y - range.max.y, point.y - range.min.y);
+    if (md2 >= d2) { return false; }
+    md2 += __minDist2(point.z - range.max.z, point.z - range.min.z);
+    return (md2 < d2);
 }
 
-} // End namespace SpatialSubd
-} // End namespace EmldCore
+}  // End namespace SpatialSubd
+}  // End namespace EmldCore
 
 #endif

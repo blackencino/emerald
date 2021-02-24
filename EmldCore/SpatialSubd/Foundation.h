@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,52 +31,22 @@
 #ifndef _EmldCore_SpatialSubd_Foundation_h_
 #define _EmldCore_SpatialSubd_Foundation_h_
 
-#include <ImathMath.h>
-#include <ImathVec.h>
-#include <ImathBox.h>
-#include <ImathFun.h>
-#include <ImathBoxAlgo.h>
-#include <ImathInterval.h>
-
-#include <boost/static_assert.hpp>
-#include <boost/smart_ptr.hpp>
-#include <boost/utility.hpp>
-#include <boost/cstdint.hpp>
-#include <boost/random.hpp>
-#include <boost/format.hpp>
-
-#include <half.h>
-
-#include <map>
-#include <utility>
-#include <algorithm>
-#include <string>
-#include <vector>
-
-#include <iostream>
-#include <sstream>
-#include <exception>
-#include <limits>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <OpenEXR/ImathVec.h>
+#include <OpenEXR/ImathBox.h>
 
 namespace EmldCore {
 namespace SpatialSubd {
 
 using Imath::V3i;
 typedef Imath::Vec3<unsigned int> V3ui;
-using Imath::V3f;
 using Imath::V3d;
+using Imath::V3f;
 
-using Imath::Box3i;
-using Imath::Box3f;
 using Imath::Box3d;
+using Imath::Box3f;
+using Imath::Box3i;
 
-} // End namespace SpatialSubd
-} // End namespace EmldCore
-
+}  // End namespace SpatialSubd
+}  // End namespace EmldCore
 
 #endif

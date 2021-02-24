@@ -35,6 +35,8 @@
 #include "KdTree3.h"
 #include "Inclusion.h"
 
+#include <limits>
+
 namespace EmldCore {
 namespace SpatialSubd {
 
