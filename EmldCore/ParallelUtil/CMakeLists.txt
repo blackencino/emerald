@@ -6,7 +6,6 @@ emldcore_legacy_define_library(ParallelUtil
      CopyFillSet.h
      For.h
      Foundation.h
-     LRUCache.h
      Reduce.h
      RemoveDuplicates.h
      Scan.h

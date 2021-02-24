@@ -37,7 +37,7 @@ typedef EmldCore::SpatialSubd::DUOctree<int> V3iIntTree;
 int main(int argc, char* argv[]) {
     std::mt19937_64 rng(12345);
     std::uniform_int_distribution<int> dst(1700, 1900);
-    auto die = [&rng, dst]() { return dst(rng); };
+    auto die = [&rng, &dst]() { return dst(rng); };
 
     V3iIntMap iMap;
     V3iIntTree iTree;

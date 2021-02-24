@@ -46,7 +46,7 @@ void Test1() {
     // Make some points
     std::mt19937_64 rng(12345);
     std::uniform_real_distribution<float> dst(-1.0f, 1.0f);
-    auto gen = [&rng, dst](){ return dst(rng); };
+    auto gen = [&rng, &dst](){ return dst(rng); };
 
     std::vector<V2f> points(5000);
     for (int i = 0; i < 5000; ++i) { points[i] = 50.0f * V2f(gen(), gen()); }
@@ -91,7 +91,7 @@ void Test2() {
     // Make some points
     std::mt19937_64 rng(54321);
     std::uniform_real_distribution<float> dst(-1.0f, 1.0f);
-    auto gen = [&rng, dst](){ return dst(rng); };
+    auto gen = [&rng, &dst](){ return dst(rng); };
 
     std::vector<V3f> points(5000);
     for (int i = 0; i < 5000; ++i) {
