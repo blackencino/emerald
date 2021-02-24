@@ -1,4 +1,5 @@
-add_library(emerald_simple_sim_viewer
+emerald_define_library(simple_sim_viewer
+  HEADERS
     all.h
     foundation.h
     gl_camera.h
@@ -10,7 +11,7 @@ add_library(emerald_simple_sim_viewer
     slab_draw_helper.h
     std_shaders.h
     viewer.h
-
+  SOURCES
     gl_camera.cpp
     lines_draw_helper.cpp
     mesh_draw_helper.cpp
@@ -20,14 +21,13 @@ add_library(emerald_simple_sim_viewer
     slab_draw_helper.cpp
     std_shaders.cpp
     viewer.cpp
-)
-
-target_include_directories(emerald_simple_sim_viewer PUBLIC "${emerald_SOURCE_DIR}")
-target_link_libraries(emerald_simple_sim_viewer PUBLIC
-                      emerald_geep_glfw
-                      emerald_util
-                      Alembic::Alembic
-                      OpenEXR::OpenEXR)
+  DEPENDENCIES
+    emerald::geep_glfw 
+    emerald::util 
+    OpenEXR::OpenEXR
+    Alembic::Alembic
+    fmt::fmt
+  )
 
 add_subdirectory(tests)
 

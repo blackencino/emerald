@@ -1,0 +1,18 @@
+emldcore_legacy_define_library(SpatialSubd
+  HEADERS
+    All.h 
+     DUOctree.h
+     Foundation.h
+     Inclusion.h
+     KdTree2.h
+     KdTree3.h
+     PointTree2.h
+     PointTree3.h
+     Test.h
+  SOURCES
+    Test.cpp
+  DEPENDENCIES
+    OpenEXR::OpenEXR
+    Boost::Boost
+  )
+add_subdirectory(Tests)

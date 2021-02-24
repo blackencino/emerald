@@ -1,22 +1,24 @@
-add_executable(shallow_weaver_headless
-               parse_parameters.h
-               parse_parameters.cpp
-               headless_main.cpp)
-target_link_libraries(shallow_weaver_headless
-                      PUBLIC
-                      emerald_shallow_weaver
-                      cxxopts::cxxopts)
+emerald_define_executable(shallow_weaver_headless
+    SOURCES 
+        parse_parameters.h
+        parse_parameters.cpp
+        headless_main.cpp
+    DEPENDENCIES 
+        emerald::shallow_weaver
+        cxxopts::cxxopts
+    )
 
-if (${EMERALD_BUILD_GUIS})
-    add_executable(shallow_weaver
-                   parse_parameters.h
-                   parse_parameters.cpp
-                   main.cpp)
-    target_link_libraries(shallow_weaver
-                          PUBLIC
-                          emerald_shallow_weaver
-                          emerald_simple_sim_viewer
-                          emerald_geep_glfw
-                          cxxopts::cxxopts)
+if (EMERALD_BUILD_GUIS)
+    emerald_define_executable(shallow_weaver_gui
+        SOURCES 
+            parse_parameters.h
+            parse_parameters.cpp
+            main.cpp
+        DEPENDENCIES 
+            emerald::shallow_weaver
+            emerald::simple_sim_viewer 
+            emerald::geep_glfw 
+            cxxopts::cxxopts
+        )
 endif()
 

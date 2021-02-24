@@ -1,0 +1,25 @@
+emldcore_legacy_define_library(Util
+  HEADERS
+    Exception.h
+     Foundation.h 
+     Functions.h
+     ImathVecOrdering.h
+     MemPool.h
+     Murmur3.h
+     Random.h
+     StorageTraits.h
+     Timer.h
+     VectorUtil.h
+     All.h
+  SOURCES
+    Exception.cpp 
+     Functions.cpp 
+     Murmur3.cpp
+     Random.cpp
+  DEPENDENCIES
+    emerald::util
+    Alembic::Alembic
+    OpenEXR::OpenEXR
+    Boost::Boost
+  )
+add_subdirectory(Tests)

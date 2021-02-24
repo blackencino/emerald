@@ -1,0 +1,12 @@
+add_subdirectory(Util)
+add_subdirectory(ParallelUtil)
+# ADD_SUBDIRECTORY( ElutMesh )
+# ADD_SUBDIRECTORY( GeepGLFW )
+# ADD_SUBDIRECTORY( Noise )
+add_subdirectory(SpatialSubd)
+add_subdirectory(TriMesh)
+# ADD_SUBDIRECTORY( MeshEdit )
+# ADD_SUBDIRECTORY( SimpleSimViewer )
+# ADD_SUBDIRECTORY( CompactHashMap )
+add_subdirectory(AbcMeshesScene)
+

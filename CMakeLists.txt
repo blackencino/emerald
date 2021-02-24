@@ -5,19 +5,39 @@ cmake_minimum_required(VERSION 3.11.2)
 
 cmake_policy(SET CMP0042 NEW)
 
-project(emerald CXX)
-
-enable_testing()
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+project(emerald 
+        LANGUAGES CXX
+        VERSION 0.0.1)
 
 option(EMERALD_BUILD_GUIS "Build Emerald Graphical UIs" ON)
+option(EMERALD_DO_TESTS "Do unit tests" ON)
 
 if (${EMERALD_BUILD_GUIS})
     add_definitions( "-DGL_SILENCE_DEPRECATION=1" )
+    set(EMLD_CONAN_OPTIONS "enable_guis=True")
+else()
+    set(EMLD_CONAN_OPTIONS "enable_guis=False")
+endif()
+
+message(STATUS "DO TESTS?: ${EMERALD_DO_TESTS}")
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    set(CMAKE_CXX_STANDARD  17)
+    set(CMAKE_CXX_EXTENSIONS    OFF)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    if (EMERALD_DO_TESTS)
+        message(STATUS "I'm enabling testing")
+        include(GoogleTest)
+        enable_testing()
+    endif()
+
+    message(STATUS "about to do conan cmake run")
+    include(cmake/conan.cmake)
+    conan_cmake_run(CONANFILE conanfile.py
+                    BASIC_SETUP
+                    BUILD missing
+                    OPTIONS ${EMLD_CONAN_OPTIONS})
+    include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 endif()
 
 # Platform
@@ -40,25 +60,36 @@ find_package(Alembic REQUIRED)
 find_package(OpenEXR REQUIRED)
 find_package(fmt REQUIRED)
 find_package(TBB REQUIRED)
-#find_package(Boost REQUIRED)
+find_package(Boost REQUIRED)
 #find_package(fftw REQUIRED)
 find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
 find_package(GTest REQUIRED)
 
-
-# find_package(LLVM REQUIRED CONFIG)
-
-# message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-# message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-
 set(EMERALD_GL_LIBS "")
 if (${EMERALD_BUILD_GUIS})
-    find_package(glfw REQUIRED)
+    find_package(glfw3 REQUIRED)
     find_package(OpenGL REQUIRED)
     find_package(glad REQUIRED)
 endif()
-#find_package(glm REQUIRED)
+
+# This is necessary because of weird skew in the gsl-lite repo.
+if(NOT TARGET gsl-lite::gsl-lite)
+    add_library(gsl-lite::gsl-lite INTERFACE IMPORTED)
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                          "${gsl_gsl-lite_INCLUDE_DIRS}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_LINK_DIRECTORIES
+                          "${gsl_gsl-lite_LIB_DIRS}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_LINK_LIBRARIES
+                          "${gsl_gsl-lite_LINK_LIBS};${gsl_gsl-lite_LINKER_FLAGS_LIST}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_COMPILE_DEFINITIONS
+                          "${gsl_gsl-lite_COMPILE_DEFINITIONS}")
+    set_target_properties(gsl-lite::gsl-lite PROPERTIES INTERFACE_COMPILE_OPTIONS
+                          "${gsl_gsl-lite_COMPILE_OPTIONS_C};${gsl_gsl-lite_COMPILE_OPTIONS_CXX}")
+endif()
+
+include(cmake/emerald_utils.cmake)
 
 add_subdirectory(emerald)
+add_subdirectory(EmldCore)
 

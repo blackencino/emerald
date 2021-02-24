@@ -1,0 +1,24 @@
+emldcore_legacy_define_library(TriMesh
+  HEADERS
+    All.h 
+     Foundation.h
+     TriKdTree2.h
+     TriKdTree3.h
+     TriMesh.h
+     TriMeshKdTree.h
+     Triangle.h
+     Utility.h
+     Vertex.h
+  SOURCES
+    TriKdTree2.cpp
+     TriKdTree3.cpp
+     TriMesh.cpp
+     TriMeshKdTree.cpp
+     Triangle.cpp
+  DEPENDENCIES
+    emerald::EmldCore_SpatialSubd
+    emerald::EmldCore_Util
+    OpenEXR::OpenEXR
+    Boost::Boost
+  )
+add_subdirectory(Tests)

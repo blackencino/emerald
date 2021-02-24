@@ -227,7 +227,8 @@ std::pair<float, float> compute_transformed_scalar_average_and_max(
 
     auto const value_average_numer = static_cast<double>(integral_value_sum);
     auto const value_average_denom = static_cast<double>(1000 * particle_count);
-    return {value_average_numer / value_average_denom, value_max};
+    return {static_cast<float>(value_average_numer / value_average_denom),
+            value_max};
 }
 
 inline std::pair<float, float> compute_scalar_average_and_max(

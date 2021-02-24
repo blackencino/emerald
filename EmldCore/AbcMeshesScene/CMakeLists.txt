@@ -1,0 +1,36 @@
+emldcore_legacy_define_library(AbcMeshesScene
+  HEADERS
+    All.h
+     ConsistentMesh.h
+     FileInfo.h
+     Foundation.h
+     InconsistentMesh.h
+     Interpolation.h
+     Mesh.h
+     MeshKdTree.h
+     Object.h
+     PropertyWrapper.h
+     RigidMesh.h
+     Scene.h
+     Xform.h
+  SOURCES
+    ConsistentMesh.cpp
+     FileInfo.cpp
+     InconsistentMesh.cpp
+     Interpolation.cpp
+     Mesh.cpp
+     MeshKdTree.cpp
+     Object.cpp
+     RigidMesh.cpp
+     Scene.cpp
+     Xform.cpp
+  DEPENDENCIES
+    emerald::EmldCore_TriMesh
+    emerald::EmldCore_SpatialSubd
+    emerald::EmldCore_Util
+    emerald::EmldCore_ParallelUtil
+    Alembic::Alembic
+    OpenEXR::OpenEXR
+    Boost::Boost
+  )
+add_subdirectory(Tests)

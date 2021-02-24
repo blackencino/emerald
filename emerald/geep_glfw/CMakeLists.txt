@@ -1,19 +1,18 @@
-add_library(emerald_geep_glfw
+emerald_define_library(geep_glfw
+  HEADERS
     foundation.h
     program.h
     util_gl.h
-
+  SOURCES
     program.cpp
     util_gl.cpp
+  DEPENDENCIES
+    emerald::util
+    OpenEXR::OpenEXR
+    glfw::glfw
+    OpenGL::GL
+    glad::glad
 )
-
-target_include_directories(emerald_geep_glfw PUBLIC "${emerald_SOURCE_DIR}")
-target_link_libraries(emerald_geep_glfw PUBLIC
-                      emerald_util
-                      OpenEXR::OpenEXR
-                      glfw::glfw
-                      OpenGL::GL
-                      glad::glad)
 
 add_subdirectory(tests)
 
