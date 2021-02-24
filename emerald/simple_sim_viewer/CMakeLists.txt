@@ -1,3 +1,4 @@
+if (EMERALD_BUILD_GUIS)
 emerald_define_library(simple_sim_viewer
   HEADERS
     all.h
@@ -30,5 +31,6 @@ emerald_define_library(simple_sim_viewer
   )
 
 add_subdirectory(tests)
+endif()
 
 

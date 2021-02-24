@@ -7,7 +7,7 @@ cmake_policy(SET CMP0042 NEW)
 
 project(emerald 
         LANGUAGES CXX
-        VERSION 0.0.1)
+        VERSION 0.0.3)
 
 option(EMERALD_BUILD_GUIS "Build Emerald Graphical UIs" ON)
 option(EMERALD_DO_TESTS "Do unit tests" ON)
@@ -22,9 +22,6 @@ endif()
 message(STATUS "DO TESTS?: ${EMERALD_DO_TESTS}")
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    set(CMAKE_CXX_STANDARD  17)
-    set(CMAKE_CXX_EXTENSIONS    OFF)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     if (EMERALD_DO_TESTS)
         message(STATUS "I'm enabling testing")
         include(GoogleTest)
@@ -61,7 +58,6 @@ find_package(OpenEXR REQUIRED)
 find_package(fmt REQUIRED)
 find_package(TBB REQUIRED)
 find_package(Boost REQUIRED)
-#find_package(fftw REQUIRED)
 find_package(gsl-lite REQUIRED)
 find_package(cxxopts REQUIRED)
 find_package(GTest REQUIRED)

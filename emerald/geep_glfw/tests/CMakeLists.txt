@@ -1,3 +1,4 @@
+if (EMERALD_BUILD_GUIS)
 emerald_define_executable(glfw_hello_world
     SOURCES 
         glfw_helloWorld.cpp
@@ -11,3 +12,5 @@ emerald_define_executable(glfw_hello_world2
     DEPENDENCIES 
         emerald::geep_glfw
     )
+endif()
+

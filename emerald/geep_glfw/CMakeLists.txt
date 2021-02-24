@@ -1,3 +1,4 @@
+if (EMERALD_BUILD_GUIS)
 emerald_define_library(geep_glfw
   HEADERS
     foundation.h
@@ -15,4 +16,5 @@ emerald_define_library(geep_glfw
 )
 
 add_subdirectory(tests)
+endif()
 
