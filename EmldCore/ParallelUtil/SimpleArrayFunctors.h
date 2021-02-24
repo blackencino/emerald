@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,14 +33,18 @@
 
 #include "Foundation.h"
 
+#include <EmldCore/Util/Foundation.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+
 namespace EmldCore {
 namespace ParallelUtil {
 
 //-*****************************************************************************
-template <typename VALUE_TYPE, 
-          typename INDEX_TYPE=std::ptrdiff_t>
-struct ValuesFunctor
-{
+template <typename VALUE_TYPE, typename INDEX_TYPE = std::ptrdiff_t>
+struct ValuesFunctor {
     typedef VALUE_TYPE value_type;
     typedef INDEX_TYPE index_type;
     typedef INDEX_TYPE difference_type;
@@ -50,30 +54,25 @@ struct ValuesFunctor
 //-*****************************************************************************
 template <typename DERIVED,
           typename VALUE_TYPE,
-          typename INDEX_TYPE=std::ptrdiff_t>
-struct ZeroValuesFunctor 
-    : public EmldCore::Util::AllZeroConstructor<DERIVED>
-    , public ValuesFunctor<VALUE_TYPE, INDEX_TYPE>
-{
+          typename INDEX_TYPE = std::ptrdiff_t>
+struct ZeroValuesFunctor : public EmldCore::Util::AllZeroConstructor<DERIVED>,
+                           public ValuesFunctor<VALUE_TYPE, INDEX_TYPE> {
     // Nothing
 };
 
 //-*****************************************************************************
 template <typename T, typename INDEX_TYPE = std::ptrdiff_t>
 struct DirectValuesFunctor
-        : public AllZeroConstructor<DirectValuesFunctor<T, INDEX_TYPE> >
-{
+  : public AllZeroConstructor<DirectValuesFunctor<T, INDEX_TYPE> > {
     typedef T value_type;
     typedef INDEX_TYPE index_type;
     value_type* Values;
 
-    value_type& operator[]( index_type i )
-    {
+    value_type& operator[](index_type i) {
         return Values[i];
     }
 
-    const value_type& operator[]( index_type i ) const
-    {
+    const value_type& operator[](index_type i) const {
         return Values[i];
     }
 };
@@ -81,27 +80,23 @@ struct DirectValuesFunctor
 //-*****************************************************************************
 template <typename T, typename INDEX_TYPE = std::ptrdiff_t>
 struct DirectConstValuesFunctor
-        : public AllZeroConstructor<DirectConstValuesFunctor<T, INDEX_TYPE> >
-{
+  : public AllZeroConstructor<DirectConstValuesFunctor<T, INDEX_TYPE> > {
     typedef T value_type;
     typedef INDEX_TYPE index_type;
     const value_type* Values;
 
-    const value_type& operator[]( index_type i ) const
-    {
+    const value_type& operator[](index_type i) const {
         return Values[i];
     }
 };
 
 //-*****************************************************************************
 template <typename INDEX_TYPE = std::ptrdiff_t>
-struct IndexValuesFunctor
-{
+struct IndexValuesFunctor {
     typedef INDEX_TYPE value_type;
     typedef INDEX_TYPE index_type;
 
-    value_type operator[]( index_type i ) const
-    {
+    value_type operator[](index_type i) const {
         return i;
     }
 };
@@ -109,15 +104,13 @@ struct IndexValuesFunctor
 //-*****************************************************************************
 template <typename VEC, typename INDEX_TYPE = std::ptrdiff_t>
 struct VecLength2ValuesFunctor
-        : public AllZeroConstructor<VecLength2ValuesFunctor<VEC, INDEX_TYPE> >
-{
+  : public AllZeroConstructor<VecLength2ValuesFunctor<VEC, INDEX_TYPE> > {
     typedef VEC vec_type;
     typedef typename VEC::BaseType value_type;
     typedef INDEX_TYPE index_type;
     const vec_type* Values;
 
-    value_type operator[]( index_type i ) const
-    {
+    value_type operator[](index_type i) const {
         return Values[i].length2();
     }
 };
@@ -125,34 +118,29 @@ struct VecLength2ValuesFunctor
 //-*****************************************************************************
 template <typename VEC, typename INDEX_TYPE = std::ptrdiff_t>
 struct VecAndLength2ValuesFunctor
-        : public AllZeroConstructor < VecAndLength2ValuesFunctor < VEC,
-          INDEX_TYPE > >
-{
+  : public AllZeroConstructor<VecAndLength2ValuesFunctor<VEC, INDEX_TYPE> > {
     typedef VEC vec_type;
     typedef typename VEC::BaseType vec_base_type;
     typedef std::pair<vec_type, vec_base_type> value_type;
     typedef INDEX_TYPE index_type;
     const vec_type* Values;
 
-    value_type operator[]( index_type i ) const
-    {
+    value_type operator[](index_type i) const {
         const vec_type v = Values[i];
-        return value_type( v, v.length2() );
+        return value_type(v, v.length2());
     }
 };
 
 //-*****************************************************************************
 template <typename VEC, typename INDEX_TYPE = std::ptrdiff_t>
 struct VecLengthValuesFunctor
-        : public AllZeroConstructor<VecLengthValuesFunctor<VEC, INDEX_TYPE> >
-{
+  : public AllZeroConstructor<VecLengthValuesFunctor<VEC, INDEX_TYPE> > {
     typedef VEC vec_type;
     typedef typename VEC::BaseType value_type;
     typedef INDEX_TYPE index_type;
     const vec_type* Values;
 
-    value_type operator[]( index_type i ) const
-    {
+    value_type operator[](index_type i) const {
         return Values[i].length();
     }
 };
@@ -160,23 +148,20 @@ struct VecLengthValuesFunctor
 //-*****************************************************************************
 template <typename VEC, typename INDEX_TYPE = std::ptrdiff_t>
 struct VecAndLengthValuesFunctor
-        : public AllZeroConstructor < VecAndLengthValuesFunctor < VEC,
-          INDEX_TYPE > >
-{
+  : public AllZeroConstructor<VecAndLengthValuesFunctor<VEC, INDEX_TYPE> > {
     typedef VEC vec_type;
     typedef typename VEC::BaseType vec_base_type;
     typedef std::pair<vec_type, vec_base_type> value_type;
     typedef INDEX_TYPE index_type;
     const vec_type* Values;
 
-    value_type operator[]( index_type i ) const
-    {
+    value_type operator[](index_type i) const {
         const vec_type v = Values[i];
-        return value_type( v, v.length() );
+        return value_type(v, v.length());
     }
 };
 
-} // End namespace ParallelUtil
-} // End namespace EmldCore
+}  // End namespace ParallelUtil
+}  // End namespace EmldCore
 
 #endif

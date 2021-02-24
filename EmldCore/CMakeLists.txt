@@ -30,7 +30,7 @@
 
 # Recurse into all the subdirectories
 add_subdirectory(Util)
-# ADD_SUBDIRECTORY( ParallelUtil )
+add_subdirectory(ParallelUtil)
 # ADD_SUBDIRECTORY( ElutMesh )
 # ADD_SUBDIRECTORY( GeepGLFW )
 # ADD_SUBDIRECTORY( Noise )

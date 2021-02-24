@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,17 +30,20 @@
 
 #include "Foundation.h"
 
+#include <atomic>
+#include <cstdint>
+
 namespace EmldCore {
 namespace ParallelUtil {
 
 #ifdef DEBUG
 
-tbb::atomic<std::size_t> g_totalEntriesCreated;
-tbb::atomic<std::size_t> g_totalEntriesDeleted;
+std::atomic<std::size_t> g_totalEntriesCreated;
+std::atomic<std::size_t> g_totalEntriesDeleted;
 
 #endif
 
 static int __stub = 0;
 
-} // End namespace ParallelUtil 
-} // End namespace EmldCore
+}  // End namespace ParallelUtil
+}  // End namespace EmldCore

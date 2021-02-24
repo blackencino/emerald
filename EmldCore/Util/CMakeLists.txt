@@ -7,10 +7,10 @@ emldcore_legacy_define_library(Util
      MemPool.h
      Murmur3.h
      Random.h
-     #StorageTraits.h
-     #Timer.h
-     #VectorUtil.h
-     #All.h
+     StorageTraits.h
+     Timer.h
+     VectorUtil.h
+     All.h
   SOURCES
     Exception.cpp 
      Functions.cpp 

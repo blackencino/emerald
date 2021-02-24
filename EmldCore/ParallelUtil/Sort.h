@@ -33,6 +33,8 @@
 
 #include "Foundation.h"
 
+#include <tbb/parallel_sort.h>
+
 namespace EmldCore {
 namespace ParallelUtil {
 

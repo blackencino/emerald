@@ -31,65 +31,10 @@
 #ifndef _EmldCore_ParallelUtil_Foundation_h_
 #define _EmldCore_ParallelUtil_Foundation_h_
 
-#include <EmldCore/Util/All.h>
+#include <EmldCore/Util/StorageTraits.h>
 
-#include <ImathMath.h>
-#include <ImathVec.h>
-#include <ImathMatrix.h>
-#include <ImathBox.h>
-#include <ImathQuat.h>
-#include <ImathColor.h>
-#include <ImathFun.h>
-#include <ImathRandom.h>
-#include <ImathBoxAlgo.h>
-
-#include <boost/format.hpp>
-#include <boost/progress.hpp>
-#include <boost/utility/value_init.hpp>
-#include <boost/utility.hpp>
-
-#include <iostream>
-#include <vector>
-#include <map>
-#include <deque>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <algorithm>
-#include <utility>
-#include <stdlib.h>
-
-//-*****************************************************************************
-// Thread Building Blocks
-//#include <tbb/tbb.h>
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_reduce.h>
-#include <tbb/parallel_scan.h>
-#include <tbb/blocked_range.h>
-#include <tbb/blocked_range2d.h>
-#include <tbb/blocked_range3d.h>
-#include <tbb/concurrent_hash_map.h>
-#include <tbb/concurrent_queue.h>
-#include <tbb/queuing_rw_mutex.h>
-#include <tbb/atomic.h>
-#include <tbb/parallel_sort.h>
-
-#include <tbb/enumerable_thread_specific.h>
-#include <tbb/mutex.h>
-#include <tbb/spin_mutex.h>
-#include <tbb/spin_rw_mutex.h>
-#include <tbb/atomic.h>
-#include <tbb/task_scheduler_init.h>
-#include <tbb/task.h>
-//-*****************************************************************************
-
-#include <sys/types.h>
-#include <stdio.h>
-#include <limits>
-#include <string.h>
-#include <math.h>
-#include <float.h>
-#include <limits.h>
+#include <atomic>
+#include <cstdint>
 
 //-*****************************************************************************
 namespace EmldCore {
@@ -97,12 +42,11 @@ namespace ParallelUtil {
 
 using namespace EmldCore::Util;
 
-
 //-*****************************************************************************
-typedef tbb::atomic<int8_t>  atomic_int8_t;
-typedef tbb::atomic<int16_t> atomic_int16_t;
-typedef tbb::atomic<int32_t> atomic_int32_t;
-typedef tbb::atomic<int64_t> atomic_int64_t;
+typedef std::atomic<int8_t>  atomic_int8_t;
+typedef std::atomic<int16_t> atomic_int16_t;
+typedef std::atomic<int32_t> atomic_int32_t;
+typedef std::atomic<int64_t> atomic_int64_t;
 
 } // End namespace ParallelUtil
 
@@ -140,10 +84,6 @@ struct storage_traits<ParallelUtil::atomic_int64_t>
 
 } // End namespace Util
 
-namespace ParallelUtil {
-
-
-} // End namespace ParallelUtil
 } // End namespace EmldCore
 
 

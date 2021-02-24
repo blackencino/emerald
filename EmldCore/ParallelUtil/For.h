@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,6 +33,14 @@
 
 #include "Foundation.h"
 
+#include <EmldCore/Util/Foundation.h>
+
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
+#include <cstddef>
+#include <cstdint>
+
 namespace EmldCore {
 namespace ParallelUtil {
 
@@ -42,12 +50,11 @@ namespace ParallelUtil {
 //-*****************************************************************************
 //-*****************************************************************************
 template <typename RANGE, typename ADAPTOR>
-void PFOR( const RANGE& i_range, ADAPTOR& i_functor )
-{
+void PFOR(const RANGE& i_range, ADAPTOR& i_functor) {
 #if 1
-    tbb::parallel_for( i_range, i_functor );
+    tbb::parallel_for(i_range, i_functor);
 #else
-    i_functor( i_range );
+    i_functor(i_range);
 #endif
 }
 
@@ -60,35 +67,34 @@ void PFOR( const RANGE& i_range, ADAPTOR& i_functor )
 
 //-*****************************************************************************
 template <typename FUNCTOR, typename INDEX_TYPE = std::ptrdiff_t>
-struct RangeAdaptor
-{
+struct RangeAdaptor {
     typedef INDEX_TYPE index_type;
     typedef tbb::blocked_range<index_type> range_type;
     FUNCTOR& functor;
 
-    RangeAdaptor( FUNCTOR& i_functor ) : functor( i_functor ) {}
+    RangeAdaptor(FUNCTOR& i_functor)
+      : functor(i_functor) {
+    }
 
-    void operator()( const range_type& i_range ) const
-    {
-        functor( i_range.begin(), i_range.end() );
+    void operator()(const range_type& i_range) const {
+        functor(i_range.begin(), i_range.end());
     }
 };
 
 //-*****************************************************************************
 template <typename FUNCTOR, typename INDEX_TYPE = std::ptrdiff_t>
-struct IndexAdaptor
-{
+struct IndexAdaptor {
     typedef INDEX_TYPE index_type;
     typedef tbb::blocked_range<index_type> range_type;
     FUNCTOR& functor;
 
-    IndexAdaptor( FUNCTOR& i_functor ) : functor( i_functor ) {}
+    IndexAdaptor(FUNCTOR& i_functor)
+      : functor(i_functor) {
+    }
 
-    void operator()( const range_type& i_range ) const
-    {
-        for ( index_type i = i_range.begin(); i < i_range.end(); ++i )
-        {
-            functor( i );
+    void operator()(const range_type& i_range) const {
+        for (index_type i = i_range.begin(); i < i_range.end(); ++i) {
+            functor(i);
         }
     }
 };
@@ -100,9 +106,8 @@ struct IndexAdaptor
 //-*****************************************************************************
 
 //-*****************************************************************************
-template < typename DERIVED, typename ADAPTOR >
-struct ForEachFunctorAdapted
-{
+template <typename DERIVED, typename ADAPTOR>
+struct ForEachFunctorAdapted {
     typedef DERIVED derived_type;
     typedef ADAPTOR adaptor_type;
     typedef typename ADAPTOR::index_type index_type;
@@ -110,42 +115,41 @@ struct ForEachFunctorAdapted
 
     index_type N;
 
-    ForEachFunctorAdapted() : N( -1 ) {}
+    ForEachFunctorAdapted()
+      : N(-1) {
+    }
 
-    void preExecute() {}
+    void preExecute() {
+    }
 
-    void postExecute() {}
+    void postExecute() {
+    }
 
-    void execute( index_type i_N, index_type i_Grain = 0 )
-    {
+    void execute(index_type i_N, index_type i_Grain = 0) {
         N = i_N;
 
-        DERIVED* dptr = static_cast<DERIVED*>( this );
+        DERIVED* dptr = static_cast<DERIVED*>(this);
         dptr->preExecute();
         {
-            ADAPTOR A( *dptr );
-            if ( i_Grain > 0 )
-            {
-                PFOR( range_type( 0, i_N, i_Grain ), A );
-            }
-            else
-            {
-                PFOR( range_type( 0, i_N ), A );
+            ADAPTOR A(*dptr);
+            if (i_Grain > 0) {
+                PFOR(range_type(0, i_N, i_Grain), A);
+            } else {
+                PFOR(range_type(0, i_N), A);
             }
         }
         dptr->postExecute();
     }
 
-    void serialExecute( index_type i_N, index_type i_Grain = 0 )
-    {
+    void serialExecute(index_type i_N, index_type i_Grain = 0) {
         N = i_N;
 
-        DERIVED* dptr = static_cast<DERIVED*>( this );
+        DERIVED* dptr = static_cast<DERIVED*>(this);
         dptr->preExecute();
 
         {
-            ADAPTOR A( *dptr );
-            A( range_type( 0, i_N ) );
+            ADAPTOR A(*dptr);
+            A(range_type(0, i_N));
         }
         dptr->postExecute();
     }
@@ -154,53 +158,46 @@ struct ForEachFunctorAdapted
 //-*****************************************************************************
 template <typename DERIVED, typename INDEX_TYPE = std::ptrdiff_t>
 struct ForEachFunctor
-        : public ForEachFunctorAdapted < DERIVED,
-          RangeAdaptor<DERIVED, INDEX_TYPE> >
-{
+  : public ForEachFunctorAdapted<DERIVED, RangeAdaptor<DERIVED, INDEX_TYPE> > {
     ForEachFunctor()
-        : ForEachFunctorAdapted<DERIVED, RangeAdaptor<DERIVED, INDEX_TYPE> > ()
-    {}
+      : ForEachFunctorAdapted<DERIVED, RangeAdaptor<DERIVED, INDEX_TYPE> >() {
+    }
 };
 
 //-*****************************************************************************
 template <typename DERIVED, typename INDEX_TYPE = std::ptrdiff_t>
-struct ZeroForEachFunctor
-        : public EmldCore::Util::AllZeroConstructor<DERIVED>
-        , public ForEachFunctor<DERIVED, INDEX_TYPE>
+struct ZeroForEachFunctor : public EmldCore::Util::AllZeroConstructor<DERIVED>,
+                            public ForEachFunctor<DERIVED, INDEX_TYPE>
 
 {
     ZeroForEachFunctor()
-        : EmldCore::Util::AllZeroConstructor<DERIVED>()
-        , ForEachFunctor<DERIVED, INDEX_TYPE>()
-    {}
+      : EmldCore::Util::AllZeroConstructor<DERIVED>()
+      , ForEachFunctor<DERIVED, INDEX_TYPE>() {
+    }
 };
-
 
 //-*****************************************************************************
 template <typename DERIVED, typename INDEX_TYPE = std::ptrdiff_t>
 struct ForEachFunctorI
-        : public ForEachFunctorAdapted < DERIVED,
-          IndexAdaptor<DERIVED, INDEX_TYPE> >
-{
+  : public ForEachFunctorAdapted<DERIVED, IndexAdaptor<DERIVED, INDEX_TYPE> > {
     ForEachFunctorI()
-        : ForEachFunctorAdapted<DERIVED, IndexAdaptor<DERIVED, INDEX_TYPE> > ()
-    {}
+      : ForEachFunctorAdapted<DERIVED, IndexAdaptor<DERIVED, INDEX_TYPE> >() {
+    }
 };
 
 //-*****************************************************************************
 template <typename DERIVED, typename INDEX_TYPE = std::ptrdiff_t>
-struct ZeroForEachFunctorI
-        : public EmldCore::Util::AllZeroConstructor<DERIVED>
-        , public ForEachFunctorI<DERIVED, INDEX_TYPE>
+struct ZeroForEachFunctorI : public EmldCore::Util::AllZeroConstructor<DERIVED>,
+                             public ForEachFunctorI<DERIVED, INDEX_TYPE>
 
 {
     ZeroForEachFunctorI()
-        : EmldCore::Util::AllZeroConstructor<DERIVED>()
-        , ForEachFunctorI<DERIVED, INDEX_TYPE>()
-    {}
+      : EmldCore::Util::AllZeroConstructor<DERIVED>()
+      , ForEachFunctorI<DERIVED, INDEX_TYPE>() {
+    }
 };
 
-} // End namespace ParallelUtil
-} // End namespace EmldCore
+}  // End namespace ParallelUtil
+}  // End namespace EmldCore
 
 #endif

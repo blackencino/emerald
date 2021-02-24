@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,6 +33,11 @@
 
 #include "Foundation.h"
 #include "SimpleArrayFunctors.h"
+
+#include <EmldCore/Util/VectorUtil.h>
+
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_scan.h>
 
 namespace EmldCore {
 namespace ParallelUtil {
@@ -59,10 +64,8 @@ namespace ParallelUtil {
 //-*****************************************************************************
 
 //-*****************************************************************************
-template < typename VALUE_FUNCTOR,
-         typename SCAN_FUNCTOR >
-struct ValueScanAdaptor
-{
+template <typename VALUE_FUNCTOR, typename SCAN_FUNCTOR>
+struct ValueScanAdaptor {
     typedef VALUE_FUNCTOR value_functor_type;
     typedef typename VALUE_FUNCTOR::value_type value_type;
     typedef typename VALUE_FUNCTOR::index_type index_type;
@@ -79,53 +82,43 @@ struct ValueScanAdaptor
     scan_value_type* ScannedValues;
     scan_value_type ScannedValue;
 
-    ValueScanAdaptor( VALUE_FUNCTOR& i_valueFunctor,
-                      SCAN_FUNCTOR& i_scanFunctor,
-                      scan_value_type* o_scannedValues )
-        : ValueFunctor( i_valueFunctor )
-        , ScanFunctor( i_scanFunctor )
-        , ScannedValues( o_scannedValues )
-    {
-        ScanFunctor( ScannedValue );
+    ValueScanAdaptor(VALUE_FUNCTOR& i_valueFunctor,
+                     SCAN_FUNCTOR& i_scanFunctor,
+                     scan_value_type* o_scannedValues)
+      : ValueFunctor(i_valueFunctor)
+      , ScanFunctor(i_scanFunctor)
+      , ScannedValues(o_scannedValues) {
+        ScanFunctor(ScannedValue);
     }
 
-    ValueScanAdaptor( this_type& i_copy, tbb::split )
-        : ValueFunctor( i_copy.ValueFunctor )
-        , ScanFunctor( i_copy.ScanFunctor )
-        , ScannedValues( i_copy.ScannedValues )
-    {
-        ScanFunctor( ScannedValue );
+    ValueScanAdaptor(this_type& i_copy, tbb::split)
+      : ValueFunctor(i_copy.ValueFunctor)
+      , ScanFunctor(i_copy.ScanFunctor)
+      , ScannedValues(i_copy.ScannedValues) {
+        ScanFunctor(ScannedValue);
     }
 
     // Called by parallel scan.
     template <typename TAG>
-    void operator()( const range_type& i_range, TAG i_tag )
-    {
+    void operator()(const range_type& i_range, TAG i_tag) {
         scan_value_type temp = ScannedValue;
-        for ( index_type i = i_range.begin(); i < i_range.end(); ++i )
-        {
-            ScanFunctor( temp, ValueFunctor[ i ] );
-            if ( TAG::is_final_scan() )
-            {
-                ScannedValues[i] = temp;
-            }
+        for (index_type i = i_range.begin(); i < i_range.end(); ++i) {
+            ScanFunctor(temp, ValueFunctor[i]);
+            if (TAG::is_final_scan()) { ScannedValues[i] = temp; }
         }
         ScannedValue = temp;
     }
 
-    void reverse_join( this_type& i_other )
-    {
-        ScanFunctor( ScannedValue, i_other.ScannedValue );
+    void reverse_join(this_type& i_other) {
+        ScanFunctor(ScannedValue, i_other.ScannedValue);
     }
 
-    void assign( this_type& i_other )
-    {
+    void assign(this_type& i_other) {
         ScannedValue = i_other.ScannedValue;
     }
 
-    void execute( index_type i_N )
-    {
-        tbb::parallel_scan( range_type( 0, i_N ), *this );
+    void execute(index_type i_N) {
+        tbb::parallel_scan(range_type(0, i_N), *this);
     }
 };
 
@@ -138,19 +131,15 @@ struct ValueScanAdaptor
 
 //-*****************************************************************************
 template <typename T>
-struct AddScanFunctor
-{
+struct AddScanFunctor {
     typedef T scan_value_type;
     typedef T value_type;
 
-    void operator()( scan_value_type& o_val ) const
-    {
-        set_zero<T>( o_val );
+    void operator()(scan_value_type& o_val) const {
+        set_zero<T>(o_val);
     }
 
-    void operator()( scan_value_type& io_val,
-                     const value_type& i_other ) const
-    {
+    void operator()(scan_value_type& io_val, const value_type& i_other) const {
         io_val += i_other;
     }
 };
@@ -162,13 +151,9 @@ struct AddScanFunctor
 //-*****************************************************************************
 
 //-*****************************************************************************
-template < typename VALUE_FUNCTOR,
-         typename SCAN_VECTOR,
-         typename SCAN_FUNCTOR >
-typename SCAN_FUNCTOR::scan_value_type
-FunctorVectorScan( VALUE_FUNCTOR& i_vfunc,
-                   SCAN_VECTOR& o_scanVector )
-{
+template <typename VALUE_FUNCTOR, typename SCAN_VECTOR, typename SCAN_FUNCTOR>
+typename SCAN_FUNCTOR::scan_value_type FunctorVectorScan(
+  VALUE_FUNCTOR& i_vfunc, SCAN_VECTOR& o_scanVector) {
     typedef typename VALUE_FUNCTOR::index_type index_type;
     typedef typename VALUE_FUNCTOR::value_type value_type;
     typedef typename SCAN_FUNCTOR::scan_value_type scan_value_type;
@@ -177,39 +162,37 @@ FunctorVectorScan( VALUE_FUNCTOR& i_vfunc,
     {
         SCAN_FUNCTOR SF;
 
-        VSA_type VSA( i_vfunc, SF, vector_data( o_scanVector ) );
-        VSA.execute( o_scanVector.size() );
+        VSA_type VSA(i_vfunc, SF, vector_data(o_scanVector));
+        VSA.execute(o_scanVector.size());
 
         return VSA.ScannedValue;
     }
 };
 
 //-*****************************************************************************
-template < typename VECTOR,
-         typename SCAN_VECTOR,
-         typename VALUE_FUNCTOR,
-         typename SCAN_FUNCTOR >
-typename SCAN_FUNCTOR::scan_value_type
-VectorScan( const VECTOR& i_vector,
-            SCAN_VECTOR& o_scanVector )
-{
+template <typename VECTOR,
+          typename SCAN_VECTOR,
+          typename VALUE_FUNCTOR,
+          typename SCAN_FUNCTOR>
+typename SCAN_FUNCTOR::scan_value_type VectorScan(const VECTOR& i_vector,
+                                                  SCAN_VECTOR& o_scanVector) {
     typedef typename std::ptrdiff_t index_type;
     typedef typename VALUE_FUNCTOR::value_type value_type;
     typedef typename SCAN_FUNCTOR::scan_value_type scan_value_type;
 
     // Make sure output vector is the right size.
     const index_type N = i_vector.size();
-    o_scanVector.resize( N );
+    o_scanVector.resize(N);
 
     typedef ValueScanAdaptor<VALUE_FUNCTOR, SCAN_FUNCTOR> VSA_type;
     {
         VALUE_FUNCTOR VF;
-        VF.Values = vector_cdata( i_vector );
+        VF.Values = vector_cdata(i_vector);
 
         SCAN_FUNCTOR SF;
 
-        VSA_type VSA( VF, SF, vector_data( o_scanVector ) );
-        VSA.execute( N );
+        VSA_type VSA(VF, SF, vector_data(o_scanVector));
+        VSA.execute(N);
 
         return VSA.ScannedValue;
     }
@@ -221,10 +204,8 @@ VectorScan( const VECTOR& i_vector,
 //-*****************************************************************************
 //-*****************************************************************************
 template <typename VECTOR, typename SCAN_VECTOR>
-typename SCAN_VECTOR::value_type
-VectorPrefixSum( const VECTOR& i_vector,
-                 SCAN_VECTOR& o_prefixSums )
-{
+typename SCAN_VECTOR::value_type VectorPrefixSum(const VECTOR& i_vector,
+                                                 SCAN_VECTOR& o_prefixSums) {
     typedef typename VECTOR::value_type value_type;
     typedef typename std::ptrdiff_t index_type;
     typedef typename SCAN_VECTOR::value_type scan_value_type;
@@ -233,26 +214,24 @@ VectorPrefixSum( const VECTOR& i_vector,
     typedef AddScanFunctor<scan_value_type> SF_type;
 
     // This will resize prefixSums vector accordingly.
-    return VectorScan<VECTOR, SCAN_VECTOR, VF_type, SF_type>
-           ( i_vector, o_prefixSums );
+    return VectorScan<VECTOR, SCAN_VECTOR, VF_type, SF_type>(i_vector,
+                                                             o_prefixSums);
 }
 
 //-*****************************************************************************
 template <typename VALUE_FUNCTOR, typename SCAN_VECTOR>
-typename SCAN_VECTOR::value_type
-FunctorVectorPrefixSum( VALUE_FUNCTOR& i_vfunc,
-                        SCAN_VECTOR& o_prefixSums )
-{
+typename SCAN_VECTOR::value_type FunctorVectorPrefixSum(
+  VALUE_FUNCTOR& i_vfunc, SCAN_VECTOR& o_prefixSums) {
     typedef typename SCAN_VECTOR::value_type scan_value_type;
 
     typedef AddScanFunctor<scan_value_type> SF_type;
 
     // This will actually take its size from the output prefix sums.
-    return FunctorVectorScan<VALUE_FUNCTOR, SCAN_VECTOR, SF_type>
-           ( i_vfunc, o_prefixSums );
+    return FunctorVectorScan<VALUE_FUNCTOR, SCAN_VECTOR, SF_type>(i_vfunc,
+                                                                  o_prefixSums);
 }
 
-} // End namespace ParallelUtil
-} // End namespace EmldCore
+}  // End namespace ParallelUtil
+}  // End namespace EmldCore
 
 #endif
