@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,14 +28,19 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-*****************************************************************************
 
-#include <EmldCore/Util/All.h>
 #include <EmldCore/ParallelUtil/For.h>
+#include <EmldCore/ParallelUtil/Foundation.h>
 #include <EmldCore/ParallelUtil/Reduce.h>
-#include <ImathVec.h>
-#include <ImathBox.h>
-#include <vector>
+#include <EmldCore/Util/Exception.h>
+#include <EmldCore/Util/Random.h>
+#include <EmldCore/Util/VectorUtil.h>
+
+#include <OpenEXR/ImathBox.h>
+#include <OpenEXR/ImathVec.h>
+
+#include <cmath>
 #include <iostream>
-#include <math.h>
+#include <vector>
 
 using namespace EmldCore::Util;
 using namespace EmldCore::ParallelUtil;
@@ -43,8 +48,7 @@ using namespace EmldCore::ParallelUtil;
 //-*****************************************************************************
 template <typename VEC>
 struct ComputeVectorMagnitude
-        : public ZeroForEachFunctorI<ComputeVectorMagnitude<VEC> >
-{
+  : public ZeroForEachFunctorI<ComputeVectorMagnitude<VEC> > {
     typedef ZeroForEachFunctorI<ComputeVectorMagnitude<VEC> > super_type;
     typedef typename super_type::index_type index_type;
 
@@ -53,8 +57,7 @@ struct ComputeVectorMagnitude
     vec_base_type* Magnitudes;
     VEC* Vectors;
 
-    void operator()( index_type i ) const
-    {
+    void operator()(index_type i) const {
         Magnitudes[i] = Vectors[i].length();
     }
 };
@@ -62,8 +65,7 @@ struct ComputeVectorMagnitude
 //-*****************************************************************************
 template <typename VEC>
 struct IntegratePositionInPlace
-        : public ZeroForEachFunctorI<IntegratePositionInPlace<VEC> >
-{
+  : public ZeroForEachFunctorI<IntegratePositionInPlace<VEC> > {
     typedef ZeroForEachFunctorI<IntegratePositionInPlace<VEC> > super_type;
     typedef typename super_type::index_type index_type;
     typedef typename VEC::BaseType vec_base_type;
@@ -72,93 +74,80 @@ struct IntegratePositionInPlace
     VEC* Velocities;
     vec_base_type Dt;
 
-    void operator()( index_type i ) const
-    {
+    void operator()(index_type i) const {
         Positions[i] += Velocities[i] * Dt;
     }
 };
 
 //-*****************************************************************************
-struct SimState
-{
+struct SimState {
     std::vector<Imath::V3f> positions;
     std::vector<Imath::V3f> velocities;
     std::vector<float> velMags;
 
-    SimState( std::size_t i_n )
-        : positions( i_n )
-        , velocities( i_n )
-        , velMags( i_n )
-    {
-        UniformRand urand( -1.0, 1.0 );
-        for ( std::size_t i = 0; i < i_n; ++i )
-        {
-            positions[i] = Imath::V3f( 100.0 * urand(),
-                                       100.0 * urand(),
-                                       100.0 * urand() );
-            velocities[i] = Imath::V3f( 5.0 * urand(),
-                                        5.0 * urand(),
-                                        5.0 * urand() );
+    SimState(std::size_t i_n)
+      : positions(i_n)
+      , velocities(i_n)
+      , velMags(i_n) {
+        UniformRand urand(-1.0, 1.0);
+        for (std::size_t i = 0; i < i_n; ++i) {
+            positions[i] =
+              Imath::V3f(100.0 * urand(), 100.0 * urand(), 100.0 * urand());
+            velocities[i] =
+              Imath::V3f(5.0 * urand(), 5.0 * urand(), 5.0 * urand());
         }
 
         computeVelMags();
     }
 
-    void computeVelMags()
-    {
+    void computeVelMags() {
         const std::size_t N = velocities.size();
-        velMags.resize( N );
+        velMags.resize(N);
 
         ComputeVectorMagnitude<Imath::V3f> F;
-        F.Magnitudes = vector_data( velMags );
-        F.Vectors = vector_data( velocities );
-        F.execute( N );
+        F.Magnitudes = vector_data(velMags);
+        F.Vectors = vector_data(velocities);
+        F.execute(N);
     }
 
-    void integrate( float i_dt )
-    {
+    void integrate(float i_dt) {
         const std::size_t N = positions.size();
 
         IntegratePositionInPlace<Imath::V3f> F;
-        F.Positions = vector_data( positions );
-        F.Velocities = vector_data( velocities );
+        F.Positions = vector_data(positions);
+        F.Velocities = vector_data(velocities);
         F.Dt = i_dt;
-        F.execute( N );
+        F.execute(N);
     }
 };
 
 //-*****************************************************************************
-int main( int argc, char* argv[] )
-{
-    SimState state( 1024 );
+int main(int argc, char* argv[]) {
+    SimState state(1024);
     std::cout << "Created sim state with 1024 members." << std::endl;
 
-    state.integrate( 1.0f / 24.0f );
+    state.integrate(1.0f / 24.0f);
     std::cout << "Integrated state through one frame." << std::endl;
 
-    Imath::Box3f bounds = VectorVecBounds( state.positions );
-    std::cout << "Calculated bounds of positions: " << bounds.min
-              << " to " << bounds.max << std::endl;
+    Imath::Box3f bounds = VectorVecBounds(state.positions);
+    std::cout << "Calculated bounds of positions: " << bounds.min << " to "
+              << bounds.max << std::endl;
 
-    float maxVelMag = VectorMaxVecLength2( state.velocities );
-    std::cout << "Calculated max velocity magnitude: " << sqrtf( maxVelMag )
+    float maxVelMag = VectorMaxVecLength2(state.velocities);
+    std::cout << "Calculated max velocity magnitude: " << sqrtf(maxVelMag)
               << std::endl;
 
     std::cout << "Average velocity magnitude squared: "
-              << VectorAvgVecLength2( state.velocities )
-              << std::endl
+              << VectorAvgVecLength2(state.velocities) << std::endl
               << "Average velocity magnitude: "
-              << VectorAvgVecLength( state.velocities )
-              << std::endl
-              << "Average velocity: "
-              << VectorAverageValue( state.velocities )
+              << VectorAvgVecLength(state.velocities) << std::endl
+              << "Average velocity: " << VectorAverageValue(state.velocities)
               << std::endl
               << "Average vel mag from state array: "
-              << VectorAverage<std::vector<float>,double>( state.velMags )
+              << VectorAverage<std::vector<float>, double>(state.velMags)
               << std::endl;
 
-    std::pair<float, float> minMaxVelMags =
-        VectorMinMax( state.velMags );
+    std::pair<float, float> minMaxVelMags = VectorMinMax(state.velMags);
 
     std::cout << "Min vel mags from min max: " << minMaxVelMags.first
               << std::endl

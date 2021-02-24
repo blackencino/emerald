@@ -8,18 +8,27 @@
 # TARGET_LINK_LIBRARIES( emld_test_BucketedConcurrentVector ${THIS_LIBS} )
 # ADD_TEST( emld_TEST_BucketedConcurrentVector 
 #           emld_test_BucketedConcurrentVector )
+emerald_define_test(EmldCore_ParallelUtil_BucketedConcurrentVectorTest
+    SOURCES test_BucketedConcurrentVector.cpp
+    DEPENDENCIES 
+        emerald::EmldCore_ParallelUtil
+        emerald::EmldCore_Util 
+    )
 
 # #-******************************************************************************
 # # LRUCache Test
 # ADD_EXECUTABLE( emld_test_LRUCache test_LRUCache.cpp )
 # TARGET_LINK_LIBRARIES( emld_test_LRUCache ${THIS_LIBS} )
 # ADD_TEST( emld_TEST_LRUCache emld_test_LRUCache )
+emerald_define_test(EmldCore_ParallelUtil_LRUCacheTest
+    SOURCES test_LRUCache.cpp
+    DEPENDENCIES 
+        emerald::EmldCore_ParallelUtil
+        emerald::EmldCore_Util 
+    )
 
-# #-******************************************************************************
-# # Parallel For Test
-# ADD_EXECUTABLE( emld_test_ParallelFor test_ParallelFor.cpp )
-# TARGET_LINK_LIBRARIES( emld_test_ParallelFor ${THIS_LIBS} )
-# ADD_TEST( emld_TEST_ParallelFor emld_test_ParallelFor )
+#-******************************************************************************
+# Parallel For Test
 emerald_define_test(EmldCore_ParallelUtil_ForTest
     SOURCES test_ParallelFor.cpp
     DEPENDENCIES 
@@ -27,11 +36,14 @@ emerald_define_test(EmldCore_ParallelUtil_ForTest
         emerald::EmldCore_Util 
     )
 
-# #-******************************************************************************
-# # Parallel Reduce Test
-# ADD_EXECUTABLE( emld_test_ParallelReduce test_ParallelReduce.cpp )
-# TARGET_LINK_LIBRARIES( emld_test_ParallelReduce ${THIS_LIBS} )
-# ADD_TEST( emld_TEST_ParallelReduce emld_test_ParallelReduce )
+#-******************************************************************************
+# Parallel Reduce Test
+emerald_define_test(EmldCore_ParallelUtil_ReduceTest
+    SOURCES test_ParallelReduce.cpp
+    DEPENDENCIES 
+        emerald::EmldCore_ParallelUtil
+        emerald::EmldCore_Util 
+    )
 
 #-******************************************************************************
 # Parallel Scan Test
@@ -51,24 +63,29 @@ emerald_define_test(EmldCore_ParallelUtil_SortTest
         emerald::EmldCore_Util 
     )
 
-# #-******************************************************************************
-# # Parallel Contiguous Blocks Test
-# ADD_EXECUTABLE( emld_test_ParallelContiguousBlocks 
-#                 test_ParallelContiguousBlocks.cpp )
-# TARGET_LINK_LIBRARIES( emld_test_ParallelContiguousBlocks ${THIS_LIBS} )
-# ADD_TEST( emld_TEST_ParallelContiguousBlocks 
-#           emld_test_ParallelContiguousBlocks )
+#-******************************************************************************
+# Parallel Contiguous Blocks Test
+emerald_define_test(EmldCore_ParallelUtil_ContiguousBlocksTest
+    SOURCES test_ParallelContiguousBlocks.cpp
+    DEPENDENCIES 
+        emerald::EmldCore_ParallelUtil
+        emerald::EmldCore_Util 
+    )
 
-# #-******************************************************************************
-# # Parallel CopyFillSet Test
-# ADD_EXECUTABLE( emld_test_ParallelCopyFillSet test_ParallelCopyFillSet.cpp )
-# TARGET_LINK_LIBRARIES( emld_test_ParallelCopyFillSet ${THIS_LIBS} )
-# ADD_TEST( emld_TEST_ParallelCopyFillSet emld_test_ParallelCopyFillSet )
+#-******************************************************************************
+# Parallel CopyFillSet Test
+emerald_define_test(EmldCore_ParallelUtil_CopyFillSetTest
+    SOURCES test_ParallelCopyFillSet.cpp
+    DEPENDENCIES 
+        emerald::EmldCore_ParallelUtil
+        emerald::EmldCore_Util 
+    )
 
-# #-******************************************************************************
-# # Remove Duplicates Test
-# ADD_EXECUTABLE( emld_test_RemoveDuplicates 
-#                 test_RemoveDuplicates.cpp )
-# TARGET_LINK_LIBRARIES( emld_test_RemoveDuplicates ${THIS_LIBS} )
-# ADD_TEST( emld_TEST_RemoveDuplicates 
-#           emld_test_RemoveDuplicates )
+#-******************************************************************************
+# Remove Duplicates Test
+emerald_define_test(EmldCore_ParallelUtil_RemoveDuplicatesTest
+    SOURCES test_RemoveDuplicates.cpp
+    DEPENDENCIES 
+        emerald::EmldCore_ParallelUtil
+        emerald::EmldCore_Util 
+    )

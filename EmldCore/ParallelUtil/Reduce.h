@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,23 +34,29 @@
 #include "Foundation.h"
 #include "SimpleArrayFunctors.h"
 
+#include <EmldCore/Util/VectorUtil.h>
+
+#include <OpenEXR/ImathBox.h>
+#include <tbb/parallel_reduce.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+
 namespace EmldCore {
 namespace ParallelUtil {
 
 //-*****************************************************************************
 //-*****************************************************************************
 // Reduction is primarily accessed through the wrapper functions
-// at the end, 
+// at the end,
 // ParallelVectorMinValue, etc.
 //-*****************************************************************************
 //-*****************************************************************************
 
-
 //-*****************************************************************************
-template < typename VALUE_FUNCTOR, 
-            typename REDUCE_FUNCTOR >
-struct ValueReduceAdaptor
-{
+template <typename VALUE_FUNCTOR, typename REDUCE_FUNCTOR>
+struct ValueReduceAdaptor {
     typedef VALUE_FUNCTOR value_functor_type;
     typedef typename VALUE_FUNCTOR::value_type value_type;
     typedef typename VALUE_FUNCTOR::index_type index_type;
@@ -66,37 +72,31 @@ struct ValueReduceAdaptor
     const REDUCE_FUNCTOR& ReduceFunctor;
     reduce_value_type ReducedValue;
 
-    ValueReduceAdaptor( const VALUE_FUNCTOR& i_valueF,
-                        const REDUCE_FUNCTOR& i_reduceF )
-        : ValueFunctor( i_valueF )
-        , ReduceFunctor( i_reduceF )
-    {
-        ReduceFunctor( ReducedValue );
+    ValueReduceAdaptor(const VALUE_FUNCTOR& i_valueF,
+                       const REDUCE_FUNCTOR& i_reduceF)
+      : ValueFunctor(i_valueF)
+      , ReduceFunctor(i_reduceF) {
+        ReduceFunctor(ReducedValue);
     }
 
-    ValueReduceAdaptor( this_type& i_copy, tbb::split )
-        : ValueFunctor( i_copy.ValueFunctor )
-        , ReduceFunctor( i_copy.ReduceFunctor )
-    {
-        ReduceFunctor( ReducedValue );
+    ValueReduceAdaptor(this_type& i_copy, tbb::split)
+      : ValueFunctor(i_copy.ValueFunctor)
+      , ReduceFunctor(i_copy.ReduceFunctor) {
+        ReduceFunctor(ReducedValue);
     }
 
-    void operator()( const range_type& i_rng )
-    {
-        for ( index_type i = i_rng.begin(); i < i_rng.end(); ++i )
-        {
-            ReduceFunctor( ReducedValue, ValueFunctor[ i ] );
+    void operator()(const range_type& i_rng) {
+        for (index_type i = i_rng.begin(); i < i_rng.end(); ++i) {
+            ReduceFunctor(ReducedValue, ValueFunctor[i]);
         }
     }
 
-    void join( const this_type& i_other )
-    {
-        ReduceFunctor( ReducedValue, i_other.ReducedValue );
+    void join(const this_type& i_other) {
+        ReduceFunctor(ReducedValue, i_other.ReducedValue);
     }
 
-    void execute( index_type i_N )
-    {
-        tbb::parallel_reduce( range_type( 0, i_N ), *this );
+    void execute(index_type i_N) {
+        tbb::parallel_reduce(range_type(0, i_N), *this);
     }
 };
 
@@ -108,79 +108,67 @@ struct ValueReduceAdaptor
 
 //-*****************************************************************************
 template <typename VEC_TYPE>
-struct BoundsReduceFunctor
-{
+struct BoundsReduceFunctor {
     typedef VEC_TYPE vec_type;
     typedef Imath::Box<VEC_TYPE> box_type;
 
     typedef box_type reduce_value_type;
     typedef vec_type value_type;
 
-    void operator()( reduce_value_type& o_box ) const
-    {
+    void operator()(reduce_value_type& o_box) const {
         o_box.makeEmpty();
     }
 
-    void operator()( reduce_value_type& io_box, const value_type& i_vec ) const
-    {
-        io_box.extendBy( i_vec );
+    void operator()(reduce_value_type& io_box, const value_type& i_vec) const {
+        io_box.extendBy(i_vec);
     }
 
-    void operator()( reduce_value_type& io_box, 
-                     const reduce_value_type& i_box ) const
-    {
-        io_box.extendBy( i_box );
+    void operator()(reduce_value_type& io_box,
+                    const reduce_value_type& i_box) const {
+        io_box.extendBy(i_box);
     }
 };
 
 //-*****************************************************************************
 template <typename BOX_TYPE>
-struct BoundsBoundsReduceFunctor
-{
+struct BoundsBoundsReduceFunctor {
     typedef BOX_TYPE box_type;
 
     typedef box_type reduce_value_type;
     typedef box_type value_type;
 
-    void operator()( reduce_value_type& o_box ) const
-    {
+    void operator()(reduce_value_type& o_box) const {
         o_box.makeEmpty();
     }
 
-    void operator()( box_type& io_box, const box_type& i_box ) const
-    {
-        io_box.extendBy( i_box );
+    void operator()(box_type& io_box, const box_type& i_box) const {
+        io_box.extendBy(i_box);
     }
 };
 
 //-*****************************************************************************
 template <typename T>
-struct MinReduceFunctor
-{
+struct MinReduceFunctor {
     typedef T reduce_value_type;
     typedef T value_type;
 
-    void operator()( reduce_value_type& o_val ) const
-    {
+    void operator()(reduce_value_type& o_val) const {
         o_val = std::numeric_limits<T>::max();
     }
 
-    void operator()( reduce_value_type& io_val,
-                     const value_type& i_other ) const
-    {
-        io_val = std::min( io_val, i_other );
+    void operator()(reduce_value_type& io_val,
+                    const value_type& i_other) const {
+        io_val = std::min(io_val, i_other);
     }
 };
 
 //-*****************************************************************************
 template <typename T>
-struct MaxReduceFunctor
-{
+struct MaxReduceFunctor {
     typedef T reduce_value_type;
     typedef T value_type;
 
-    void operator()( reduce_value_type& o_val ) const
-    {
+    void operator()(reduce_value_type& o_val) const {
 #if EMLD_USE_CXX11
         o_val = std::numeric_limits<T>::lowest();
 #else
@@ -188,62 +176,47 @@ struct MaxReduceFunctor
 #endif
     }
 
-    void operator()( reduce_value_type& io_val,
-                     const value_type& i_other ) const
-    {
-        io_val = std::max( io_val, i_other );
+    void operator()(reduce_value_type& io_val,
+                    const value_type& i_other) const {
+        io_val = std::max(io_val, i_other);
     }
 };
 
 //-*****************************************************************************
 template <typename T>
-struct MinMaxReduceFunctor
-{
-    typedef std::pair<T,T> reduce_value_type;
+struct MinMaxReduceFunctor {
+    typedef std::pair<T, T> reduce_value_type;
     typedef T value_type;
 
-    void operator()( reduce_value_type& o_val ) const
-    {
-#if EMLD_USE_CXX11
-        o_val = reduce_value_type( std::numeric_limits<T>::max(),
-                                   std::numeric_limits<T>::lowest() );
-#else
-        o_val = reduce_value_type( std::numeric_limits<T>::max(),
-                                   -std::numeric_limits<T>::max() );
-#endif
+    void operator()(reduce_value_type& o_val) const {
+        o_val = reduce_value_type(std::numeric_limits<T>::max(),
+                                  std::numeric_limits<T>::lowest());
     }
 
-    void operator()( reduce_value_type& io_val,
-                     const value_type& i_val ) const
-    {
-        io_val.first = std::min( io_val.first, i_val );
-        io_val.second = std::max( io_val.second, i_val );
+    void operator()(reduce_value_type& io_val, const value_type& i_val) const {
+        io_val.first = std::min(io_val.first, i_val);
+        io_val.second = std::max(io_val.second, i_val);
     }
 
-    void operator()( reduce_value_type& io_val,
-                     const reduce_value_type& i_other ) const
-    {
-
-        io_val.first = std::min( io_val.first, i_other.first );
-        io_val.second = std::max( io_val.second, i_other.second );
+    void operator()(reduce_value_type& io_val,
+                    const reduce_value_type& i_other) const {
+        io_val.first = std::min(io_val.first, i_other.first);
+        io_val.second = std::max(io_val.second, i_other.second);
     }
 };
 
 //-*****************************************************************************
 template <typename T>
-struct AddReduceFunctor
-{
+struct AddReduceFunctor {
     typedef T reduce_value_type;
     typedef T value_type;
 
-    void operator()( reduce_value_type& o_val ) const
-    {
-        set_zero<T>( o_val );
+    void operator()(reduce_value_type& o_val) const {
+        set_zero<T>(o_val);
     }
 
-    void operator()( reduce_value_type& io_val,
-                     const value_type& i_other ) const
-    {
+    void operator()(reduce_value_type& io_val,
+                    const value_type& i_other) const {
         io_val += i_other;
     }
 };
@@ -255,12 +228,9 @@ struct AddReduceFunctor
 //-*****************************************************************************
 
 //-*****************************************************************************
-template <typename VECTOR, 
-          typename VALUE_FUNCTOR, 
-          typename REDUCE_FUNCTOR>
-typename REDUCE_FUNCTOR::reduce_value_type
-VectorReduce( const VECTOR& i_vector )
-{
+template <typename VECTOR, typename VALUE_FUNCTOR, typename REDUCE_FUNCTOR>
+typename REDUCE_FUNCTOR::reduce_value_type VectorReduce(
+  const VECTOR& i_vector) {
     typedef typename std::ptrdiff_t index_type;
     typedef typename VALUE_FUNCTOR::value_type value_type;
     typedef typename REDUCE_FUNCTOR::reduce_value_type reduce_value_type;
@@ -268,23 +238,21 @@ VectorReduce( const VECTOR& i_vector )
     typedef ValueReduceAdaptor<VALUE_FUNCTOR, REDUCE_FUNCTOR> vra_type;
     {
         VALUE_FUNCTOR VF;
-        VF.Values = vector_cdata( i_vector );
+        VF.Values = vector_cdata(i_vector);
 
         REDUCE_FUNCTOR RF;
 
-        vra_type VRA( VF, RF );
-        VRA.execute( i_vector.size() );
+        vra_type VRA(VF, RF);
+        VRA.execute(i_vector.size());
 
         return VRA.ReducedValue;
     }
 };
 
 //-*****************************************************************************
-template <typename VALUE_FUNCTOR,
-          typename REDUCE_FUNCTOR>
-typename REDUCE_FUNCTOR::reduce_value_type
-FunctorReduce( const VALUE_FUNCTOR& i_VF, std::ptrdiff_t N )
-{
+template <typename VALUE_FUNCTOR, typename REDUCE_FUNCTOR>
+typename REDUCE_FUNCTOR::reduce_value_type FunctorReduce(
+  const VALUE_FUNCTOR& i_VF, std::ptrdiff_t N) {
     typedef typename std::ptrdiff_t index_type;
     typedef typename REDUCE_FUNCTOR::reduce_value_type reduce_value_type;
 
@@ -292,8 +260,8 @@ FunctorReduce( const VALUE_FUNCTOR& i_VF, std::ptrdiff_t N )
     {
         REDUCE_FUNCTOR RF;
 
-        vra_type VRA( i_VF, RF );
-        VRA.execute( N );
+        vra_type VRA(i_VF, RF);
+        VRA.execute(N);
 
         return VRA.ReducedValue;
     }
@@ -301,16 +269,15 @@ FunctorReduce( const VALUE_FUNCTOR& i_VF, std::ptrdiff_t N )
 
 //-*****************************************************************************
 template <typename VEC_VECTOR>
-Imath::Box<typename VEC_VECTOR::value_type> 
-VectorVecBounds( const VEC_VECTOR& i_vector )
-{
+Imath::Box<typename VEC_VECTOR::value_type> VectorVecBounds(
+  const VEC_VECTOR& i_vector) {
     typedef typename VEC_VECTOR::value_type vec_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef DirectConstValuesFunctor<vec_type,index_type> VF_type;
+    typedef DirectConstValuesFunctor<vec_type, index_type> VF_type;
     typedef BoundsReduceFunctor<vec_type> RF_type;
 
-    return VectorReduce<VEC_VECTOR,VF_type, RF_type>( i_vector );
+    return VectorReduce<VEC_VECTOR, VF_type, RF_type>(i_vector);
 }
 
 //-*****************************************************************************
@@ -318,80 +285,70 @@ VectorVecBounds( const VEC_VECTOR& i_vector )
 
 //-*****************************************************************************
 template <typename VEC_VECTOR>
-typename VEC_VECTOR::value_type::BaseType
-VectorMinVecLength2( const VEC_VECTOR& i_vector )
-{
+typename VEC_VECTOR::value_type::BaseType VectorMinVecLength2(
+  const VEC_VECTOR& i_vector) {
     typedef typename VEC_VECTOR::value_type vec_type;
     typedef typename vec_type::BaseType value_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef VecLength2ValuesFunctor<vec_type,index_type> VF_type;
+    typedef VecLength2ValuesFunctor<vec_type, index_type> VF_type;
     typedef MinReduceFunctor<value_type> RF_type;
 
-    return VectorReduce<VEC_VECTOR,VF_type, RF_type>( i_vector );
+    return VectorReduce<VEC_VECTOR, VF_type, RF_type>(i_vector);
 }
 
 //-*****************************************************************************
 template <typename VEC_VECTOR>
-typename VEC_VECTOR::value_type::BaseType
-VectorMaxVecLength2( const VEC_VECTOR& i_vector )
-{
+typename VEC_VECTOR::value_type::BaseType VectorMaxVecLength2(
+  const VEC_VECTOR& i_vector) {
     typedef typename VEC_VECTOR::value_type vec_type;
     typedef typename vec_type::BaseType value_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef VecLength2ValuesFunctor<vec_type,index_type> VF_type;
+    typedef VecLength2ValuesFunctor<vec_type, index_type> VF_type;
     typedef MaxReduceFunctor<value_type> RF_type;
 
-    return VectorReduce<VEC_VECTOR,VF_type, RF_type>( i_vector );
+    return VectorReduce<VEC_VECTOR, VF_type, RF_type>(i_vector);
 }
 
 //-*****************************************************************************
 template <typename VEC_VECTOR>
-typename VEC_VECTOR::value_type::BaseType
-VectorAvgVecLength2( const VEC_VECTOR& i_vector )
-{
+typename VEC_VECTOR::value_type::BaseType VectorAvgVecLength2(
+  const VEC_VECTOR& i_vector) {
     typedef typename VEC_VECTOR::value_type vec_type;
     typedef typename vec_type::BaseType value_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef VecLength2ValuesFunctor<vec_type,index_type> VF_type;
+    typedef VecLength2ValuesFunctor<vec_type, index_type> VF_type;
     typedef AddReduceFunctor<value_type> RF_type;
 
     const index_type N = i_vector.size();
-    const value_type numer = 
-    VectorReduce<VEC_VECTOR,VF_type, RF_type>( i_vector );
-    if ( N > 0 )
-    {
-        return numer / static_cast<value_type>( N );
-    }
-    else
-    {
+    const value_type numer =
+      VectorReduce<VEC_VECTOR, VF_type, RF_type>(i_vector);
+    if (N > 0) {
+        return numer / static_cast<value_type>(N);
+    } else {
         return numer;
     }
 }
 
 //-*****************************************************************************
 template <typename VEC_VECTOR>
-typename VEC_VECTOR::value_type::BaseType
-VectorAvgVecLength( const VEC_VECTOR& i_vector )
-{
+typename VEC_VECTOR::value_type::BaseType VectorAvgVecLength(
+  const VEC_VECTOR& i_vector) {
     typedef typename VEC_VECTOR::value_type vec_type;
     typedef typename vec_type::BaseType value_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef VecLengthValuesFunctor<vec_type,index_type> VF_type;
+    typedef VecLengthValuesFunctor<vec_type, index_type> VF_type;
     typedef AddReduceFunctor<value_type> RF_type;
 
     const index_type N = i_vector.size();
-    const value_type numer = 
-    VectorReduce<VEC_VECTOR,VF_type, RF_type>( i_vector );
-    if ( N > 0 )
-    {
-        return numer / static_cast<value_type>( N );
-    }
-    else
-    {
+    const value_type numer =
+      VectorReduce<VEC_VECTOR, VF_type, RF_type>(i_vector);
+    if (N > 0) {
+        return numer / static_cast<value_type>(N);
+    } else {
         return numer;
     }
 }
@@ -401,103 +358,87 @@ VectorAvgVecLength( const VEC_VECTOR& i_vector )
 
 //-*****************************************************************************
 template <typename FUNCTOR>
-typename FUNCTOR::value_type
-FunctorMin( const FUNCTOR& i_F, std::ptrdiff_t N )
-{
+typename FUNCTOR::value_type FunctorMin(const FUNCTOR& i_F, std::ptrdiff_t N) {
     typedef typename FUNCTOR::value_type value_type;
 
     typedef MinReduceFunctor<value_type> RF_type;
-    return FunctorReduce<FUNCTOR,RF_type>( i_F, N );
+    return FunctorReduce<FUNCTOR, RF_type>(i_F, N);
 }
 
 //-*****************************************************************************
 template <typename FUNCTOR>
-typename FUNCTOR::value_type
-FunctorMax( const FUNCTOR& i_F, std::ptrdiff_t N )
-{
+typename FUNCTOR::value_type FunctorMax(const FUNCTOR& i_F, std::ptrdiff_t N) {
     typedef typename FUNCTOR::value_type value_type;
 
     typedef MaxReduceFunctor<value_type> RF_type;
-    return FunctorReduce<FUNCTOR,RF_type>( i_F, N );
+    return FunctorReduce<FUNCTOR, RF_type>(i_F, N);
 }
 
 //-*****************************************************************************
 template <typename VECTOR>
-typename VECTOR::value_type
-VectorMin( const VECTOR& i_vector )
-{
+typename VECTOR::value_type VectorMin(const VECTOR& i_vector) {
     typedef typename VECTOR::value_type value_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef DirectConstValuesFunctor<value_type,index_type> VF_type;
+    typedef DirectConstValuesFunctor<value_type, index_type> VF_type;
     typedef MinReduceFunctor<value_type> RF_type;
 
-    return VectorReduce<VECTOR,VF_type, RF_type>( i_vector );
+    return VectorReduce<VECTOR, VF_type, RF_type>(i_vector);
 }
 
 //-*****************************************************************************
 template <typename VECTOR>
-typename VECTOR::value_type
-VectorMax( const VECTOR& i_vector )
-{
+typename VECTOR::value_type VectorMax(const VECTOR& i_vector) {
     typedef typename VECTOR::value_type value_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef DirectConstValuesFunctor<value_type,index_type> VF_type;
+    typedef DirectConstValuesFunctor<value_type, index_type> VF_type;
     typedef MaxReduceFunctor<value_type> RF_type;
 
-    return VectorReduce<VECTOR,VF_type, RF_type>( i_vector );
+    return VectorReduce<VECTOR, VF_type, RF_type>(i_vector);
 }
 
 //-*****************************************************************************
 template <typename VECTOR, typename AVERAGE_TYPE>
-AVERAGE_TYPE
-VectorAverage( const VECTOR& i_vector )
-{
+AVERAGE_TYPE VectorAverage(const VECTOR& i_vector) {
     typedef typename VECTOR::value_type value_type;
     typedef typename std::ptrdiff_t index_type;
     typedef AVERAGE_TYPE reduce_value_type;
 
-    typedef DirectConstValuesFunctor<value_type,index_type> VF_type;
+    typedef DirectConstValuesFunctor<value_type, index_type> VF_type;
     typedef AddReduceFunctor<reduce_value_type> RF_type;
 
     const index_type N = i_vector.size();
-    const reduce_value_type numer = 
-    VectorReduce<VECTOR,VF_type, RF_type>( i_vector );
-    if ( N > 0 )
-    {
-        return numer / static_cast<reduce_value_type>( N );
-    }
-    else
-    {
+    const reduce_value_type numer =
+      VectorReduce<VECTOR, VF_type, RF_type>(i_vector);
+    if (N > 0) {
+        return numer / static_cast<reduce_value_type>(N);
+    } else {
         return numer;
     }
 }
 
 //-*****************************************************************************
 template <typename VECTOR>
-typename VECTOR::value_type
-VectorAverageValue( const VECTOR& i_vector )
-{
+typename VECTOR::value_type VectorAverageValue(const VECTOR& i_vector) {
     typedef typename VECTOR::value_type value_type;
-    return VectorAverage<VECTOR,value_type>( i_vector );
+    return VectorAverage<VECTOR, value_type>(i_vector);
 }
 
 //-*****************************************************************************
 template <typename VECTOR>
 std::pair<typename VECTOR::value_type, typename VECTOR::value_type>
-VectorMinMax( const VECTOR& i_vector )
-{
+VectorMinMax(const VECTOR& i_vector) {
     typedef typename VECTOR::value_type value_type;
     typedef typename std::ptrdiff_t index_type;
 
-    typedef DirectConstValuesFunctor<value_type,index_type> VF_type;
+    typedef DirectConstValuesFunctor<value_type, index_type> VF_type;
     typedef MinMaxReduceFunctor<value_type> RF_type;
 
-    return VectorReduce<VECTOR,VF_type, RF_type>( i_vector );
+    return VectorReduce<VECTOR, VF_type, RF_type>(i_vector);
 }
-    
-} // End namespace ParallelUtil
-} // End namespace EmldCore
+
+}  // End namespace ParallelUtil
+}  // End namespace EmldCore
 
 #endif

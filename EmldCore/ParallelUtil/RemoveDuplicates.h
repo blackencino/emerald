@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,9 +31,15 @@
 #ifndef _EmldCore_ParallelUtil_RemoveDuplicates_h_
 #define _EmldCore_ParallelUtil_RemoveDuplicates_h_
 
-#include "Foundation.h"
 #include "ContiguousBlocks.h"
+#include "Foundation.h"
 #include "Sort.h"
+
+#include <EmldCore/Util/VectorUtil.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 namespace EmldCore {
 namespace ParallelUtil {
@@ -46,19 +52,18 @@ namespace ParallelUtil {
 
 //-*****************************************************************************
 template <typename T, typename INDEX>
-struct RDSimpleBlock : public SimpleBlock<INDEX>
-{
+struct RDSimpleBlock : public SimpleBlock<INDEX> {
     typedef T value_type;
     typedef INDEX index_type;
 
     RDSimpleBlock()
-        : SimpleBlock<INDEX>()
-    {}
+      : SimpleBlock<INDEX>() {
+    }
 
-    RDSimpleBlock( const T& i_val, index_type i_begin, index_type i_end )
-        : SimpleBlock<INDEX>( i_begin, i_end )
-        , value( i_val )
-    {}
+    RDSimpleBlock(const T& i_val, index_type i_begin, index_type i_end)
+      : SimpleBlock<INDEX>(i_begin, i_end)
+      , value(i_val) {
+    }
 
     T value;
 };
@@ -72,30 +77,24 @@ struct RDSimpleBlock : public SimpleBlock<INDEX>
 //-*****************************************************************************
 template <typename T, typename BLOCK, typename INDEX>
 struct CopyValuesToBlocks
-        : public ZeroForEachFunctorI <
-        CopyValuesToBlocks< T, BLOCK, INDEX >, INDEX >
-{
+  : public ZeroForEachFunctorI<CopyValuesToBlocks<T, BLOCK, INDEX>, INDEX> {
     const T* InValues;
     BLOCK* OutBlocks;
 
-    void operator()( INDEX i ) const
-    {
+    void operator()(INDEX i) const {
         BLOCK& b = OutBlocks[i];
-        b.value = InValues[ b.Begin ];
+        b.value = InValues[b.Begin];
     }
 };
 
 //-*****************************************************************************
 template <typename T, typename BLOCK, typename INDEX>
 struct CopyValuesFromBlocks
-        : public ZeroForEachFunctorI <
-        CopyValuesFromBlocks< T, BLOCK, INDEX >, INDEX >
-{
+  : public ZeroForEachFunctorI<CopyValuesFromBlocks<T, BLOCK, INDEX>, INDEX> {
     const BLOCK* InBlocks;
     T* OutValues;
 
-    void operator()( INDEX i ) const
-    {
+    void operator()(INDEX i) const {
         OutValues[i] = InBlocks[i].value;
     }
 };
@@ -103,18 +102,17 @@ struct CopyValuesFromBlocks
 //-*****************************************************************************
 template <typename T, typename BLOCK, typename INDEX, typename SIZE>
 struct CopyValuesAndSizesFromBlocks
-        : public ZeroForEachFunctorI <
-        CopyValuesAndSizesFromBlocks< T, BLOCK, INDEX, SIZE>, INDEX >
-{
+  : public ZeroForEachFunctorI<
+      CopyValuesAndSizesFromBlocks<T, BLOCK, INDEX, SIZE>,
+      INDEX> {
     const BLOCK* InBlocks;
     T* OutValues;
     SIZE* OutSizes;
 
-    void operator()( INDEX i ) const
-    {
+    void operator()(INDEX i) const {
         const BLOCK& b = InBlocks[i];
         OutValues[i] = b.value;
-        OutSizes[i] = static_cast<SIZE>( b.size() );
+        OutSizes[i] = static_cast<SIZE>(b.size());
     }
 };
 
@@ -125,12 +123,8 @@ struct CopyValuesAndSizesFromBlocks
 //-*****************************************************************************
 
 template <typename VECTOR, typename SVECTOR>
-void VectorRemoveDuplicatesGetSizesInPlaceEqual
-(
-    VECTOR& io_items,
-    SVECTOR& o_sizes
-)
-{
+void VectorRemoveDuplicatesGetSizesInPlaceEqual(VECTOR& io_items,
+                                                SVECTOR& o_sizes) {
     // Typedefs
     typedef std::ptrdiff_t INDEX;
     typedef typename VECTOR::value_type T;
@@ -141,40 +135,39 @@ void VectorRemoveDuplicatesGetSizesInPlaceEqual
     typedef std::vector<INDEX> IndexVector;
 
     // Sort the stuff
-    VectorSort<VECTOR>( io_items );
+    VectorSort<VECTOR>(io_items);
 
     // Make block index vector.
     IndexVector blockIndices;
-    blockIndices.resize( io_items.size() );
-    INDEX numItems = 1 +
-        VectorContiguousBlockIndicesEqual<VECTOR, IndexVector>
-        ( io_items, blockIndices );
+    blockIndices.resize(io_items.size());
+    INDEX numItems = 1 + VectorContiguousBlockIndicesEqual<VECTOR, IndexVector>(
+                           io_items, blockIndices);
 
     // Make block vector.
     RDSimpleBlockVector blocks;
-    blocks.resize( std::size_t( numItems ) );
-    VectorContiguousBlockSetBeginEndSimple<IndexVector, RDSimpleBlockVector>
-    ( blockIndices, blocks );
+    blocks.resize(std::size_t(numItems));
+    VectorContiguousBlockSetBeginEndSimple<IndexVector, RDSimpleBlockVector>(
+      blockIndices, blocks);
 
     // Copy elements to blocks
     {
-        CopyValuesToBlocks< T, block_type, INDEX> F;
-        F.InValues = vector_cdata( io_items );
-        F.OutBlocks = vector_data( blocks );
-        F.execute( numItems );
+        CopyValuesToBlocks<T, block_type, INDEX> F;
+        F.InValues = vector_cdata(io_items);
+        F.OutBlocks = vector_data(blocks);
+        F.execute(numItems);
     }
 
     // Resize unduplicated items
-    io_items.resize( numItems );
-    o_sizes.resize( numItems );
+    io_items.resize(numItems);
+    o_sizes.resize(numItems);
 
     // Copy blocks to elements & sizes
     {
         CopyValuesAndSizesFromBlocks<T, block_type, INDEX, size_type> F;
-        F.InBlocks = vector_cdata( blocks );
-        F.OutValues = vector_data( io_items );
-        F.OutSizes = vector_data( o_sizes );
-        F.execute( numItems );
+        F.InBlocks = vector_cdata(blocks);
+        F.OutValues = vector_data(io_items);
+        F.OutSizes = vector_data(o_sizes);
+        F.execute(numItems);
     }
 }
 
@@ -186,11 +179,7 @@ void VectorRemoveDuplicatesGetSizesInPlaceEqual
 
 //-*****************************************************************************
 template <typename VECTOR>
-void VectorRemoveDuplicatesInPlaceEqual
-(
-    VECTOR& io_items
-)
-{
+void VectorRemoveDuplicatesInPlaceEqual(VECTOR& io_items) {
     // Typedefs
     typedef std::ptrdiff_t INDEX;
     typedef typename VECTOR::value_type T;
@@ -200,49 +189,48 @@ void VectorRemoveDuplicatesInPlaceEqual
     typedef std::vector<INDEX> IndexVector;
 
     // Sort the stuff
-    VectorSort<VECTOR>( io_items );
-    //std::cout << "Sorted items" << std::endl;
+    VectorSort<VECTOR>(io_items);
+    // std::cout << "Sorted items" << std::endl;
 
     // Make block index vector.
     IndexVector blockIndices;
-    blockIndices.resize( io_items.size() );
-    INDEX numItems = 1 +
-        VectorContiguousBlockIndicesEqual<VECTOR, IndexVector>
-        ( io_items, blockIndices );
-    //std::cout << "Made contiguous block indices." << std::endl
+    blockIndices.resize(io_items.size());
+    INDEX numItems = 1 + VectorContiguousBlockIndicesEqual<VECTOR, IndexVector>(
+                           io_items, blockIndices);
+    // std::cout << "Made contiguous block indices." << std::endl
     //          << "Num contiguous blocks: " << numItems << std::endl;
 
     // Make block vector.
     RDSimpleBlockVector blocks;
-    blocks.resize( std::size_t( numItems ) );
-    VectorContiguousBlockSetBeginEndSimple<IndexVector, RDSimpleBlockVector>
-    ( blockIndices, blocks );
-    //std::cout << "Made blocks." << std::endl;
+    blocks.resize(std::size_t(numItems));
+    VectorContiguousBlockSetBeginEndSimple<IndexVector, RDSimpleBlockVector>(
+      blockIndices, blocks);
+    // std::cout << "Made blocks." << std::endl;
 
     // Copy elements to blocks
     {
-        CopyValuesToBlocks< T, block_type, INDEX> F;
-        F.InValues = vector_cdata( io_items );
-        F.OutBlocks = vector_data( blocks );
-        F.execute( numItems );
+        CopyValuesToBlocks<T, block_type, INDEX> F;
+        F.InValues = vector_cdata(io_items);
+        F.OutBlocks = vector_data(blocks);
+        F.execute(numItems);
     }
-    //std::cout << "Copied values to blocks." << std::endl;
+    // std::cout << "Copied values to blocks." << std::endl;
 
     // Resize unduplicated items
-    io_items.resize( numItems );
-    //std::cout << "Resized items." << std::endl;
+    io_items.resize(numItems);
+    // std::cout << "Resized items." << std::endl;
 
     // Copy blocks to elements & sizes
     {
         CopyValuesFromBlocks<T, block_type, INDEX> F;
-        F.InBlocks = vector_cdata( blocks );
-        F.OutValues = vector_data( io_items );
-        F.execute( numItems );
+        F.InBlocks = vector_cdata(blocks);
+        F.OutValues = vector_data(io_items);
+        F.execute(numItems);
     }
-    //std::cout << "Copied blocks to values." << std::endl;
+    // std::cout << "Copied blocks to values." << std::endl;
 }
 
-} // End namespace ParallelUtil
-} // End namespace EmldCore
+}  // End namespace ParallelUtil
+}  // End namespace EmldCore
 
 #endif

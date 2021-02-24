@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,53 +30,46 @@
 
 #include <EmldCore/ParallelUtil/BucketedConcurrentVector.h>
 
-#include <EmldCore/Util/All.h>
-#include <EmldCore/ParallelUtil/Sort.h>
 #include <EmldCore/ParallelUtil/For.h>
+#include <EmldCore/ParallelUtil/Foundation.h>
+#include <EmldCore/ParallelUtil/Sort.h>
+#include <EmldCore/Util/Exception.h>
 
-#include <ImathVec.h>
-#include <vector>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 
 using namespace EmldCore::Util;
 using namespace EmldCore::ParallelUtil;
 
 //-*****************************************************************************
-struct EmitIndices
-    : public ZeroForEachFunctorI<EmitIndices,int>
-{
+struct EmitIndices : public ZeroForEachFunctorI<EmitIndices, int> {
     BucketedConcurrentVector<int>* IndicesPtr;
 
-    void operator()( int i ) const
-    {
-        IndicesPtr->push_back( i );
+    void operator()(int i) const {
+        IndicesPtr->push_back(i);
     }
 };
 
 //-*****************************************************************************
-int main( int argc, char* argv[] )
-{
+int main(int argc, char* argv[]) {
     BucketedConcurrentVector<int> values;
-    values.set_bucket_size( 64 );
+    values.set_bucket_size(64);
     int N = 4096;
     {
         EmitIndices F;
         F.IndicesPtr = &values;
-        F.execute( N );
+        F.execute(N);
     }
     std::cout << "Parallel emission of integers" << std::endl;
 
-    EMLD_ASSERT( values.size() == N, 
-                    "Wrong number of parallel-emitted indices." );
+    EMLD_ASSERT(values.size() == N,
+                "Wrong number of parallel-emitted indices.");
 
-    VectorSort( values );
+    VectorSort(values);
     std::cout << "Parallel-sorted values." << std::endl;
 
-    for ( std::size_t i = 0; i < values.size(); ++i )
-    {
-        EMLD_ASSERT( values[i] == i, 
-                        "sort out of order at: " << i );
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        EMLD_ASSERT(values[i] == i, "sort out of order at: " << i);
     }
     std::cout << "Verified result." << std::endl;
 

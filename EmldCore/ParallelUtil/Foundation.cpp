@@ -36,12 +36,8 @@
 namespace EmldCore {
 namespace ParallelUtil {
 
-#ifdef DEBUG
-
 std::atomic<std::size_t> g_totalEntriesCreated;
 std::atomic<std::size_t> g_totalEntriesDeleted;
-
-#endif
 
 static int __stub = 0;
 

@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,65 +28,54 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-*****************************************************************************
 
-#include <EmldCore/Util/All.h>
 #include <EmldCore/ParallelUtil/CopyFillSet.h>
-#include <ImathVec.h>
-#include <vector>
-#include <iostream>
+#include <EmldCore/Util/Exception.h>
+#include <EmldCore/Util/Random.h>
+
 #include <algorithm>
+#include <cstdint>
+#include <iostream>
+#include <vector>
 
 using namespace EmldCore::Util;
 using namespace EmldCore::ParallelUtil;
 
 //-*****************************************************************************
-int main( int argc, char* argv[] )
-{
-    std::vector<float> values( 4096 );
-    UniformRand urand( -100.0, 100.0 );
-    for ( std::size_t i = 0; i < values.size(); ++i )
-    {
-        values[i] = urand();
-    }
+int main(int argc, char* argv[]) {
+    std::vector<float> values(4096);
+    UniformRand urand(-100.0, 100.0);
+    for (std::size_t i = 0; i < values.size(); ++i) { values[i] = urand(); }
     std::cout << "Created base set of values." << std::endl;
 
-    std::vector<float> newValues( 4096 );
-    VectorCopy( values, newValues );
+    std::vector<float> newValues(4096);
+    VectorCopy(values, newValues);
     std::cout << "Parallel-copied values." << std::endl;
 
-    for ( std::size_t i = 0; i < values.size(); ++i )
-    {
-        EMLD_ASSERT( values[i] == newValues[i], 
-                       "copy mismatch at: " << i );
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        EMLD_ASSERT(values[i] == newValues[i], "copy mismatch at: " << i);
     }
     std::cout << "Verified result." << std::endl;
-
 
     static const float testVal = 7.34f;
-    VectorFill( newValues, testVal );
+    VectorFill(newValues, testVal);
     std::cout << "Parallel-set values." << std::endl;
-    for ( std::size_t i = 0; i < values.size(); ++i )
-    {
-        EMLD_ASSERT( newValues[i] == testVal, 
-                       "bad set value at: " << i );
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        EMLD_ASSERT(newValues[i] == testVal, "bad set value at: " << i);
     }
     std::cout << "Verified result." << std::endl;
 
-    VectorZeroBits( newValues );
+    VectorZeroBits(newValues);
     std::cout << "Parallel-zero'd values." << std::endl;
-    for ( std::size_t i = 0; i < values.size(); ++i )
-    {
-        EMLD_ASSERT( newValues[i] == 0.0f,
-                       "bad zero value at: " << i );
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        EMLD_ASSERT(newValues[i] == 0.0f, "bad zero value at: " << i);
     }
     std::cout << "Verified result." << std::endl;
 
-    std::vector<int> orderedIndices( 7153 );
-    VectorSetOrderedIndices( orderedIndices );
+    std::vector<int> orderedIndices(7153);
+    VectorSetOrderedIndices(orderedIndices);
     std::cout << "Parallel set ordered indices." << std::endl;
-    for ( std::size_t i = 0; i < orderedIndices.size(); ++i )
-    {
-        EMLD_ASSERT( orderedIndices[i] == i,
-                        "bad ordered index at: " << i );
+    for (std::size_t i = 0; i < orderedIndices.size(); ++i) {
+        EMLD_ASSERT(orderedIndices[i] == i, "bad ordered index at: " << i);
     }
     std::cout << "Verified result." << std::endl;
 
