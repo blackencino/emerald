@@ -32,6 +32,8 @@
 
 #include <iostream>
 #include <typeinfo>
+#include <cmath>
+#include <cstdlib>
 
 namespace EmldCore {
 namespace Util {
@@ -44,7 +46,7 @@ void testWrapT( T x, T lb, T ub, T expected, T tol )
     std::cout << "wrap<" << typeid( T ).name() << ">( " << x
             << ", " << lb << ", " << ub << " ) = " << k << ", expecting: "
             << expected << std::endl;
-    EMLD_ASSERT( std::abs<T>( k - expected ) <= tol, "test wrap" );
+    EMLD_ASSERT( std::abs( k - expected ) <= tol, "test wrap" );
 }
 
 //-*****************************************************************************

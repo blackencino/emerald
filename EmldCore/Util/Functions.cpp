@@ -30,6 +30,10 @@
 
 #include "Functions.h"
 
+#include <cfloat>
+#include <cmath>
+#include <limits>
+
 namespace EmldCore {
 namespace Util {
 
@@ -56,29 +60,27 @@ namespace Util {
 
 //-*****************************************************************************
 //                         Internally Defined Routines                        //
-static long double xGamma( long double x );
-static long double Duplication_Formula( long double two_x );
+static long double xGamma(long double x);
+static long double Duplication_Formula(long double two_x);
 
 //-*****************************************************************************
 //                         Internally Defined Constants                       //
-static long double const e =  2.71828182845904523536028747L;
+static long double const e = 2.71828182845904523536028747L;
 static long double const pi = 3.14159265358979323846264338L;
-static long double const g =  9.65657815377331589457187L;
+static long double const g = 9.65657815377331589457187L;
 static long double const exp_g_o_sqrt_2pi = +6.23316569877722552586386e+3L;
 static double max_double_arg = 171.0;
 static long double max_long_double_arg = 1755.5L;
 
-static long double const a[] = {
-    +1.14400529453851095667309e+4L,
-    -3.23988020152318335053598e+4L,
-    +3.50514523505571666566083e+4L,
-    -1.81641309541260702610647e+4L,
-    +4.63232990536666818409138e+3L,
-    -5.36976777703356780555748e+2L,
-    +2.28754473395181007645155e+1L,
-    -2.17925748738865115560082e-1L,
-    +1.08314836272589368860689e-4L
-};
+static long double const a[] = {+1.14400529453851095667309e+4L,
+                                -3.23988020152318335053598e+4L,
+                                +3.50514523505571666566083e+4L,
+                                -1.81641309541260702610647e+4L,
+                                +4.63232990536666818409138e+3L,
+                                -5.36976777703356780555748e+2L,
+                                +2.28754473395181007645155e+1L,
+                                -2.17925748738865115560082e-1L,
+                                +1.08314836272589368860689e-4L};
 
 //-*****************************************************************************
 // double Gamma_Function( double x )                                          //
@@ -111,17 +113,16 @@ static long double const a[] = {
 //                                                                            //
 //     g = Gamma_Function( x );                                               //
 //-*****************************************************************************
-double Gamma_Function( double x )
-{
+double Gamma_Function(double x) {
     long double g;
 
-    if ( x > max_double_arg ) { return DBL_MAX; }
+    if (x > max_double_arg) { return DBL_MAX; }
 
-    g = xGamma_Function( ( long double ) x);
+    g = xGamma_Function((long double)x);
 
-    if ( std::abs( g ) < DBL_MAX ) { return (double) g; }
+    if (std::abs(g) < DBL_MAX) { return (double)g; }
 
-    return ( g < 0.0L ) ? -DBL_MAX : DBL_MAX;
+    return (g < 0.0L) ? -DBL_MAX : DBL_MAX;
 }
 
 //-*****************************************************************************
@@ -154,8 +155,7 @@ double Gamma_Function( double x )
 //                                                                            //
 //     g = xGamma_Function( x );                                              //
 //-*****************************************************************************
-long double xGamma_Function( long double x )
-{
+long double xGamma_Function(long double x) {
     long double sin_x;
 
     long double rg;
@@ -164,45 +164,31 @@ long double xGamma_Function( long double x )
     // For a positive argument (x > 0)                 //
     //    if x <= max_long_double_arg return Gamma(x)  //
     //    otherwise      return LDBL_MAX.              //
-    if ( x > 0.0L )
-    {
-        if ( x <= max_long_double_arg )
-        {
-            return xGamma( x );
-        }
-        else
-        {
+    if (x > 0.0L) {
+        if (x <= max_long_double_arg) {
+            return xGamma(x);
+        } else {
             return LDBL_MAX;
         }
     }
 
     // For a nonpositive argument (x <= 0) //
     //    if x is a pole return LDBL_MAX   //
-    if ( x > -( long double )LONG_MAX )
-    {
-        ix = ( long int ) x;
-        if ( x == ( long double ) ix )
-        {
-            return LDBL_MAX;
-        }
+    if (x > -(long double)LONG_MAX) {
+        ix = (long int)x;
+        if (x == (long double)ix) { return LDBL_MAX; }
     }
-    sin_x = sinl( pi * x );
-    if ( sin_x == 0.0L )
-    {
-        return LDBL_MAX;
-    }
+    sin_x = sinl(pi * x);
+    if (sin_x == 0.0L) { return LDBL_MAX; }
 
     // if x is not a pole and x < -(max_long_double_arg - 1) //
     //                                     then return 0.0L  //
-    if ( x < -( max_long_double_arg - 1.0L ) )
-    {
-        return 0.0L;
-    }
+    if (x < -(max_long_double_arg - 1.0L)) { return 0.0L; }
 
     // if x is not a pole and x >= -(max_long_double - 1) //
     //                               then return Gamma(x) //
-    rg = xGamma( 1.0L - x ) * sin_x / pi;
-    if ( rg != 0.0L ) { return ( 1.0L / rg ); }
+    rg = xGamma(1.0L - x) * sin_x / pi;
+    if (rg != 0.0L) { return (1.0L / rg); }
 
     return LDBL_MAX;
 }
@@ -233,25 +219,21 @@ long double xGamma_Function( long double x )
 //                                                                            //
 //     g = xGamma_Function( x );                                              //
 //-*****************************************************************************
-static long double xGamma( long double x )
-{
-    long double xx = ( x < 1.0L ) ? x + 1.0L : x;
+static long double xGamma(long double x) {
+    long double xx = (x < 1.0L) ? x + 1.0L : x;
     long double temp;
-    int const n = sizeof( a ) / sizeof( long double );
+    int const n = sizeof(a) / sizeof(long double);
     int i;
 
-    if ( x > 1755.5L ){ return LDBL_MAX; }
+    if (x > 1755.5L) { return LDBL_MAX; }
 
-    if ( x > 900.0L ){ return Duplication_Formula( x ); }
+    if (x > 900.0L) { return Duplication_Formula(x); }
 
     temp = 0.0L;
-    for ( i = n-1; i >= 0; i-- )
-    {
-        temp += ( a[i] / ( xx + ( long double ) i ) );
-    }
+    for (i = n - 1; i >= 0; i--) { temp += (a[i] / (xx + (long double)i)); }
     temp += 1.0L;
-    temp *= ( powl( ( g + xx - 0.5L ) / e, xx - 0.5L ) / exp_g_o_sqrt_2pi );
-    return ( x < 1.0L ) ?  temp / x : temp;
+    temp *= (powl((g + xx - 0.5L) / e, xx - 0.5L) / exp_g_o_sqrt_2pi);
+    return (x < 1.0L) ? temp / x : temp;
 }
 
 //-*****************************************************************************
@@ -272,17 +254,16 @@ static long double xGamma( long double x )
 //                                                                            //
 //     g = Duplication_Formula(two_x);                                        //
 //-*****************************************************************************
-static long double Duplication_Formula( long double two_x )
-{
+static long double Duplication_Formula(long double two_x) {
     long double x = 0.5L * two_x;
     long double g;
-    int n = ( int ) two_x - 1;
+    int n = (int)two_x - 1;
 
-    g = powl( 2.0L, two_x - 1.0L - (long double) n );
-    g = ldexpl( g,n );
-    g /= sqrt( pi );
-    g *= xGamma_Function( x );
-    g *= xGamma_Function( x + 0.5L );
+    g = powl(2.0L, two_x - 1.0L - (long double)n);
+    g = ldexpl(g, n);
+    g /= sqrt(pi);
+    g *= xGamma_Function(x);
+    g *= xGamma_Function(x + 0.5L);
 
     return g;
 }
@@ -305,8 +286,7 @@ static long double Duplication_Formula( long double two_x )
 //                                                                            //
 //     x = Gamma_Function_Max_Arg();                                          //
 //-*****************************************************************************
-double Gamma_Function_Max_Arg( void )
-{
+double Gamma_Function_Max_Arg(void) {
     return max_double_arg;
 }
 
@@ -328,11 +308,9 @@ double Gamma_Function_Max_Arg( void )
 //                                                                            //
 //     x = xGamma_Function_Max_Arg();                                         //
 //-*****************************************************************************
-long double xGamma_Function_Max_Arg( void )
-{
+long double xGamma_Function_Max_Arg(void) {
     return max_long_double_arg;
 }
 
-} // End namespace Util
-} // End namespace EmldCore
-
+}  // End namespace Util
+}  // End namespace EmldCore

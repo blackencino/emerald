@@ -34,7 +34,6 @@
 #include <vector>
 #include <cmath>
 
-#if __cplusplus > 199711L
 //-*****************************************************************************
 //-*****************************************************************************
 // C++ 11 FOR SURE
@@ -53,32 +52,6 @@ typedef std::linear_congruential_engine<uint64_t,
     0xB, uint64_t(1)<<48>
 Rand48_Engine;
 #define SPH_UNIFORM_REAL_DISTRIBUTION std::uniform_real_distribution
-
-#else
-//-*****************************************************************************
-//-*****************************************************************************
-// NO C++ 11 yet, use Boost
-//-*****************************************************************************
-//-*****************************************************************************
-
-#include <boost/random.hpp>
-#include <boost/random/linear_congruential.hpp>
-
-#undef SPH_USE_CXX11
-#define SPH_STATIC_CONSTEXPR static const
-
-typedef boost::random::linear_congruential_engine<uint64_t,
-        uint64_t(0xDEECE66DUL) | (uint64_t(0x5) << 32),
-        0xB, uint64_t(1)<<48> 
-Rand48_Engine;
-
-typedef uint64_t seed_type;
-
-#define SPH_UNIFORM_REAL_DISTRIBUTION boost::random::uniform_real_distribution
-
-#endif
-//-*****************************************************************************
-//-*****************************************************************************
 
 #if SPH_USE_CXX11
 

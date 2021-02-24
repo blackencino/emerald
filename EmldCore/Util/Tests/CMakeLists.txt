@@ -28,56 +28,60 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ##-*****************************************************************************
 
-SET( THIS_LIBS
-  EmldCoreUtil
-  ${EMLD_FIELD3D_LIBS}
-  ${EMLD_ALEMBIC_LIBS}
-  ${EMLD_HDF5_LIBS}
-  ${EMLD_PARTIO_LIBS}
-  ${EMLD_ILMBASE_LIBS}
-  ${EMLD_BOOST_LIBS}
-  ${EMLD_TBB_LIBS}
-  ${EMLD_GL_LIBS}
-  ${EMLD_THREAD_LIBS}
-  ${EMLD_Z_LIBS} m )
+##------------------------------------------------------------------------------
+# TESTS
+emerald_define_test(EmldCore_Util_ExceptionTest
+    SOURCES ExceptionTest.cpp
+    DEPENDENCIES emerald::EmldCore_Util)
 
-SET( CPP11_LIBS m )
+emerald_define_test(EmldCore_Util_Cpp11Test
+    SOURCES test_Cpp11.cpp
+    DEPENDENCIES emerald::EmldCore_Util)
 
-#-******************************************************************************
-# CPP11 Test
-ADD_EXECUTABLE( emldUtil_test_Cpp11 test_Cpp11.cpp )
-TARGET_LINK_LIBRARIES( emldUtil_test_Cpp11 ${THIS_LIBS} )
-ADD_TEST( emldUtil_TEST_Cpp11 emldUtil_test_Cpp11 )
+emerald_define_test(EmldCore_Util_FunctionsTest
+    SOURCES test_Functions.cpp
+    DEPENDENCIES emerald::EmldCore_Util)
 
-#-******************************************************************************
-# Exception Test
-ADD_EXECUTABLE( EmldCoreUtilException_Test ExceptionTest.cpp )
-TARGET_LINK_LIBRARIES( EmldCoreUtilException_Test 
-                       ${THIS_LIBS} )
-ADD_TEST( EmldCoreUtilException_TEST EmldCoreUtilException_Test )
-
-#-******************************************************************************
-# Vector Util Test
-ADD_EXECUTABLE( EmldCoreUtilVectorUtil_Test VectorUtilTest.cpp )
-TARGET_LINK_LIBRARIES( EmldCoreUtilVectorUtil_Test 
-                       ${THIS_LIBS} )
-ADD_TEST( EmldCoreUtilVectorUtil_TEST EmldCoreUtilVectorUtil_Test )
-
-#-******************************************************************************
-# Functions Test
-ADD_EXECUTABLE( emldUtil_test_functions test_Functions.cpp )
-TARGET_LINK_LIBRARIES( emldUtil_test_functions ${THIS_LIBS} )
-ADD_TEST( emldUtil_TEST_functions emldUtil_test_functions )
-
-#-******************************************************************************
-# Field3D Test
-ADD_EXECUTABLE( emldUtil_test_Field3D test_Field3D.cpp )
-TARGET_LINK_LIBRARIES( emldUtil_test_Field3D ${THIS_LIBS} )
-ADD_TEST( emldUtil_TEST_Field3D emldUtil_test_Field3D )
+emerald_define_test(EmldCore_Util_VectorUtilTest
+    SOURCES VectorUtilTest.cpp
+    DEPENDENCIES emerald::EmldCore_Util)
 
 
-#-******************************************************************************
-# Field3D Sparse to Dense
-ADD_EXECUTABLE( emldUtil_F3dSparseToDense test_F3dSparseToDense.cpp )
-TARGET_LINK_LIBRARIES( emldUtil_F3dSparseToDense ${THIS_LIBS} )
+# #-******************************************************************************
+# # CPP11 Test
+# ADD_EXECUTABLE( emldUtil_test_Cpp11 test_Cpp11.cpp )
+# TARGET_LINK_LIBRARIES( emldUtil_test_Cpp11 ${THIS_LIBS} )
+# ADD_TEST( emldUtil_TEST_Cpp11 emldUtil_test_Cpp11 )
+
+# #-******************************************************************************
+# # Exception Test
+# ADD_EXECUTABLE( EmldCoreUtilException_Test ExceptionTest.cpp )
+# TARGET_LINK_LIBRARIES( EmldCoreUtilException_Test 
+#                        ${THIS_LIBS} )
+# ADD_TEST( EmldCoreUtilException_TEST EmldCoreUtilException_Test )
+
+# #-******************************************************************************
+# # Vector Util Test
+# ADD_EXECUTABLE( EmldCoreUtilVectorUtil_Test VectorUtilTest.cpp )
+# TARGET_LINK_LIBRARIES( EmldCoreUtilVectorUtil_Test 
+#                        ${THIS_LIBS} )
+# ADD_TEST( EmldCoreUtilVectorUtil_TEST EmldCoreUtilVectorUtil_Test )
+
+# #-******************************************************************************
+# # Functions Test
+# ADD_EXECUTABLE( emldUtil_test_functions test_Functions.cpp )
+# TARGET_LINK_LIBRARIES( emldUtil_test_functions ${THIS_LIBS} )
+# ADD_TEST( emldUtil_TEST_functions emldUtil_test_functions )
+
+# #-******************************************************************************
+# # Field3D Test
+# ADD_EXECUTABLE( emldUtil_test_Field3D test_Field3D.cpp )
+# TARGET_LINK_LIBRARIES( emldUtil_test_Field3D ${THIS_LIBS} )
+# ADD_TEST( emldUtil_TEST_Field3D emldUtil_test_Field3D )
+
+
+# #-******************************************************************************
+# # Field3D Sparse to Dense
+# ADD_EXECUTABLE( emldUtil_F3dSparseToDense test_F3dSparseToDense.cpp )
+# TARGET_LINK_LIBRARIES( emldUtil_F3dSparseToDense ${THIS_LIBS} )
 

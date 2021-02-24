@@ -33,6 +33,9 @@
 
 #include "Foundation.h"
 
+#include <boost/pool/singleton_pool.hpp>
+#include <boost/pool/pool_alloc.hpp>
+
 namespace EmldCore {
 namespace Util {
 

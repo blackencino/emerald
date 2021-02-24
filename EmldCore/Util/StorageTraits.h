@@ -33,6 +33,13 @@
 
 #include "Foundation.h"
 
+#include <OpenEXR/ImathBox.h>
+#include <OpenEXR/ImathVec.h>
+#include <OpenEXR/ImathMatrix.h>
+#include <OpenEXR/ImathColor.h>
+
+#include <cstdint>
+
 namespace EmldCore {
 namespace Util {
 

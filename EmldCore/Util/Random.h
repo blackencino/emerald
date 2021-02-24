@@ -33,6 +33,9 @@
 
 #include "Foundation.h"
 
+#include <random>
+#include <cstdint>
+
 namespace EmldCore {
 namespace Util {
 
@@ -61,9 +64,8 @@ inline int64_t HashGrid( uint32_t i_seed,
 }
 
 //-*****************************************************************************
-typedef boost::mt19937 BaseRandGenType;
-typedef boost::uniform_real<double> UniDistType;
-typedef boost::variate_generator<BaseRandGenType&, UniDistType> URandGenType;
+typedef std::mt19937_64 BaseRandGenType;
+typedef std::uniform_real_distribution<double> UniDistType;
 
 //-*****************************************************************************
 class UniformRand
@@ -71,16 +73,16 @@ class UniformRand
 public:
     UniformRand( double iMin = 0.0, double iMax = 1.0, int64_t iSeed = 54321 )
       : m_baseGenerator( ( const BaseRandGenType::result_type & )iSeed )
-      , m_generator( m_baseGenerator, UniDistType( iMin, iMax ) )
+      , m_distribution( iMin, iMax )
     {
         // Nothing
     }
 
     void reset( int64_t iSeed )
     {
-        m_generator.engine().seed(
+        m_baseGenerator.seed(
             ( const BaseRandGenType::result_type & )iSeed );
-        m_generator.distribution().reset();
+        m_distribution.reset();
     }
 
     void reset( const V3f &iSeed )
@@ -97,20 +99,19 @@ public:
 
     double operator()( void )
     {
-        return m_generator();
+        return m_distribution(m_baseGenerator);
     }
 
 protected:
     BaseRandGenType m_baseGenerator;
-    URandGenType m_generator;
+    UniDistType m_distribution;
 };
 
 
 
 //-*****************************************************************************
 // Gaussian variation based on floating point input.
-typedef boost::normal_distribution<double> NormDistType;
-typedef boost::variate_generator<BaseRandGenType&, NormDistType> RandGenType;
+typedef std::normal_distribution<double> NormDistType;
 
 //-*****************************************************************************
 class GaussRand
@@ -118,16 +119,16 @@ class GaussRand
 public:
     GaussRand( double iMean = 0.0, double iDev = 1.0, int64_t iSeed = 54321 )
       : m_baseGenerator( ( const BaseRandGenType::result_type & )iSeed )
-      , m_generator( m_baseGenerator, NormDistType( iMean, iDev ) )
+      , m_distribution( iMean, iDev  )
     {
         // Nothing
     }
 
     void reset( int64_t iSeed )
     {
-        m_generator.engine().seed(
+        m_baseGenerator.seed(
             ( const BaseRandGenType::result_type & )iSeed );
-        m_generator.distribution().reset();
+        m_distribution.reset();
     }
 
     void reset( const V3f &iSeed )
@@ -144,19 +145,19 @@ public:
 
     void reset( int32_t iSeed )
     {
-        m_generator.engine().seed(
+        m_baseGenerator.seed(
             ( const BaseRandGenType::result_type & )iSeed );
-        m_generator.distribution().reset();
+        m_distribution.reset();
     }
 
     double operator()( void )
     {
-        return m_generator();
+        return m_distribution(m_baseGenerator);
     }
 
 protected:
     BaseRandGenType m_baseGenerator;
-    RandGenType m_generator;
+    NormDistType m_distribution;
 };
 
 } // End namespace Util

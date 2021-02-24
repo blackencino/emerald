@@ -38,54 +38,40 @@ namespace Util {
 
 //-*****************************************************************************
 //! \brief Basic real-time stopwatch. Returns elapsed time in seconds.
-class Timer
-{
+class Timer {
 public:
     //! Begins the timer and resets the elapsed time to zero
-    void start()
-    {
-        struct timezone tz;
-        gettimeofday( &m_tp0, &tz );
-        m_stopped = -1;
+    void start() {
+        m_stopped = -1.0;
+        m_start = std::chrono::high_resolution_clock::now();
     }
 
     //! Creates a timer which is started by default
-    Timer() : m_stopped( -1 ) { start(); }
+    Timer() {
+        start();
+    }
 
     //! Stops the timer and records elapsed time
-    double stop()
-    {
-        struct timezone tz;
-        struct timeval tp;
-        gettimeofday( &tp, &tz );
-
-        double seconds = tp.tv_sec - m_tp0.tv_sec;
-        seconds += double(tp.tv_usec) * 1e-6;
-        seconds -= double(m_tp0.tv_usec) * 1e-6;
-        return ( m_stopped = double(seconds) );
+    double stop() {
+        m_stopped =
+            std::chrono::duration<double>{
+                std::chrono::high_resolution_clock::now() - m_start}
+                .count();
+        return m_stopped;
     }
 
     //! Returns the amount of time elapsed.
-    double elapsed() const
-    {
-        if ( m_stopped >= 0.0 )
-        {
-            return m_stopped;
-        }
-    
-        struct timezone tz;
-        struct timeval tp;
-        gettimeofday( &tp, &tz );
+    double elapsed() const {
+        if (m_stopped >= 0.0) { return m_stopped; }
 
-        double seconds = tp.tv_sec - m_tp0.tv_sec;
-        seconds += double( tp.tv_usec ) * 1e-6;
-        seconds -= double( m_tp0.tv_usec ) * 1e-6;
-        return double(seconds);
+        return std::chrono::duration<double>{
+            std::chrono::high_resolution_clock::now() - m_start}
+            .count();
     }
 
 private:
-    double m_stopped;
-    struct timeval m_tp0;
+    double m_stopped = -1.0;
+    std::chrono::high_resolution_clock::time_point m_start;
 };
 
 } // End namespace Util

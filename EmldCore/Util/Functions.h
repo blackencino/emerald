@@ -33,6 +33,11 @@
 
 #include "Foundation.h"
 
+#include <OpenEXR/ImathBox.h>
+#include <OpenEXR/ImathVec.h>
+
+#include <cmath>
+
 namespace EmldCore {
 namespace Util {
 
@@ -42,29 +47,23 @@ namespace Util {
 // for x <= 0.5, and then asymptotically approaches 1 for any value greater
 // than 0.5. This can be used to implement a soft clamp.
 template <typename T>
-inline T shoulder( const T& x )
-{
+inline T shoulder(const T& x) {
     EMLD_LITERAL_CONSTANT T Half = 0.5;
     EMLD_LITERAL_CONSTANT T Two = 2.0;
 
-    if ( x <= Half )
-    {
+    if (x <= Half) {
         return x;
-    }
-    else
-    {
-        return Half + ( Half * std::tanh( Two * ( x - Half ) ) );
+    } else {
+        return Half + (Half * std::tanh(Two * (x - Half)));
     }
 }
 
 //-*****************************************************************************
 // Limit value to never get larger than maxVal, using shoulder curve.
 template <typename T>
-inline T shoulderLimit( const T& x, const T& maxVal )
-{
-    return maxVal * shoulder( x / maxVal );
+inline T shoulderLimit(const T& x, const T& maxVal) {
+    return maxVal * shoulder(x / maxVal);
 }
-
 
 //-*****************************************************************************
 // The Gamma functions (Euler's Gamma Function) are implemented in the .cpp.  //
@@ -87,10 +86,10 @@ inline T shoulderLimit( const T& x, const T& maxVal )
 //     the Gamma function for arguments > 1 and return values of type long    //
 //     double.                                                                //
 //-*****************************************************************************
-double Gamma_Function( double x );
-long double xGamma_Function( long double x );
-double Gamma_Function_Max_Arg( void );
-long double xGamma_Function_Max_Arg( void );
+double Gamma_Function(double x);
+long double xGamma_Function(long double x);
+double Gamma_Function_Max_Arg(void);
+long double xGamma_Function_Max_Arg(void);
 
 //-*****************************************************************************
 // A collection of simple functions borrowed from various places
@@ -99,8 +98,7 @@ long double xGamma_Function_Max_Arg( void );
 
 //-*****************************************************************************
 template <typename T>
-inline const T& clamp( const T &val, const T &lo, const T &hi )
-{
+inline const T& clamp(const T& val, const T& lo, const T& hi) {
     return val < lo ? lo : val > hi ? hi : val;
 }
 
@@ -109,16 +107,14 @@ inline const T& clamp( const T &val, const T &lo, const T &hi )
 // and one less multiply to do a + (b-a)*t, right? Bad! Increases floating
 // point exception occurances. Same as LERP
 template <class T, class T2>
-inline T mix( const T &a, const T &b, const T2 &interp )
-{
+inline T mix(const T& a, const T& b, const T2& interp) {
     EMLD_LITERAL_CONSTANT T2 one = ((T2)1);
-    return (a*(one-interp)) + (b*interp);
+    return (a * (one - interp)) + (b * interp);
 }
 
 //-*****************************************************************************
 template <class T>
-inline const T &sign( const T &val )
-{
+inline const T& sign(const T& val) {
     EMLD_LITERAL_CONSTANT T positive = ((T)1);
     EMLD_LITERAL_CONSTANT T negative = ((T)-1);
     EMLD_LITERAL_CONSTANT T zero = ((T)0);
@@ -127,29 +123,29 @@ inline const T &sign( const T &val )
 
 //******************************************************************************
 template <class T>
-inline T radians( const T &deg )
-{
+inline T radians(const T& deg) {
     EMLD_LITERAL_CONSTANT T TPI = ((T)M_PI);
     EMLD_LITERAL_CONSTANT T ONEEIGHTY = ((T)180);
-    return TPI*(deg/ONEEIGHTY);
+    return TPI * (deg / ONEEIGHTY);
 }
 
 //******************************************************************************
 template <class T>
-inline T degrees( const T &rad )
-{
+inline T degrees(const T& rad) {
     EMLD_LITERAL_CONSTANT T TPI = ((T)M_PI);
     EMLD_LITERAL_CONSTANT T ONEEIGHTY = ((T)180);
-    return ONEEIGHTY*(rad/TPI);
+    return ONEEIGHTY * (rad / TPI);
 }
 
 //-*****************************************************************************
 // f(x) = c0 + c1*x + c2*x^2 + c3*x^3
 template <typename T1, typename T2>
-inline T1 cubic( const T1 &coeff0, const T1 &coeff1,
-                   const T1 &coeff2, const T1 &coeff3, const T2 &t )
-{
-    return coeff0 + t * ( coeff1 + t * ( coeff2 + t * coeff3 ) );
+inline T1 cubic(const T1& coeff0,
+                const T1& coeff1,
+                const T1& coeff2,
+                const T1& coeff3,
+                const T2& t) {
+    return coeff0 + t * (coeff1 + t * (coeff2 + t * coeff3));
 }
 
 //-*****************************************************************************
@@ -167,59 +163,51 @@ inline T1 cubic( const T1 &coeff0, const T1 &coeff1,
 // c3 = N - 2M
 // c2 = M - c3
 template <typename T1, typename T2>
-inline T1 hermite( const T1 &pointA, const T1 &pointB,
-                     const T1 &slopeA, const T1 &slopeB,
-                     const T2 &t )
-{
+inline T1 hermite(const T1& pointA,
+                  const T1& pointB,
+                  const T1& slopeA,
+                  const T1& slopeB,
+                  const T2& t) {
     T1 M = pointB - pointA - slopeA;
-    T1 M2 = M * ( ( T2 )2 );
+    T1 M2 = M * ((T2)2);
     T1 N = slopeB - slopeA;
     T1 c3 = N - M2;
-    return cubic( pointA, slopeA, M - c3, c3, t );
+    return cubic(pointA, slopeA, M - c3, c3, t);
 }
 
 //******************************************************************************
 // Smoothstep function
 // Goes from 0 to 1.
 template <class T>
-inline T smoothstep( const T &t )
-{
-    if ( t <= ( T )0 )
-    {
-        return ( T )0;
-    }
-    else if ( t >= ( T )1 )
-    {
-        return ( T )1;
-    }
-    else
-    {
-        return t * t * ( ( T )3 - ( t * ( 2 ) ) );
+inline T smoothstep(const T& t) {
+    if (t <= (T)0) {
+        return (T)0;
+    } else if (t >= (T)1) {
+        return (T)1;
+    } else {
+        return t * t * ((T)3 - (t * (2)));
     }
 }
 
 //******************************************************************************
 template <class T>
-inline T smoothstep( const T &edge0, const T &edge1, const T &t )
-{
-    return smoothstep( ( t - edge0 ) / ( edge1 - edge0 ) );
+inline T smoothstep(const T& edge0, const T& edge1, const T& t) {
+    return smoothstep((t - edge0) / (edge1 - edge0));
 }
 
 //-*****************************************************************************
 template <class T>
-inline const T &linstep( const T &t )
-{
+inline const T& linstep(const T& t) {
     EMLD_LITERAL_CONSTANT T t0 = ((T)0);
     EMLD_LITERAL_CONSTANT T t1 = ((T)1);
 
-    return clamp( t, t0, t1 );
+    return clamp(t, t0, t1);
 }
 
 //-*****************************************************************************
 template <class T>
-inline T linstep( const T &edge0, const T &edge1, const T &t )
-{
-    return linstep( ( t - edge0 ) / ( edge1 - edge0 ) );
+inline T linstep(const T& edge0, const T& edge1, const T& t) {
+    return linstep((t - edge0) / (edge1 - edge0));
 }
 
 //-*****************************************************************************
@@ -241,156 +229,42 @@ inline T linstep( const T &edge0, const T &edge1, const T &t )
 //-*****************************************************************************
 // This assumes an integer type for T.
 template <typename T>
-typename
-std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value, T>::type
-wrap( T i_x, T i_lowerBound, T i_upperBound )
-{
+typename std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value,
+                        T>::type
+wrap(T i_x, T i_lowerBound, T i_upperBound) {
     const T rangeSize = i_upperBound - i_lowerBound + 1;
 
-    if ( i_x < i_lowerBound )
-    {
-        i_x += rangeSize * ( ( ( i_lowerBound - i_x ) / rangeSize ) + 1 );
+    if (i_x < i_lowerBound) {
+        i_x += rangeSize * (((i_lowerBound - i_x) / rangeSize) + 1);
     }
 
-    return i_lowerBound + ( i_x - i_lowerBound ) % rangeSize;
+    return i_lowerBound + (i_x - i_lowerBound) % rangeSize;
 }
 
 //-*****************************************************************************
 template <typename T>
-typename
-std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value, T>::type
-wrap( T i_x, T N )
-{
-    if ( i_x < 0 )
-    {
-        i_x += N * ( ( ( -i_x ) / N ) + 1 );
-    }
+typename std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value,
+                        T>::type
+wrap(T i_x, T N) {
+    if (i_x < 0) { i_x += N * (((-i_x) / N) + 1); }
 
     return i_x % N;
 }
 
 //-*****************************************************************************
 template <typename T>
-typename std::enable_if<std::is_floating_point<T>::value, T>::type
-wrap( T x, T n )
-{
-    return x - ( n * std::floor( x / n ) );
+typename std::enable_if<std::is_floating_point<T>::value, T>::type wrap(T x,
+                                                                        T n) {
+    return x - (n * std::floor(x / n));
 }
 
 //-*****************************************************************************
 template <typename T>
-typename std::enable_if<std::is_floating_point<T>::value, T>::type
-wrap( T x, T lb, T ub )
-{
-    return lb + wrap( x - lb, ub - lb );
+typename std::enable_if<std::is_floating_point<T>::value, T>::type wrap(T x,
+                                                                        T lb,
+                                                                        T ub) {
+    return lb + wrap(x - lb, ub - lb);
 }
-
-#if 0
-//-*****************************************************************************
-// WRAP SPECIALIZATIONS
-//-*****************************************************************************
-
-//-*****************************************************************************
-template <>
-inline int8_t wrap<int8_t>( int8_t x, int8_t lb, int8_t ub )
-{
-    return wrapSignedInteger<int8_t>( x, lb, ub );
-}
-
-//-*****************************************************************************
-template <>
-inline int16_t wrap<int16_t>( int16_t x, int16_t lb, int16_t ub )
-{
-    return wrapSignedInteger<int16_t>( x, lb, ub );
-}
-
-//-*****************************************************************************
-template <>
-inline int32_t wrap<int32_t>( int32_t x, int32_t lb, int32_t ub )
-{
-    return wrapSignedInteger<int32_t>( x, lb, ub );
-}
-
-//-*****************************************************************************
-template <>
-inline int64_t wrap<int64_t>( int64_t x, int64_t lb, int64_t ub )
-{
-    return wrapSignedInteger<int64_t>( x, lb, ub );
-}
-
-//-*****************************************************************************
-template <>
-inline half wrap<half>( half x, half lb, half ub )
-{
-    return wrapFloatingPoint<half>( x, lb, ub );
-}
-
-//-*****************************************************************************
-template <>
-inline float wrap<float>( float x, float lb, float ub )
-{
-    return wrapFloatingPoint<float>( x, lb, ub );
-}
-
-//-*****************************************************************************
-template <>
-inline double wrap<double>( double x, double lb, double ub )
-{
-    return wrapFloatingPoint<double>( x, lb, ub );
-}
-
-//-*****************************************************************************
-//-*****************************************************************************
-
-//-*****************************************************************************
-template <>
-inline int8_t wrap<int8_t>( int8_t x, int8_t n )
-{
-    return wrapSignedInteger<int8_t>( x, n );
-}
-
-//-*****************************************************************************
-template <>
-inline int16_t wrap<int16_t>( int16_t x, int16_t n )
-{
-    return wrapSignedInteger<int16_t>( x, n );
-}
-
-//-*****************************************************************************
-template <>
-inline int32_t wrap<int32_t>( int32_t x, int32_t n )
-{
-    return wrapSignedInteger<int32_t>( x, n );
-}
-
-//-*****************************************************************************
-template <>
-inline int64_t wrap<int64_t>( int64_t x, int64_t n )
-{
-    return wrapSignedInteger<int64_t>( x, n );
-}
-
-//-*****************************************************************************
-template <>
-inline half wrap<half>( half x, half n )
-{
-    return wrapFloatingPoint<half>( x, n );
-}
-
-//-*****************************************************************************
-template <>
-inline float wrap<float>( float x, float n )
-{
-    return wrapFloatingPoint<float>( x, n );
-}
-
-//-*****************************************************************************
-template <>
-inline double wrap<double>( double x, double n )
-{
-    return wrapFloatingPoint<double>( x, n );
-}
-#endif
 
 //-*****************************************************************************
 // END WRAP
@@ -398,16 +272,14 @@ inline double wrap<double>( double x, double n )
 
 //-*****************************************************************************
 template <class T>
-inline T sqr( const T &a )
-{
-    return a*a;
+inline T sqr(const T& a) {
+    return a * a;
 }
 
 //-*****************************************************************************
 template <typename T>
-inline T cube( const T& a )
-{
-    return a*a*a;
+inline T cube(const T& a) {
+    return a * a * a;
 }
 
 //-*****************************************************************************
@@ -417,32 +289,28 @@ inline T cube( const T& a )
 //-*****************************************************************************
 
 template <typename T>
-inline Imath::Box<Imath::Vec3<T> >
-BoxIntersection( const Imath::Box<Imath::Vec3<T> >& i_a,
-                 const Imath::Box<Imath::Vec3<T> >& i_b )
-{
+inline Imath::Box<Imath::Vec3<T> > BoxIntersection(
+  const Imath::Box<Imath::Vec3<T> >& i_a,
+  const Imath::Box<Imath::Vec3<T> >& i_b) {
     return Imath::Box<Imath::Vec3<T> >(
-               Imath::Vec3<T>( std::max( i_a.min.x, i_b.min.x ),
-                               std::max( i_a.min.y, i_b.min.y ),
-                               std::max( i_a.min.z, i_b.min.z ) ),
+      Imath::Vec3<T>(std::max(i_a.min.x, i_b.min.x),
+                     std::max(i_a.min.y, i_b.min.y),
+                     std::max(i_a.min.z, i_b.min.z)),
 
-               Imath::Vec3<T>( std::min( i_a.max.x, i_b.max.x ),
-                               std::min( i_a.max.y, i_b.max.y ),
-                               std::min( i_a.max.z, i_b.max.z ) ) );
+      Imath::Vec3<T>(std::min(i_a.max.x, i_b.max.x),
+                     std::min(i_a.max.y, i_b.max.y),
+                     std::min(i_a.max.z, i_b.max.z)));
 }
 
 template <typename T>
-inline Imath::Box<Imath::Vec3<T> >
-BoxIntersection( const Imath::Box<Imath::Vec3<T> >& i_a,
-                 const Imath::Box<Imath::Vec3<T> >& i_b,
-                 const Imath::Box<Imath::Vec3<T> >& i_c )
-{
-    return BoxIntersection<T>( BoxIntersection<T>( i_a, i_b ),
-                               i_c );
+inline Imath::Box<Imath::Vec3<T> > BoxIntersection(
+  const Imath::Box<Imath::Vec3<T> >& i_a,
+  const Imath::Box<Imath::Vec3<T> >& i_b,
+  const Imath::Box<Imath::Vec3<T> >& i_c) {
+    return BoxIntersection<T>(BoxIntersection<T>(i_a, i_b), i_c);
 }
 
-} // End namespace Util
-} // End namespace EmldCore
-
+}  // End namespace Util
+}  // End namespace EmldCore
 
 #endif

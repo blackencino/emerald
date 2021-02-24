@@ -33,6 +33,8 @@
 
 #include "Foundation.h"
 
+#include <OpenEXR/ImathVec.h>
+
 #ifdef IMATH_INTERNAL_NAMESPACE_HEADER_ENTER
 IMATH_INTERNAL_NAMESPACE_HEADER_ENTER
 #else

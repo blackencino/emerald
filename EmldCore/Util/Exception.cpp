@@ -30,6 +30,9 @@
 
 #include "Exception.h"
 
+#include <iostream>
+#include <cstdlib>
+
 namespace EmldCore {
 namespace Util {
 
