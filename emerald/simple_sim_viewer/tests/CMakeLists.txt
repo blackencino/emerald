@@ -1,3 +1,4 @@
+if (EMERALD_BUILD_GUIS)
 emerald_define_executable(test_simple_mesh_sim
     SOURCES 
         test_simple_mesh_sim.cpp
@@ -35,4 +36,5 @@ emerald_define_executable(test_multi_particles_sim
     DEPENDENCIES 
         emerald::multi_scale_draw
     )
+endif()
 

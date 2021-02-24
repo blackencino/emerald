@@ -1,3 +1,4 @@
+if (EMERALD_BUILD_GUIS)
 emerald_define_executable(AbcMeshesView
     SOURCES 
         TestFoundation.h
@@ -12,3 +13,6 @@ emerald_define_executable(AbcMeshesView
         OpenEXR::OpenEXR
         Boost::Boost
     )
+endif()
+
+
