@@ -36,14 +36,8 @@
 namespace EmldCore {
 namespace AbcMeshesScene {
 
-//-*****************************************************************************
-#if ABCM_USE_CXX11
 #define ABCM_REGEX std::regex
 #define ABCM_REGEX_MATCH std::regex_match
-#else
-#define ABCM_REGEX boost::regex
-#define ABCM_REGEX_MATCH boost::regex_match
-#endif
 
 //-*****************************************************************************
 struct FileInfo

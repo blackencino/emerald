@@ -30,7 +30,7 @@
 
 #include "TestViewScene.h"
 #include <EmldCore/AbcMeshesScene/All.h>
-#include <EmldCore/SimpleSimViewer/All.h>
+#include <emerald/simple_sim_viewer/all.h>
 #include <iostream>
 #include <exception>
 #include <string>
@@ -68,11 +68,11 @@ int main( int argc, char* argv[] )
         std::cout << "Created scene from file: " << abcFileName
                   << std::endl;
 
-        SimpleSimViewer::SimPtr vptr(
+        emerald::simple_sim_viewer::SimPtr vptr(
             new AbcmTest::ViewScene( sptr, increment ) );
         std::cout << "Created view scene." << std::endl;
 
-        SimpleSimViewer::SimpleViewSim( vptr );
+        emerald::simple_sim_viewer::SimpleViewSim( vptr );
     }
     catch ( std::exception& exc )
     {

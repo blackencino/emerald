@@ -31,16 +31,21 @@
 #ifndef _EmldCore_Util_Functions_h_
 #define _EmldCore_Util_Functions_h_
 
-#include "Foundation.h"
+//#include "Foundation.h"
 
-#include <OpenEXR/ImathBox.h>
-#include <OpenEXR/ImathVec.h>
+#include <emerald/util/functions.h>
 
-#include <cmath>
+//#include <OpenEXR/ImathBox.h>
+//#include <OpenEXR/ImathVec.h>
+
+//#include <cmath>
 
 namespace EmldCore {
 namespace Util {
 
+using namespace emerald::util;
+
+#if 0
 //-*****************************************************************************
 //-*****************************************************************************
 // SHOULDER FUNCTION - this implements a curve that's basically just 'x'
@@ -64,6 +69,7 @@ template <typename T>
 inline T shoulderLimit(const T& x, const T& maxVal) {
     return maxVal * shoulder(x / maxVal);
 }
+#endif
 
 //-*****************************************************************************
 // The Gamma functions (Euler's Gamma Function) are implemented in the .cpp.  //
@@ -90,6 +96,8 @@ double Gamma_Function(double x);
 long double xGamma_Function(long double x);
 double Gamma_Function_Max_Arg(void);
 long double xGamma_Function_Max_Arg(void);
+
+#if 0
 
 //-*****************************************************************************
 // A collection of simple functions borrowed from various places
@@ -309,6 +317,7 @@ inline Imath::Box<Imath::Vec3<T> > BoxIntersection(
   const Imath::Box<Imath::Vec3<T> >& i_c) {
     return BoxIntersection<T>(BoxIntersection<T>(i_a, i_b), i_c);
 }
+#endif
 
 }  // End namespace Util
 }  // End namespace EmldCore

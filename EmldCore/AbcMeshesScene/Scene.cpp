@@ -30,6 +30,8 @@
 
 #include "Scene.h"
 
+#include <Alembic/AbcCoreFactory/IFactory.h>
+
 namespace EmldCore {
 namespace AbcMeshesScene {
 
@@ -49,10 +51,10 @@ void Scene::loadMeshesFromFile( const FileInfo& i_fileInfo,
               << std::endl;
 
     // Load Input Archive
-    AbcG::IArchive inArchive( Alembic::AbcCoreHDF5::ReadArchive(),
-                              i_fileInfo.fileName,
-                              AbcG::ErrorHandler::kThrowPolicy,
-                              i_cachePtr );
+    Alembic::AbcCoreFactory::IFactory factory;
+    factory.setSampleCache(i_cachePtr);
+    factory.setPolicy(AbcG::ErrorHandler::kThrowPolicy);
+    AbcG::IArchive inArchive = factory.getArchive(i_fileInfo.fileName);
 
     AbcG::IObject inTopObject = inArchive.getTop();
 

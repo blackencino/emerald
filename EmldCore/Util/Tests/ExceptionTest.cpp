@@ -33,12 +33,13 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
 
 int main( int argc, char *argv[] )
 {
     try
     {
-        EMLD_THROW( "I am an exception. Was I caught?" );
+        throw std::runtime_error("I am an exception. Was I caught?" );
     }
     catch ( std::exception &exc )
     {

@@ -440,13 +440,13 @@ void LRUCache<KEY, DATA, KHASHER, DSIZER>::tryPurge() {
     }
 
     // Old queue should be empty
-    EMLD_DEBUG_ASSERT(m_queue->unsafe_size() == 0, "Old queue should be empty");
+    EMLD_ASSERT(m_queue->unsafe_size() == 0, "Old queue should be empty");
 
     // New queue should be same size as map.
-    EMLD_DEBUG_ASSERT(nq->unsafe_size() == m_map->size(),
-                      "Map and queue should be same size after purge"
-                        << ", map size: " << m_map->size()
-                        << ", queue size: " << nq->unsafe_size());
+    EMLD_ASSERT(nq->unsafe_size() == m_map->size(),
+                "Map and queue should be same size after purge"
+                  << ", map size: " << m_map->size()
+                  << ", queue size: " << nq->unsafe_size());
 
     // Swap the new queue with the old.
     m_queue.swap(nq);

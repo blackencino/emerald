@@ -31,14 +31,17 @@
 #ifndef _EmldCore_Util_Exception_h_
 #define _EmldCore_Util_Exception_h_
 
-#include "Foundation.h"
+//#include "Foundation.h"
 
-#include <exception>
-#include <string>
+//#include <exception>
+//#include <string>
+
+#include <emerald/util/assert.h>
 
 namespace EmldCore {
 namespace Util {
 
+#if 0
 //-*****************************************************************************
 //! Base class for all exceptions in the Emld libraries. Derived
 //! from both std::exception and std::string, publicly
@@ -144,6 +147,7 @@ extern void __EMLD_DEBUG_ASSERT_FAIL(const char* msg) throw();
 
 #define EMLD_DEBUG_ASSERT(COND, TEXT) (__EMLD_DEBUG_ASSERT_VOID_CAST(0))
 
+#endif
 #endif
 
 }  // End namespace Util

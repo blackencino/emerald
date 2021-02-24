@@ -17,6 +17,7 @@ emldcore_legacy_define_library(Util
      Murmur3.cpp
      Random.cpp
   DEPENDENCIES
+    emerald::util
     Alembic::Alembic
     OpenEXR::OpenEXR
     Boost::Boost

@@ -8,6 +8,8 @@
 #include "Vertex.h"
 
 #include <boost/core/noncopyable.hpp>
+#include <OpenEXR/ImathMatrix.h>
+#include <OpenEXR/ImathMatrixAlgo.h>
 
 #include <memory>
 #include <string>

@@ -32,8 +32,8 @@
 #define _EmldCore_AbcMeshesScene_TestFoundation_h_
 
 #include <EmldCore/AbcMeshesScene/All.h>
-#include <EmldCore/SimpleSimViewer/All.h>
-#include <EmldCore/GeepGLFW/All.h>
+#include <emerald/simple_sim_viewer/all.h>
+#include <emerald/geep_glfw/all.h>
 #include <EmldCore/Util/All.h>
 
 namespace AbcmTest {

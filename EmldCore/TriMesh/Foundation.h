@@ -14,7 +14,7 @@ namespace EmldCore {
 namespace TriMesh {
 
 //-*****************************************************************************
-#define TRIMESH_THROW(TEXT) EMLD_THROW(TEXT)
+#define TRIMESH_THROW(TEXT) EMLD_FAIL(TEXT)
 #define TRIMESH_ASSERT(COND, TEXT) EMLD_ASSERT(COND, TEXT)
 
 //-*****************************************************************************

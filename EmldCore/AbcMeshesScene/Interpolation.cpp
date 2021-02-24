@@ -30,6 +30,10 @@
 
 #include "Interpolation.h"
 
+#include <Alembic/AbcGeom/All.h>
+
+#include <utility>
+
 namespace EmldCore {
 namespace AbcMeshesScene {
 
