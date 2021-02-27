@@ -49,6 +49,17 @@ Xform::Xform( Object& i_enclosingObject,
     // if we have a non-constant time sampling, we should get times
     // out of it.
     AbcG::TimeSamplingPtr iTsmp = schema.getTimeSampling();
+
+    std::cout << "Hey, I'm here. " << std::endl;
+    if (!iTsmp) {
+        std::cout << "Time Sampling Pointer is null" << std::endl;
+    } else {
+        std::cout << "Time Sampling Pointer not null" << std::endl;
+    }
+
+    std::cout << "Does the schema think it is constant? "
+    << schema.isConstant() << std::endl;
+
     if ( !schema.isConstant() )
     {
         size_t numSamps = schema.getNumSamples();
