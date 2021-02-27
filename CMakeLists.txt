@@ -7,7 +7,7 @@ cmake_policy(SET CMP0042 NEW)
 
 project(emerald 
         LANGUAGES CXX
-        VERSION 0.0.3)
+        VERSION 0.0.4)
 
 option(EMERALD_BUILD_GUIS "Build Emerald Graphical UIs" ON)
 option(EMERALD_DO_TESTS "Do unit tests" ON)
