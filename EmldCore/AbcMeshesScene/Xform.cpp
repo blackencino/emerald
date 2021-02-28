@@ -63,6 +63,11 @@ Xform::Xform( Object& i_enclosingObject,
     if ( !schema.isConstant() )
     {
         size_t numSamps = schema.getNumSamples();
+        std::cout << "Num samples in schema: " << numSamps << std::endl
+        << "Num stored samples in time sampling: " << iTsmp->getNumStoredTimes() << std::endl
+        << "Time sampling type: " << iTsmp->getTimeSamplingType() << std::endl
+        << "samp 0: " << iTsmp->getSampleTime(0) << std::endl
+        << "samp n-1: " << iTsmp->getSampleTime(numSamps - 1) << std::endl;
         if ( numSamps > 0 )
         {
             m_internalMinTime = iTsmp->getSampleTime( 0 );

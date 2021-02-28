@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -40,15 +40,12 @@ namespace AbcMeshesScene {
 //-*****************************************************************************
 
 //-*****************************************************************************
-void Scene::loadMeshesFromFile( const FileInfo& i_fileInfo,
-                                TopologyMask i_topologyMask,
-                                AbcG::ReadArraySampleCachePtr i_cachePtr )
-{
-    std::cout << "Loading meshes from: "
-              << i_fileInfo.fileName
+void Scene::loadMeshesFromFile(const FileInfo& i_fileInfo,
+                               TopologyMask i_topologyMask,
+                               AbcG::ReadArraySampleCachePtr i_cachePtr) {
+    std::cout << "Loading meshes from: " << i_fileInfo.fileName
               << ", on = " << i_fileInfo.onRegEx
-              << ", off = " << i_fileInfo.offRegEx
-              << std::endl;
+              << ", off = " << i_fileInfo.offRegEx << std::endl;
 
     // Load Input Archive
     Alembic::AbcCoreFactory::IFactory factory;
@@ -59,92 +56,91 @@ void Scene::loadMeshesFromFile( const FileInfo& i_fileInfo,
     AbcG::IObject inTopObject = inArchive.getTop();
 
     // Create onOffSet
-    OnOffSet onOffSet( i_fileInfo.onRegEx, i_fileInfo.offRegEx );
+    OnOffSet onOffSet(i_fileInfo.onRegEx, i_fileInfo.offRegEx);
 
-    ObjectSptr obj( new Object( inTopObject, onOffSet, i_topologyMask,
-                                NULL, *this, m_currentTime ) );
-    m_topObjects.push_back( obj );
+    ObjectSptr obj(new Object(
+      inTopObject, onOffSet, i_topologyMask, NULL, *this, m_currentTime));
+    m_topObjects.push_back(obj);
 }
 
 //-*****************************************************************************
-Scene::Scene( const FileInfoVec& i_fileInfo,
-              TopologyMask i_topologyMask,
-              chrono_t i_initTime,
-              const M44d& i_simToScene,
-              const M44d& i_sceneToSim,
-              AbcG::ReadArraySampleCachePtr i_cachePtr )
-    : m_currentTime( i_initTime )
-    , m_simToScene( i_simToScene )
-    , m_sceneToSim( i_sceneToSim )
-{
+Scene::Scene(const FileInfoVec& i_fileInfo,
+             TopologyMask i_topologyMask,
+             chrono_t i_initTime,
+             const M44d& i_simToScene,
+             const M44d& i_sceneToSim,
+             AbcG::ReadArraySampleCachePtr i_cachePtr)
+  : m_currentTime(i_initTime)
+  , m_simToScene(i_simToScene)
+  , m_sceneToSim(i_sceneToSim) {
     // Load meshes from scenes.
-    for ( FileInfoVec::const_iterator miter = i_fileInfo.begin();
-          miter != i_fileInfo.end(); ++miter )
-    {
-        loadMeshesFromFile( ( *miter ), i_topologyMask, i_cachePtr );
+    for (FileInfoVec::const_iterator miter = i_fileInfo.begin();
+         miter != i_fileInfo.end();
+         ++miter) {
+        loadMeshesFromFile((*miter), i_topologyMask, i_cachePtr);
     }
+
+    std::cout << "Num mesh handles after load from file: " 
+        << m_meshHandles.size() << std::endl;
 
     // Get bounds and time range.
     m_simBounds.makeEmpty();
+    
+    for (std::vector<MeshHandleSptr>::iterator miter = m_meshHandles.begin();
+         miter != m_meshHandles.end();
+         ++miter) {
+        const Object& mobj = (*miter)->mesh().enclosingObject();
+        m_simBounds.extendBy(mobj.simBounds());
+    }
+    
     m_minTime = FLT_MAX;
     m_maxTime = -FLT_MAX;
-    for ( std::vector<MeshHandleSptr>::iterator miter = m_meshHandles.begin();
-          miter != m_meshHandles.end(); ++miter )
-    {
-        const Object& mobj = (*miter)->mesh().enclosingObject();
-        m_simBounds.extendBy( mobj.simBounds() );
-        m_minTime = std::min( m_minTime, mobj.minTime() );
-        m_maxTime = std::max( m_maxTime, mobj.maxTime() );
+    for (auto& obj : m_topObjects) {
+        m_minTime = std::min(m_minTime, obj->minTime());
+        m_maxTime = std::max(m_maxTime, obj->maxTime());
     }
 
+    std::cout << "SCENE min time: " << m_minTime << std::endl
+              << "SCENE max time: " << m_maxTime << std::endl;
+
     // Build the tree!
-    if ( m_simBounds.isEmpty() )
-    {
+    if (m_simBounds.isEmpty()) {
         m_tree.reset();
-    }
-    else
-    {
-        m_tree.reset( new MeshKdTree( m_meshHandles ) );
+    } else {
+        m_tree.reset(new MeshKdTree(m_meshHandles));
     }
 }
 
 //-*****************************************************************************
-void Scene::setTime( chrono_t i_time )
-{
+void Scene::setTime(chrono_t i_time) {
     m_currentTime = i_time;
-    for ( ObjectSptrVec::iterator oiter = m_topObjects.begin();
-          oiter != m_topObjects.end(); ++oiter )
-    {
-        ( *oiter )->setTime( i_time );
+    for (ObjectSptrVec::iterator oiter = m_topObjects.begin();
+         oiter != m_topObjects.end();
+         ++oiter) {
+        (*oiter)->setTime(i_time);
     }
 
     m_simBounds.makeEmpty();
-    for ( std::vector<MeshHandleSptr>::iterator miter = m_meshHandles.begin();
-          miter != m_meshHandles.end(); ++miter )
-    {
-        m_simBounds.extendBy( ( *miter )->
-                              mesh().enclosingObject().simBounds() );
+    for (std::vector<MeshHandleSptr>::iterator miter = m_meshHandles.begin();
+         miter != m_meshHandles.end();
+         ++miter) {
+        m_simBounds.extendBy((*miter)->mesh().enclosingObject().simBounds());
     }
 
     // Build the tree!
-    if ( m_simBounds.isEmpty() )
-    {
+    if (m_simBounds.isEmpty()) {
         m_tree.reset();
-    }
-    else
-    {
-        m_tree.reset( new MeshKdTree( m_meshHandles ) );
+    } else {
+        m_tree.reset(new MeshKdTree(m_meshHandles));
     }
 }
 
 //-*****************************************************************************
-void Scene::addMeshHandle( Mesh& iMesh )
-{
-    MeshHandleSptr cptr( new MeshHandle( iMesh ) );
-    iMesh.setMeshId( m_meshHandles.size() );
-    m_meshHandles.push_back( cptr );
+void Scene::addMeshHandle(Mesh& iMesh) {
+    MeshHandleSptr cptr(new MeshHandle(iMesh));
+    iMesh.setMeshId(m_meshHandles.size());
+    m_meshHandles.push_back(cptr);
 }
 
-} // End namespace AbcMeshesScene
-} // End namespace EmldCore
-
+}  // End namespace AbcMeshesScene
+}  // End namespace EmldCore
