@@ -288,12 +288,7 @@ bool Mesh::intersects( const V3d& i_point,
                                                baryElevation );
         internalPoint = ctri.bestTriangle->barycentricEval( baryAlphaBeta,
                                                             baryElevation );
-        // CJH HACK
-        #if 0
-        o_meshPoint.simPoint = internalPoint * shapeToSim();
-        #else
         o_meshPoint.simPoint = i_point;
-        #endif
         o_meshPoint.shapePoint = internalPoint;
         o_meshPoint.barycentric = V3d( baryAlphaBeta.x,
                                        baryAlphaBeta.y,
@@ -357,12 +352,7 @@ bool Mesh::intersectsInnerNarrowBand( const V3d& i_point,
                                                baryElevation );
         internalPoint = ctri.bestTriangle->barycentricEval( baryAlphaBeta,
                                                             baryElevation );
-        // CJH HACK
-        #if 0
-        o_meshPoint.simPoint = internalPoint * shapeToSim();
-        #else
         o_meshPoint.simPoint = i_point;
-        #endif
         o_meshPoint.shapePoint = internalPoint;
         o_meshPoint.barycentric = V3d( baryAlphaBeta.x,
                                        baryAlphaBeta.y,

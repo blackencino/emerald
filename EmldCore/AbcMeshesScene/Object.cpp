@@ -138,10 +138,10 @@ Object::Object( AbcG::IObject& i_abcObject,
         }
     }
 
-    //std::cout << "Internal min time: " << m_internal->internalMinTime()
-    //          << std::endl
-    //          << "Internal max time: " << m_internal->internalMaxTime()
-    //          << std::endl;
+    std::cout << "Internal min time: " << m_internal->internalMinTime()
+             << std::endl
+             << "Internal max time: " << m_internal->internalMaxTime()
+             << std::endl;
 
     // Set up our min & max times from internals
     m_minTime = m_internal->internalMinTime();
@@ -163,6 +163,16 @@ Object::Object( AbcG::IObject& i_abcObject,
 
         m_minTime = std::min( m_minTime, child->minTime() );
         m_maxTime = std::max( m_maxTime, child->maxTime() );
+    }
+
+    std::cout << "Object min time: " << m_minTime << std::endl
+    << "Object max time: " << m_maxTime << std::endl
+    << "Name: " << m_abcObject.getName() << std::endl;
+    if (m_parent) {
+        std::cout << "Parent name: " << m_parent->m_abcObject.getName() 
+        << std::endl;
+    } else {
+        std::cout << "NULL parent" << std::endl;
     }
 
     // Then build our bounds.
