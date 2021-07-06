@@ -10,7 +10,7 @@
 namespace emerald::simple_sim_viewer {
 
 static auto const* const vertex_source =
-    R"SHADER(
+  R"SHADER(
     #version 410
 
     vec2 rotate(vec2 v, float a) {
@@ -43,7 +43,7 @@ static auto const* const vertex_source =
 )SHADER";
 
 static auto const* const fragment_source =
-    R"SHADER(
+  R"SHADER(
     #version 410
 
     in vec4 v_rgba;
@@ -96,13 +96,13 @@ Single_scale_draw::Single_scale_draw(size_t const _capacity)
     glGenBuffers(4, vbos.data());
     util_gl::CheckErrors("glGenBuffers");
     EMLD_ASSERT(
-        std::all_of(
-            vbos.begin(), vbos.end(), [](auto const vbo) { return vbo > 0; }),
-        "Failed to create VBO");
+      std::all_of(
+        vbos.begin(), vbos.end(), [](auto const vbo) { return vbo > 0; }),
+      "Failed to create VBO");
 
     // bind the quad corners to position 0
     static const std::array quad_vertex_data = {
-        V2f{-1.0f, -1.0f}, V2f{1.0f, -1.0f}, V2f{-1.0f, 1.0f}, V2f{1.0f, 1.0f}};
+      V2f{-1.0f, -1.0f}, V2f{1.0f, -1.0f}, V2f{-1.0f, 1.0f}, V2f{1.0f, 1.0f}};
 
     auto const bind_attribute = [this](GLuint const index,
                                        GLsizeiptr const capacity,
@@ -173,8 +173,8 @@ Single_scale_draw::~Single_scale_draw() {
     }
 
     if (std::all_of(
-            vbos.begin(), vbos.end(), [](auto const vbo) { return vbo > 0; })) {
-        glDeleteBuffers(vbos.size(), vbos.data());
+          vbos.begin(), vbos.end(), [](auto const vbo) { return vbo > 0; })) {
+        glDeleteBuffers(static_cast<GLsizei>(vbos.size()), vbos.data());
         util_gl::CheckErrors("glDeleteBuffers");
         std::fill(vbos.begin(), vbos.end(), 0);
     }
@@ -197,16 +197,14 @@ void Single_scale_draw::update(size_t const in_count,
             // util_gl::CheckErrors("glBufferData");
         };
 
-        new_buffer(1,
-                   sizeof(V2f) * in_count,
-                   reinterpret_cast<GLvoid const*>(centers));
-
-        new_buffer(2,
-                   sizeof(float) * in_count,
-                   reinterpret_cast<GLvoid const*>(angles));
+        new_buffer(
+          1, sizeof(V2f) * in_count, reinterpret_cast<GLvoid const*>(centers));
 
         new_buffer(
-            3, sizeof(C4c) * in_count, reinterpret_cast<GLvoid const*>(rgbas));
+          2, sizeof(float) * in_count, reinterpret_cast<GLvoid const*>(angles));
+
+        new_buffer(
+          3, sizeof(C4c) * in_count, reinterpret_cast<GLvoid const*>(rgbas));
 
         capacity = in_count;
     } else {
@@ -220,16 +218,14 @@ void Single_scale_draw::update(size_t const in_count,
             // util_gl::CheckErrors("glBufferSubData");
         };
 
-        fill_buffer(1,
-                    sizeof(V2f) * in_count,
-                    reinterpret_cast<GLvoid const*>(centers));
-
-        fill_buffer(2,
-                    sizeof(float) * in_count,
-                    reinterpret_cast<GLvoid const*>(angles));
+        fill_buffer(
+          1, sizeof(V2f) * in_count, reinterpret_cast<GLvoid const*>(centers));
 
         fill_buffer(
-            3, sizeof(C4c) * in_count, reinterpret_cast<GLvoid const*>(rgbas));
+          2, sizeof(float) * in_count, reinterpret_cast<GLvoid const*>(angles));
+
+        fill_buffer(
+          3, sizeof(C4c) * in_count, reinterpret_cast<GLvoid const*>(rgbas));
     }
 
     count = in_count;
@@ -242,7 +238,8 @@ void Single_scale_draw::draw() const {
         glBindVertexArray(vao);
         // util_gl::CheckErrors("glBindVertexArray 2: " + std::to_string(vao));
 
-        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, count);
+        glDrawArraysInstanced(
+          GL_TRIANGLE_STRIP, 0, 4, static_cast<GLsizei>(count));
         // util_gl::CheckErrors("glDrawArraysInstanced");
     }
 }
@@ -258,16 +255,16 @@ Multi_scale_draw::Multi_scale_draw(size_t const scale_count,
     util_gl::CheckErrors("After scale drawers create in Multi_scale_draw ctor");
 
     geep_glfw::Program::Bindings const vtx_bindings = {
-        {0, "quad_corner"}, {1, "center"}, {2, "angle"}, {3, "rgba"}};
+      {0, "quad_corner"}, {1, "center"}, {2, "angle"}, {3, "rgba"}};
     geep_glfw::Program::Bindings const frg_bindings = {{0, "fragment_color"}};
     program =
-        std::make_unique<geep_glfw::Program>("Draw quad helper",
-                                             vertex_source,
-                                             "",
-                                             fragment_source,
-                                             vtx_bindings,
-                                             frg_bindings,
-                                             single_scale_drawers.front().vao);
+      std::make_unique<geep_glfw::Program>("Draw quad helper",
+                                           vertex_source,
+                                           "",
+                                           fragment_source,
+                                           vtx_bindings,
+                                           frg_bindings,
+                                           single_scale_drawers.front().vao);
 
     auto const get_uniform = [this](GLchar const* const name) -> GLint {
         auto const ret = glGetUniformLocation(program->id(), name);
@@ -300,9 +297,9 @@ void Multi_scale_draw::deactivate_scale(int const scale) {
 
 void Multi_scale_draw::deactivate_all_scales() {
     std::for_each(
-        single_scale_drawers.begin(),
-        single_scale_drawers.end(),
-        [](auto& single_scale_draw) { single_scale_draw.active = false; });
+      single_scale_drawers.begin(),
+      single_scale_drawers.end(),
+      [](auto& single_scale_draw) { single_scale_draw.active = false; });
 }
 
 void Multi_scale_draw::draw(M44f const& modelview,

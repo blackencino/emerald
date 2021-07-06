@@ -35,86 +35,74 @@ namespace EmldCore {
 namespace AbcMeshesScene {
 
 //-*****************************************************************************
-void Mesh::extractScale( bool i_set )
-{
+void Mesh::extractScale(bool i_set) {
     // Get the scale out of the transformation matrix.
     M44d objectLocalToSim = m_enclosingObject.localToSim();
 
     // What is the scaling going on?
-    V3d scl( 1.0 );
-    V3d shr( 0.0 );
-    if ( !Imath::extractAndRemoveScalingAndShear(
-             objectLocalToSim, scl, shr, false ) )
-    {
-        ABCM_THROW( "Unable to extract scale and shear from transform" );
+    V3d scl(1.0);
+    V3d shr(0.0);
+    if (!Imath::extractAndRemoveScalingAndShear(
+          objectLocalToSim, scl, shr, false)) {
+        ABCM_THROW("Unable to extract scale and shear from transform");
     }
-    if ( i_set )
-    {
-        ABCM_ASSERT( scl.x != 0.0 && scl.y != 0.0 && scl.z != 0.0,
-                     "Degenerate scale." );
+    if (i_set) {
+        ABCM_ASSERT(scl.x != 0.0 && scl.y != 0.0 && scl.z != 0.0,
+                    "Degenerate scale.");
         m_scale = scl;
 
         // So the scale is applied to the geometry.
         // InternalToLocal divides the scale back out
         // LocalToInternal multiplies the scale.
-        m_internalToLocal.setScale( V3d( 1.0 / m_scale.x,
-                                         1.0 / m_scale.y,
-                                         1.0 / m_scale.z ) );
-        m_localToInternal.setScale( m_scale );
-    }
-    else
-    {
+        m_internalToLocal.setScale(
+          V3d(1.0 / m_scale.x, 1.0 / m_scale.y, 1.0 / m_scale.z));
+        m_localToInternal.setScale(m_scale);
+    } else {
         // If not setting, then checking.
         const V3d diff = scl - m_scale;
-        ABCM_ASSERT( std::abs( diff.x ) < 0.01 &&
-                     std::abs( diff.y ) < 0.01 &&
-                     std::abs( diff.z ) < 0.01,
-                     "Cannot support animating scale." );
+        ABCM_ASSERT(std::abs(diff.x) < 0.01 && std::abs(diff.y) < 0.01 &&
+                      std::abs(diff.z) < 0.01,
+                    "Cannot support animating scale.");
     }
 }
 
 //-*****************************************************************************
-Mesh::Mesh( Object& i_enclosingObject,
-            AbcG::IPolyMesh& i_abcPolyMesh,
-            Scene& i_scene )
-    : Object::Internal( i_enclosingObject )
-    , m_abcPolyMesh( i_abcPolyMesh )
-    , m_meshId( 0 )
-{
+Mesh::Mesh(Object& i_enclosingObject,
+           AbcG::IPolyMesh& i_abcPolyMesh,
+           Scene& i_scene)
+  : Object::Internal(i_enclosingObject)
+  , m_abcPolyMesh(i_abcPolyMesh)
+  , m_meshId(0) {
     // Extract the scale and set the scale matrices.
-    extractScale( true );
+    extractScale(true);
 
     // Set the variance.
     m_abcPolyMeshVariance = m_abcPolyMesh.getSchema().getTopologyVariance();
 
     // Get time range.
-    if ( !m_abcPolyMesh.getSchema().isConstant() )
-    {
+    if (!m_abcPolyMesh.getSchema().isConstant()) {
         AbcG::TimeSamplingPtr iTsmp =
-            m_abcPolyMesh.getSchema().getTimeSampling();
+          m_abcPolyMesh.getSchema().getTimeSampling();
 
-        size_t numSamps =  m_abcPolyMesh.getSchema().getNumSamples();
-        if ( numSamps > 0 )
-        {
-            m_internalMinTime = iTsmp->getSampleTime( 0 );
-            m_internalMaxTime = iTsmp->getSampleTime( numSamps - 1 );
+        size_t numSamps = m_abcPolyMesh.getSchema().getNumSamples();
+        if (numSamps > 0) {
+            m_internalMinTime = iTsmp->getSampleTime(0);
+            m_internalMaxTime = iTsmp->getSampleTime(numSamps - 1);
         }
     }
 
-    i_scene.addMeshHandle( *this );
+    i_scene.addMeshHandle(*this);
 }
 
 //-*****************************************************************************
-void Mesh::setTime()
-{
+void Mesh::setTime() {
     // Constant topology does not allow for animated scales.
-    const bool isConstant =
-        ( m_abcPolyMeshVariance == AbcG::kConstantTopology );
+    const bool isConstant = (m_abcPolyMeshVariance == AbcG::kConstantTopology);
 
     // We set scale for non-constants.
     const bool doSetScale = !isConstant;
 
-    extractScale( doSetScale );
+    extractScale(doSetScale);
 }
 
 //-*****************************************************************************
@@ -123,50 +111,44 @@ void Mesh::setTime()
 
 //-*****************************************************************************
 // Is the mesh static?
-bool Mesh::isStatic() const
-{
-    return ( m_abcPolyMeshVariance == AbcG::kConstantTopology ) &&
+bool Mesh::isStatic() const {
+    return (m_abcPolyMeshVariance == AbcG::kConstantTopology) &&
            !m_enclosingObject.isXformAnimating();
 }
 
 //-*****************************************************************************
 // Is the region rigid?
-bool Mesh::isRigid() const
-{
-    return ( m_abcPolyMeshVariance == AbcG::kConstantTopology );
+bool Mesh::isRigid() const {
+    return (m_abcPolyMeshVariance == AbcG::kConstantTopology);
 }
 
 //-*****************************************************************************
 // Is the region consistent (topologically)?
-bool Mesh::isConsistent() const
-{
-    return ( m_abcPolyMeshVariance == AbcG::kConstantTopology ) ||
-           ( m_abcPolyMeshVariance == AbcG::kHomogenousTopology );
+bool Mesh::isConsistent() const {
+    return (m_abcPolyMeshVariance == AbcG::kConstantTopology) ||
+           (m_abcPolyMeshVariance == AbcG::kHomogenousTopology);
 }
 
 //-*****************************************************************************
 // Is the region consistent (topologically)?
-bool Mesh::isConsistentAndNotRigid() const
-{
-    return ( m_abcPolyMeshVariance == AbcG::kHomogenousTopology );
+bool Mesh::isConsistentAndNotRigid() const {
+    return (m_abcPolyMeshVariance == AbcG::kHomogenousTopology);
 }
 
 //-*****************************************************************************
-V3d Mesh::transformShapePointToSim( const V3d& i_shapePoint ) const
-{
+V3d Mesh::transformShapePointToSim(const V3d& i_shapePoint) const {
     return i_shapePoint * shapeToSim();
 }
 
 //-*****************************************************************************
-V3d Mesh::transformBarycentricToSim( const V3d& i_barycentric,
-                                     int i_triIndex ) const
-{
-    const Etm::Triangle* tri = &( *( m_triMesh->triangle( i_triIndex ) ) );
+V3d Mesh::transformBarycentricToSim(const V3d& i_barycentric,
+                                    int i_triIndex) const {
+    const Etm::Triangle* tri = &(*(m_triMesh->triangle(i_triIndex)));
 
     const V3d shapePoint(
-        tri->barycentricEval( V2f( i_barycentric.x,
-                                   i_barycentric.y ),
-                              i_barycentric.z ) );
+      tri->barycentricEval(V2f{static_cast<float>(i_barycentric.x),
+                               static_cast<float>(i_barycentric.y)},
+                           static_cast<float>(i_barycentric.z)));
 
     return shapePoint * shapeToSim();
 }
@@ -177,129 +159,111 @@ V3d Mesh::transformBarycentricToSim( const V3d& i_barycentric,
 // return whether any of the triangles are inside the box. If the box
 // is not totally outside our bounds, and the box does not intersect
 // the mesh, then we just test the bounds center against the mesh inside.
-bool Mesh::areBoundsFullyInside( const Box3d& i_bounds ) const
-{
+bool Mesh::areBoundsFullyInside(const Box3d& i_bounds) const {
     // First check all the way outside.
-    if ( !simBounds().intersects( i_bounds ) ) { return false; }
+    if (!simBounds().intersects(i_bounds)) { return false; }
 
     // Transform bounds internal
-    Box3f internalBounds =
-        toBox3f( Imath::transform( i_bounds, simToShape() ) );
+    Box3f internalBounds = toBox3f(Imath::transform(i_bounds, simToShape()));
 
     // Test against tri mesh - this is looking for surface intersection,
     // not interior.
-    if ( m_triMesh->intersects( internalBounds ) ) { return false; }
+    if (m_triMesh->intersects(internalBounds)) { return false; }
 
     // Test whether the bounds center point is inside.
-    return m_triMesh->isInside( internalBounds.center() );
+    return m_triMesh->isInside(internalBounds.center());
 }
 
 //-*****************************************************************************
 // Is the space inside a given set of bounds fully outside this region?
-bool Mesh::areBoundsFullyOutside( const Box3d& i_bounds ) const
-{
+bool Mesh::areBoundsFullyOutside(const Box3d& i_bounds) const {
     // First check bounds.
-    if ( !simBounds().intersects( i_bounds ) ) { return true; }
+    if (!simBounds().intersects(i_bounds)) { return true; }
 
     // Transform bounds internal
-    Box3f internalBounds = toBox3f(
-                               Imath::transform( i_bounds, simToShape() ) );
+    Box3f internalBounds = toBox3f(Imath::transform(i_bounds, simToShape()));
 
     // Test against tri mesh - this is looking for surface intersection,
     // not interior. Any intersection means bounds overlaps surface, so
     // false on all the way outside.
-    if ( m_triMesh->intersects( internalBounds ) ) { return false; }
+    if (m_triMesh->intersects(internalBounds)) { return false; }
 
     // Test whether the bounds center point is inside.
-    return !( m_triMesh->isInside( internalBounds.center() ) );
+    return !(m_triMesh->isInside(internalBounds.center()));
 }
 
 //-*****************************************************************************
 // Does the region intersect the bounds?
 // We treat this as an interior test.
-bool Mesh::intersects( const Box3d& i_bounds ) const
-{
+bool Mesh::intersects(const Box3d& i_bounds) const {
     // First check bounds.
-    if ( !simBounds().intersects( i_bounds ) ) { return false; }
+    if (!simBounds().intersects(i_bounds)) { return false; }
 
     // Transform bounds internal
-    Box3f internalBounds = toBox3f(
-                               Imath::transform( i_bounds, simToShape() ) );
+    Box3f internalBounds = toBox3f(Imath::transform(i_bounds, simToShape()));
 
     // Test against tri mesh - this is looking for surface intersection,
     // not interior. Any intersection means bounds overlaps surface, so
     // true on intersection.
-    if ( m_triMesh->intersects( internalBounds ) ) { return true; }
+    if (m_triMesh->intersects(internalBounds)) { return true; }
 
     // If we get here, the bounds intersected in sim space,
     // and the transformed bounds did not intersect in internal space.
     // therefore, the bounds are either entirely inside the mesh or
     // entirely outside, but with some bounds overlap. So we test the
     // center point.
-    return m_triMesh->isInside( internalBounds.center() );
+    return m_triMesh->isInside(internalBounds.center());
 }
 
 //-*****************************************************************************
 // Does the region intersect the point?
-bool Mesh::intersects( const V3d& i_point,
-                       V3d& o_localPoint ) const
-{
+bool Mesh::intersects(const V3d& i_point, V3d& o_localPoint) const {
     // First check bounds.
-    if ( !simBounds().intersects( i_point ) ) { return false; }
+    if (!simBounds().intersects(i_point)) { return false; }
 
     // Transform point internal
-    V3f internalPoint = V3f( ( i_point * simToShape() ) );
+    V3f internalPoint = V3f((i_point * simToShape()));
 
-    if ( m_triMesh->isInside( internalPoint ) )
-    {
+    if (m_triMesh->isInside(internalPoint)) {
         o_localPoint = i_point * simToLocal();
         return true;
-    }
-    else
-    {
+    } else {
         return false;
     }
 }
 
 //-*****************************************************************************
 // Does the region intersect the point, with closest point info...
-bool Mesh::intersects( const V3d& i_point,
-                       BestMeshPointD& o_meshPoint ) const
-{
+bool Mesh::intersects(const V3d& i_point, BestMeshPointD& o_meshPoint) const {
     // First check bounds.
-    if ( !simBounds().intersects( i_point ) ) { return false; }
+    if (!simBounds().intersects(i_point)) { return false; }
 
     // Transform point internal
-    V3f internalPoint = V3f( ( i_point * simToShape() ) );
+    V3f internalPoint = V3f((i_point * simToShape()));
 
     // If not inside, return false.
-    if ( !m_triMesh->isInside( internalPoint ) ) { return false; }
+    if (!m_triMesh->isInside(internalPoint)) { return false; }
 
     // Find the closest point.
-    Etm::ClosestTriangle ctri =
-        m_triMesh->closestPoint( internalPoint );
-    if ( ctri.foundAny() )
-    {
+    Etm::ClosestTriangle ctri = m_triMesh->closestPoint(internalPoint);
+    if (ctri.foundAny()) {
         // Barycentric is now correct.
         V2f baryAlphaBeta;
         float baryElevation;
-        ctri.bestTriangle->computeBarycentric( internalPoint,
-                                               baryAlphaBeta,
-                                               baryElevation );
-        internalPoint = ctri.bestTriangle->barycentricEval( baryAlphaBeta,
-                                                            baryElevation );
+        ctri.bestTriangle->computeBarycentric(
+          internalPoint, baryAlphaBeta, baryElevation);
+        internalPoint =
+          ctri.bestTriangle->barycentricEval(baryAlphaBeta, baryElevation);
         o_meshPoint.simPoint = i_point;
         o_meshPoint.shapePoint = internalPoint;
-        o_meshPoint.barycentric = V3d( baryAlphaBeta.x,
-                                       baryAlphaBeta.y,
-                                       baryElevation );
+        o_meshPoint.barycentric =
+          V3d(baryAlphaBeta.x, baryAlphaBeta.y, baryElevation);
         o_meshPoint.triId = ctri.bestTriangle->triangleId();
         o_meshPoint.meshId = m_meshId;
-        const V3f svel = ctri.bestTriangle->velBarycentric(
-                             baryAlphaBeta );
+        const V3f svel = ctri.bestTriangle->velBarycentric(baryAlphaBeta);
         V3f ovel;
-        shapeToSim().multDirMatrix( svel, ovel );
-        o_meshPoint.simVelocity = V3d( ovel );
+        shapeToSim().multDirMatrix(svel, ovel);
+        o_meshPoint.simVelocity = V3d(ovel);
 
         o_meshPoint.bestSquaredDist = ctri.bestSquaredDist;
         o_meshPoint.maxSquaredDist = ctri.maxSquaredDist;
@@ -307,9 +271,7 @@ bool Mesh::intersects( const V3d& i_point,
         o_meshPoint.bestMesh = this;
 
         return true;
-    }
-    else
-    {
+    } else {
         return false;
     }
 }
@@ -317,53 +279,46 @@ bool Mesh::intersects( const V3d& i_point,
 //-*****************************************************************************
 // Does a narrow interior band of the region intersect the bounds?
 // This is an optimization only, and by default just returns intersects.
-bool Mesh::intersectsInnerNarrowBand( const Box3d& i_bounds,
-                                      double i_narrowBand2 ) const
-{
+bool Mesh::intersectsInnerNarrowBand(const Box3d& i_bounds,
+                                     double i_narrowBand2) const {
     // This one's tough... for now just return intersects.
-    return intersects( i_bounds );
+    return intersects(i_bounds);
 }
 
 //-*****************************************************************************
 // Does a narrow interior band of the region intersect the point?
-bool Mesh::intersectsInnerNarrowBand( const V3d& i_point,
-                                      double i_narrowBand2,
-                                      BestMeshPointD& o_meshPoint ) const
-{
+bool Mesh::intersectsInnerNarrowBand(const V3d& i_point,
+                                     double i_narrowBand2,
+                                     BestMeshPointD& o_meshPoint) const {
     // First check bounds.
-    if ( !simBounds().intersects( i_point ) ) { return false; }
+    if (!simBounds().intersects(i_point)) { return false; }
 
     // Transform point internal
-    V3f internalPoint = V3f( ( i_point * simToShape() ) );
+    V3f internalPoint = V3f((i_point * simToShape()));
 
     // If not inside, return false.
-    if ( !m_triMesh->isInside( internalPoint ) ) { return false; }
+    if (!m_triMesh->isInside(internalPoint)) { return false; }
 
-    Etm::ClosestTriangle ctri =
-        m_triMesh->closestPointWithinSquaredDistance(
-            internalPoint, i_narrowBand2 );
-    if ( ctri.foundAny() )
-    {
+    Etm::ClosestTriangle ctri = m_triMesh->closestPointWithinSquaredDistance(
+      internalPoint, static_cast<float>(i_narrowBand2));
+    if (ctri.foundAny()) {
         // Barycentric is now correct.
         V2f baryAlphaBeta;
         float baryElevation;
-        ctri.bestTriangle->computeBarycentric( internalPoint,
-                                               baryAlphaBeta,
-                                               baryElevation );
-        internalPoint = ctri.bestTriangle->barycentricEval( baryAlphaBeta,
-                                                            baryElevation );
+        ctri.bestTriangle->computeBarycentric(
+          internalPoint, baryAlphaBeta, baryElevation);
+        internalPoint =
+          ctri.bestTriangle->barycentricEval(baryAlphaBeta, baryElevation);
         o_meshPoint.simPoint = i_point;
         o_meshPoint.shapePoint = internalPoint;
-        o_meshPoint.barycentric = V3d( baryAlphaBeta.x,
-                                       baryAlphaBeta.y,
-                                       baryElevation );
+        o_meshPoint.barycentric =
+          V3d(baryAlphaBeta.x, baryAlphaBeta.y, baryElevation);
         o_meshPoint.triId = ctri.bestTriangle->triangleId();
         o_meshPoint.meshId = m_meshId;
-        const V3f svel = ctri.bestTriangle->velBarycentric(
-                             baryAlphaBeta );
+        const V3f svel = ctri.bestTriangle->velBarycentric(baryAlphaBeta);
         V3f ovel;
-        shapeToSim().multDirMatrix( svel, ovel );
-        o_meshPoint.simVelocity = V3d( ovel );
+        shapeToSim().multDirMatrix(svel, ovel);
+        o_meshPoint.simVelocity = V3d(ovel);
 
         o_meshPoint.bestSquaredDist = ctri.bestSquaredDist;
         o_meshPoint.maxSquaredDist = ctri.maxSquaredDist;
@@ -371,13 +326,10 @@ bool Mesh::intersectsInnerNarrowBand( const V3d& i_point,
         o_meshPoint.bestMesh = this;
 
         return true;
-    }
-    else
-    {
+    } else {
         return false;
     }
 }
 
-} // End namespace AbcMeshesScene
-} // End namespace EmldCore
-
+}  // End namespace AbcMeshesScene
+}  // End namespace EmldCore

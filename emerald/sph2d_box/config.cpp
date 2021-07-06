@@ -107,7 +107,8 @@ Simulation_config::Simulation_config(Parameters const& in_params)
       muchness0,
       mass_per_particle);
 
-    seconds_per_sub_step = to_seconds(params.time_per_step / params.sub_steps);
+    seconds_per_sub_step =
+      static_cast<float>(to_seconds(params.time_per_step / params.sub_steps));
 
     // Beta is defined as 2.0 * sqr( dt * m / rho0 );
     // However, we just defined m as rho0/muchness.

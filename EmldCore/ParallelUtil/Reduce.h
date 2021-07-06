@@ -399,24 +399,26 @@ typename VECTOR::value_type VectorMax(const VECTOR& i_vector) {
 }
 
 //-*****************************************************************************
+#pragma warning(push)
+#pragma warning(disable: 4244)
 template <typename VECTOR, typename AVERAGE_TYPE>
 AVERAGE_TYPE VectorAverage(const VECTOR& i_vector) {
     typedef typename VECTOR::value_type value_type;
     typedef typename std::ptrdiff_t index_type;
-    typedef AVERAGE_TYPE reduce_value_type;
+    //typedef AVERAGE_TYPE reduce_value_type;
 
     typedef DirectConstValuesFunctor<value_type, index_type> VF_type;
-    typedef AddReduceFunctor<reduce_value_type> RF_type;
+    typedef AddReduceFunctor<AVERAGE_TYPE> RF_type;
 
-    const index_type N = i_vector.size();
-    const reduce_value_type numer =
-      VectorReduce<VECTOR, VF_type, RF_type>(i_vector);
+    auto const N = i_vector.size();
+    const auto numer = VectorReduce<VECTOR, VF_type, RF_type>(i_vector);
     if (N > 0) {
-        return numer / static_cast<reduce_value_type>(N);
+        return static_cast<AVERAGE_TYPE>(numer) / N;
     } else {
-        return numer;
+        return static_cast<AVERAGE_TYPE>(numer);
     }
 }
+#pragma warning(pop)
 
 //-*****************************************************************************
 template <typename VECTOR>

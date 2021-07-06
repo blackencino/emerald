@@ -2,8 +2,6 @@
 #include <emerald/util/format.h>
 #include <emerald/util/random.h>
 
-#include <OpenEXR/ImathVec.h>
-
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 

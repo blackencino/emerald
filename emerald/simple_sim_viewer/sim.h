@@ -26,9 +26,9 @@ public:
         return V2i{800, 600};
     }
 
-    virtual void init_draw(int w, int h) {
+    virtual void init_draw(int /*w*/, int /*h*/) {
     }
-    virtual void reshape(int w, int h) {
+    virtual void reshape(int /*w*/, int /*h*/) {
     }
 
     //! Just step forward.
@@ -37,11 +37,11 @@ public:
     }
     virtual void frame_camera() {
     }
-    virtual void dolly_camera(float dx, float dy) {
+    virtual void dolly_camera(float /*dx*/, float /*dy*/) {
     }
-    virtual void track_camera(float dx, float dy) {
+    virtual void track_camera(float /*dx*/, float /*dy*/) {
     }
-    virtual void rotate_camera(float dx, float dy) {
+    virtual void rotate_camera(float /*dx*/, float /*dy*/) {
     }
 
     virtual bool needs_redraw() {
@@ -57,23 +57,30 @@ public:
     //! ...
     virtual void outer_draw();
 
-    virtual void character(unsigned int i_char, int x, int y) {
+    virtual void character(unsigned int /*i_char*/, int /*x*/, int /*y*/) {
     }
 
-    virtual void keyboard(
-        int i_key, int i_scancode, int i_action, int i_mods, int i_x, int i_y) {
+    virtual void keyboard(int /*i_key*/,
+                          int /*i_scancode*/,
+                          int /*i_action*/,
+                          int /*i_mods*/,
+                          int /*i_x*/,
+                          int /*i_y*/) {
     }
 
-    virtual void mouse(int i_button,
-                       int i_action,
-                       int i_mods,
-                       double x,
-                       double y,
-                       double lastX,
-                       double lastY) {
+    virtual void mouse(int /*i_button*/,
+                       int /*i_action*/,
+                       int /*i_mods*/,
+                       double /*x*/,
+                       double /*y*/,
+                       double /*lastX*/,
+                       double /*lastY*/) {
     }
 
-    virtual void mouse_drag(double x, double y, double lastX, double lastY) {
+    virtual void mouse_drag(double /*x*/,
+                            double /*y*/,
+                            double /*lastX*/,
+                            double /*lastY*/) {
     }
 };
 
@@ -132,11 +139,11 @@ public:
     void reshape(int w, int h) override;
     void frame_camera() override {
     }
-    void dolly_camera(float dx, float dy) override {
+    void dolly_camera(float /*dx*/, float /*dy*/) override {
     }
-    void track_camera(float dx, float dy) override {
+    void track_camera(float /*dx*/, float /*dy*/) override {
     }
-    void rotate_camera(float dx, float dy) override {
+    void rotate_camera(float /*dx*/, float /*dy*/) override {
     }
 
     void outer_draw() override;

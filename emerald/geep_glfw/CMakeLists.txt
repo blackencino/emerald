@@ -15,6 +15,10 @@ emerald_define_library(geep_glfw
     glad::glad
 )
 
+if (MSVC)
+target_compile_options(geep_glfw PUBLIC /wd4005)
+endif()
+
 add_subdirectory(tests)
 endif()
 

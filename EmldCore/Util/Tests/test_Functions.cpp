@@ -57,15 +57,15 @@ void testWrap()
     testWrapT<int>( -19, 9, 13, 11, 0 );
 
     // Try floats.
-    testWrapT<float>( -741.325, 1.4151, 19.7333, 9.72113, 0.0001 );
+    testWrapT<float>( -741.325f, 1.4151f, 19.7333f, 9.72113f, 0.0001f );
 
-    float e = 32.4;
+    float e = 32.4f;
     int block = -844;
-    float lb = 1.8;
-    float ub = 66.7113;
+    float lb = 1.8f;
+    float ub = 66.7113f;
 
     float x = lb + ( ( ub - lb ) * float( block ) ) + ( e - lb );
-    testWrapT<float>( x, lb, ub, e, 0.01 );
+    testWrapT<float>( x, lb, ub, e, 0.01f );
 }
 
 } // End namespace Util

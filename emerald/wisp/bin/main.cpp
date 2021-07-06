@@ -85,7 +85,7 @@ public:
 
     void mouse(int i_button,
                int i_action,
-               int i_mods,
+               int /*i_mods*/,
                double x,
                double y,
                double lastX,

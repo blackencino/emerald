@@ -91,10 +91,12 @@ struct SimState {
       , velMags(i_n) {
         UniformRand urand(-1.0, 1.0);
         for (std::size_t i = 0; i < i_n; ++i) {
-            positions[i] =
-              Imath::V3f(100.0 * urand(), 100.0 * urand(), 100.0 * urand());
-            velocities[i] =
-              Imath::V3f(5.0 * urand(), 5.0 * urand(), 5.0 * urand());
+            positions[i] = Imath::V3f(static_cast<float>(100.0 * urand()),
+                                      static_cast<float>(100.0 * urand()),
+                                      static_cast<float>(100.0 * urand()));
+            velocities[i] = Imath::V3f(static_cast<float>(5.0 * urand()),
+                                       static_cast<float>(5.0 * urand()),
+                                       static_cast<float>(5.0 * urand()));
         }
 
         computeVelMags();

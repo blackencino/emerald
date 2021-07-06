@@ -1,4 +1,3 @@
-#include <OpenEXR/ImathMatrixAlgo.h>
 #include <emerald/geep_glfw/program.h>
 #include <emerald/simple_sim_viewer/points_draw_helper.h>
 #include <emerald/simple_sim_viewer/std_shaders.h>

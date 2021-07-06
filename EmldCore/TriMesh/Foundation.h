@@ -1,6 +1,10 @@
 #ifndef _EmldCore_TriMesh_Foundation_h_
 #define _EmldCore_TriMesh_Foundation_h_
 
+
+#pragma warning(push)
+#pragma warning( disable : 4244 4100 4456 )
+
 #include <EmldCore/Util/Exception.h>
 
 #include <OpenEXR/ImathBox.h>
@@ -102,4 +106,7 @@ inline const unsigned int* GetBeginUintPointer(const RANGE& iRng) {
 }  // End namespace TriMesh
 }  // End namespace EmldCore
 
+#pragma warning(pop)
+
 #endif
+

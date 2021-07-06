@@ -138,43 +138,43 @@ Unary_slab_op make_accumulate() {
     };
 }
 
-#define DEFINE_LOCAL_LAMBDAS                                               \
-    auto swap_state = [&]() {                                              \
-        using std::swap;                                                   \
-        swap(state.velocity, state.velocity_prev);                         \
-        swap(state.height, state.height_prev);                             \
-    };                                                                     \
-                                                                           \
-    auto estimate_height_star = [&](float const dt) {                      \
-        state.height_star = state.height_prev;                             \
-        state.height_star = height_boundary(accumulate(                    \
-            std::move(state.height_star), state.velocity_star, dt));       \
-    };                                                                     \
-                                                                           \
-    auto estimate_velocity_star = [&](float const dt) {                    \
-        state.velocity_star = state.velocity_prev;                         \
-        state.velocity_star = velocity_boundary(accumulate(                \
-            std::move(state.velocity_star), state.acceleration_star, dt)); \
-    };                                                                     \
-                                                                           \
-    auto estimate_acceleration_star = [&](float const dt) {                \
-        std::tie(state.acceleration_star, state.jacobi_tmp) =              \
-            jacobi_solve_accel(std::move(state.acceleration_star),         \
-                               std::move(state.jacobi_tmp),                \
-                               state.height_star,                          \
-                               dt);                                        \
-    };                                                                     \
-                                                                           \
-    auto accumulate_estimate = [&](float const dt) {                       \
-        state.height =                                                     \
-            accumulate(std::move(state.height), state.velocity_star, dt);  \
-        state.velocity = accumulate(                                       \
-            std::move(state.velocity), state.acceleration_star, dt);       \
-    };                                                                     \
-                                                                           \
-    auto enforce_boundary = [&]() {                                        \
-        state.height = height_boundary(std::move(state.height));           \
-        state.velocity = velocity_boundary(std::move(state.velocity));     \
+#define DEFINE_LOCAL_LAMBDAS                                                  \
+    auto swap_state = [&]() {                                                 \
+        using std::swap;                                                      \
+        swap(state.velocity, state.velocity_prev);                            \
+        swap(state.height, state.height_prev);                                \
+    };                                                                        \
+                                                                              \
+    auto estimate_height_star = [&](float const dt) {                         \
+        state.height_star = state.height_prev;                                \
+        state.height_star = height_boundary(                                  \
+          accumulate(std::move(state.height_star), state.velocity_star, dt)); \
+    };                                                                        \
+                                                                              \
+    auto estimate_velocity_star = [&](float const dt) {                       \
+        state.velocity_star = state.velocity_prev;                            \
+        state.velocity_star = velocity_boundary(accumulate(                   \
+          std::move(state.velocity_star), state.acceleration_star, dt));      \
+    };                                                                        \
+                                                                              \
+    auto estimate_acceleration_star = [&](float const dt) {                   \
+        std::tie(state.acceleration_star, state.jacobi_tmp) =                 \
+          jacobi_solve_accel(std::move(state.acceleration_star),              \
+                             std::move(state.jacobi_tmp),                     \
+                             state.height_star,                               \
+                             dt);                                             \
+    };                                                                        \
+                                                                              \
+    auto accumulate_estimate = [&](float const dt) {                          \
+        state.height =                                                        \
+          accumulate(std::move(state.height), state.velocity_star, dt);       \
+        state.velocity =                                                      \
+          accumulate(std::move(state.velocity), state.acceleration_star, dt); \
+    };                                                                        \
+                                                                              \
+    auto enforce_boundary = [&]() {                                           \
+        state.height = height_boundary(std::move(state.height));              \
+        state.velocity = velocity_boundary(std::move(state.velocity));        \
     };
 
 // First-Order Symplectic Time Step function.
@@ -342,7 +342,7 @@ void enforce_neumann_boundary_conditions(Float_slab& slab) {
                               } else if (j == (NY - 1)) {
                                   for (int i = 0; i < NX; ++i) {
                                       slab.value(i, NY - 1) =
-                                          slab.value(i, NY - 2);
+                                        slab.value(i, NY - 2);
                                   }
                               }
 
@@ -353,7 +353,7 @@ void enforce_neumann_boundary_conditions(Float_slab& slab) {
 }
 
 Nullary_timeless_slab_op make_enforce_height_boundary_conditions(
-    std::optional<std::pair<int2, float> > const input) {
+  std::optional<std::pair<int2, float> > const input) {
     if (!input) {
         return enforce_neumann_boundary_conditions;
     } else {
@@ -374,39 +374,38 @@ Binary_slab_op make_jacobi_iteration_accel(float const wave_speed,
                    Float_slab const& h_slab,
                    float const dt) {
         tbb::parallel_for(
-            tbb::blocked_range<int>{1, a_slab.size()[1] - 1},
-            [&a_slab, &a_old_slab, &h_slab, dt, gamma](
-                tbb::blocked_range<int> const& range) {
-                auto const kappa = gamma * dt;
-                int const NX = a_slab.size()[0];
-                int const NY = a_slab.size()[1];
-                for (int j = range.begin(); j < range.end(); ++j) {
-                    for (int i = 1; i < NX - 1; ++i) {
-                        auto const a_nbhd_sum =
-                            a_old_slab.value(i, j - 1) +  // down
-                            a_old_slab.value(i - 1, j) +  // left
-                            a_old_slab.value(i + 1, j) +  // right
-                            a_old_slab.value(i, j + 1);   // up;
+          tbb::blocked_range<int>{1, a_slab.size()[1] - 1},
+          [&a_slab, &a_old_slab, &h_slab, dt, gamma](
+            tbb::blocked_range<int> const& range) {
+              auto const kappa = gamma * dt;
+              int const NX = a_slab.size()[0];
+              int const NY = a_slab.size()[1];
+              for (int j = range.begin(); j < range.end(); ++j) {
+                  for (int i = 1; i < NX - 1; ++i) {
+                      auto const a_nbhd_sum =
+                        a_old_slab.value(i, j - 1) +  // down
+                        a_old_slab.value(i - 1, j) +  // left
+                        a_old_slab.value(i + 1, j) +  // right
+                        a_old_slab.value(i, j + 1);   // up;
 
-                        auto const h_nbhd_sum_lo =
-                            h_slab.value(i, j - 1) +            // down
-                            h_slab.value(i - 1, j);             // left
-                        auto const h_cen = h_slab.value(i, j);  // center
-                        auto const h_nbhd_sum_hi =
-                            h_slab.value(i + 1, j) +  // right
-                            h_slab.value(i, j + 1);   // up;
+                      auto const h_nbhd_sum_lo =
+                        h_slab.value(i, j - 1) +              // down
+                        h_slab.value(i - 1, j);               // left
+                      auto const h_cen = h_slab.value(i, j);  // center
+                      auto const h_nbhd_sum_hi =
+                        h_slab.value(i + 1, j) +  // right
+                        h_slab.value(i, j + 1);   // up;
 
-                        auto const b =
-                            gamma *
-                            ((h_nbhd_sum_lo + h_nbhd_sum_hi) - (4.0f * h_cen));
-                        auto const c = kappa * a_nbhd_sum;
+                      auto const b = gamma * ((h_nbhd_sum_lo + h_nbhd_sum_hi) -
+                                              (4.0f * h_cen));
+                      auto const c = kappa * a_nbhd_sum;
 
-                        a_slab.value(i, j) = (b + c) / (1.0f + 4.0f * kappa);
-                    }
-                }
+                      a_slab.value(i, j) = (b + c) / (1.0f + 4.0f * kappa);
+                  }
+              }
 
-                enforce_dirichlet_boundary_conditions(a_slab);
-            });
+              enforce_dirichlet_boundary_conditions(a_slab);
+          });
     };
 }
 
@@ -432,7 +431,7 @@ Jacobi_solve_op make_jacobi_solve_accel(Binary_slab_op jacobi_iter) {
 
 void copy_from(Float_slab& into, Float_slab const& from) {
     std::copy(
-        from.as_span().begin(), from.as_span().end(), into.as_span().begin());
+      from.as_span().begin(), from.as_span().end(), into.as_span().begin());
 }
 
 void accumulate(Float_slab& into,
@@ -447,44 +446,44 @@ void accumulate(Float_slab& into,
     }
 }
 
-#define DEFINE_LOCAL_LAMBDAS                                                   \
-    auto swap_state = [&]() {                                                  \
-        state.velocity.swap(state.velocity_prev);                              \
-        state.height.swap(state.height_prev);                                  \
-    };                                                                         \
-                                                                               \
-    auto estimate_height_star = [&](float const dt) {                          \
-        copy_from(state.height_star, state.height_prev);                       \
-        accumulate(state.height_star, state.velocity_star, dt);                \
-        height_boundary(state.height_star);                                    \
-    };                                                                         \
-                                                                               \
-    auto estimate_velocity_star = [&](float const dt) {                        \
-        copy_from(state.velocity_star, state.velocity_prev);                   \
-        accumulate(state.velocity_star, state.acceleration_star, dt);          \
-        velocity_boundary(state.velocity_star);                                \
-    };                                                                         \
-                                                                               \
-    auto estimate_acceleration_star = [&](float const dt) {                    \
-        jacobi_solve_accel(                                                    \
-            state.acceleration_star, state.jacobi_tmp, state.height_star, dt); \
-    };                                                                         \
-                                                                               \
-    auto accumulate_estimate = [&](float const dt) {                           \
-        accumulate(state.height, state.velocity_star, dt);                     \
-        accumulate(state.velocity, state.acceleration_star, dt);               \
-    };                                                                         \
-                                                                               \
-    auto enforce_boundary = [&]() {                                            \
-        height_boundary(state.height);                                         \
-        velocity_boundary(state.velocity);                                     \
+#define DEFINE_LOCAL_LAMBDAS                                                 \
+    auto swap_state = [&]() {                                                \
+        state.velocity.swap(state.velocity_prev);                            \
+        state.height.swap(state.height_prev);                                \
+    };                                                                       \
+                                                                             \
+    auto estimate_height_star = [&](float const dt) {                        \
+        copy_from(state.height_star, state.height_prev);                     \
+        accumulate(state.height_star, state.velocity_star, dt);              \
+        height_boundary(state.height_star);                                  \
+    };                                                                       \
+                                                                             \
+    auto estimate_velocity_star = [&](float const dt) {                      \
+        copy_from(state.velocity_star, state.velocity_prev);                 \
+        accumulate(state.velocity_star, state.acceleration_star, dt);        \
+        velocity_boundary(state.velocity_star);                              \
+    };                                                                       \
+                                                                             \
+    auto estimate_acceleration_star = [&](float const dt) {                  \
+        jacobi_solve_accel(                                                  \
+          state.acceleration_star, state.jacobi_tmp, state.height_star, dt); \
+    };                                                                       \
+                                                                             \
+    auto accumulate_estimate = [&](float const dt) {                         \
+        accumulate(state.height, state.velocity_star, dt);                   \
+        accumulate(state.velocity, state.acceleration_star, dt);             \
+    };                                                                       \
+                                                                             \
+    auto enforce_boundary = [&]() {                                          \
+        height_boundary(state.height);                                       \
+        velocity_boundary(state.velocity);                                   \
     };
 
 // First-Order Symplectic Time Step function.
 Time_step_op make_time_step_first_order(
-    Nullary_timeless_slab_op height_boundary,
-    Nullary_timeless_slab_op velocity_boundary,
-    Jacobi_solve_op jacobi_solve_accel) {
+  Nullary_timeless_slab_op height_boundary,
+  Nullary_timeless_slab_op velocity_boundary,
+  Jacobi_solve_op jacobi_solve_accel) {
     return [=](State& state, float const dt) {
         DEFINE_LOCAL_LAMBDAS;
 
@@ -531,7 +530,7 @@ Time_step_op make_time_step_rk2(Nullary_timeless_slab_op height_boundary,
         estimate_velocity_star(dt);
         estimate_height_star(dt);
         estimate_acceleration_star(dt);
-        accumulate_estimate(dt / 2.0);
+        accumulate_estimate(dt / 2.0f);
 
         // Final boundary conditions on height and vel
         enforce_boundary();
@@ -574,26 +573,26 @@ Time_step_op make_time_step_rk4(Nullary_timeless_slab_op height_boundary,
 
             {
                 auto c2 = Caliper{"B.3"};
-                accumulate_estimate(dt / 6.0);
+                accumulate_estimate(dt / 6.0f);
             }
         }
 
         {
             auto _ = Caliper{"C"};
             // 2
-            estimate_velocity_star(dt / 2.0);
-            estimate_height_star(dt / 2.0);
-            estimate_acceleration_star(dt / 2.0);
-            accumulate_estimate(dt / 3.0);
+            estimate_velocity_star(dt / 2.0f);
+            estimate_height_star(dt / 2.0f);
+            estimate_acceleration_star(dt / 2.0f);
+            accumulate_estimate(dt / 3.0f);
         }
 
         {
             auto _ = Caliper{"D"};
             // 3
-            estimate_velocity_star(dt / 2.0);
-            estimate_height_star(dt / 2.0);
-            estimate_acceleration_star(dt / 2.0);
-            accumulate_estimate(dt / 3.0);
+            estimate_velocity_star(dt / 2.0f);
+            estimate_height_star(dt / 2.0f);
+            estimate_acceleration_star(dt / 2.0f);
+            accumulate_estimate(dt / 3.0f);
         }
 
         {
@@ -602,7 +601,7 @@ Time_step_op make_time_step_rk4(Nullary_timeless_slab_op height_boundary,
             estimate_velocity_star(dt);
             estimate_height_star(dt);
             estimate_acceleration_star(dt);
-            accumulate_estimate(dt / 6.0);
+            accumulate_estimate(dt / 6.0f);
         }
 
         {
@@ -620,14 +619,14 @@ Time_step_op make_time_step(Nullary_timeless_slab_op height_boundary,
     switch (time_integration) {
     case Time_integration::FIRST_ORDER:
         return make_time_step_first_order(
-            height_boundary, velocity_boundary, jacobi_solve_accel);
+          height_boundary, velocity_boundary, jacobi_solve_accel);
     case Time_integration::RUNGE_KUTTA_2:
         return make_time_step_rk2(
-            height_boundary, velocity_boundary, jacobi_solve_accel);
+          height_boundary, velocity_boundary, jacobi_solve_accel);
     case Time_integration::RUNGE_KUTTA_4:
     default:
         return make_time_step_rk4(
-            height_boundary, velocity_boundary, jacobi_solve_accel);
+          height_boundary, velocity_boundary, jacobi_solve_accel);
     }
 }
 

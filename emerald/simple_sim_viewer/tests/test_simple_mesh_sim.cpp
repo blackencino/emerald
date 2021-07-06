@@ -1,4 +1,3 @@
-#include <OpenEXR/ImathMatrixAlgo.h>
 #include <emerald/geep_glfw/program.h>
 #include <emerald/simple_sim_viewer/mesh_draw_helper.h>
 #include <emerald/simple_sim_viewer/std_shaders.h>
@@ -30,15 +29,15 @@ protected:
         // Pushing back two triangles.
         V3ui triA;
 
-        triA[0] = m_vtxPosData.size();
+        triA[0] = static_cast<uint32_t>(m_vtxPosData.size());
         m_vtxPosData.push_back(i_c00);
         m_vtxNormData.push_back(i_n);
 
-        triA[1] = m_vtxPosData.size();
+        triA[1] = static_cast<uint32_t>(m_vtxPosData.size());
         m_vtxPosData.push_back(i_c10);
         m_vtxNormData.push_back(i_n);
 
-        triA[2] = m_vtxPosData.size();
+        triA[2] = static_cast<uint32_t>(m_vtxPosData.size());
         m_vtxPosData.push_back(i_c01);
         m_vtxNormData.push_back(i_n);
 
@@ -46,15 +45,15 @@ protected:
 
         V3ui triB;
 
-        triB[0] = m_vtxPosData.size();
+        triB[0] = static_cast<uint32_t>(m_vtxPosData.size());
         m_vtxPosData.push_back(i_c01);
         m_vtxNormData.push_back(i_n);
 
-        triB[1] = m_vtxPosData.size();
+        triB[1] = static_cast<uint32_t>(m_vtxPosData.size());
         m_vtxPosData.push_back(i_c10);
         m_vtxNormData.push_back(i_n);
 
-        triB[2] = m_vtxPosData.size();
+        triB[2] = static_cast<uint32_t>(m_vtxPosData.size());
         m_vtxPosData.push_back(i_c11);
         m_vtxNormData.push_back(i_n);
 

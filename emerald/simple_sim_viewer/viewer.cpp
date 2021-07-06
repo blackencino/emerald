@@ -435,8 +435,8 @@ void Viewer::mouse_drag(double x, double y) {
     m_lastY = m_mouseY;
     m_mouseX = x;
     m_mouseY = y;
-    double dx = m_mouseX - m_lastX;
-    double dy = m_mouseY - m_lastY;
+    auto const dx = static_cast<float>(m_mouseX - m_lastX);
+    auto const dy = static_cast<float>(m_mouseY - m_lastY);
 
     if (m_keyMods & GLFW_MOD_ALT) {
         if (((m_buttonMask & BMASK_LEFT) && (m_buttonMask & BMASK_MIDDLE)) ||

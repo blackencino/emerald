@@ -70,7 +70,7 @@ TriMesh::TriMesh(const std::string& iName,
         m_normals[i] = V3f(0.0f, 1.0e-5f, 0.0f);
         m_velocities[i] = V3f(0.0f);
         m_bounds.extendBy(p);
-        m_vertices[i] = Vertex(m_positions, m_velocities, i);
+        m_vertices[i] = Vertex(m_positions, m_velocities, static_cast<int>(i));
     }
 
     // Indices
@@ -150,7 +150,7 @@ TriMesh::TriMesh(const std::string& iName,
             edges.push_back(edge1);
             edges.push_back(edge2);
 
-            int triId = m_triangles.size();
+            int triId = static_cast<int>(m_triangles.size());
             TrianglePtr newTri(new Triangle(
               &(m_vertices[Ai]), &(m_vertices[Bi]), &(m_vertices[Ci]), triId));
             m_triangles.push_back(newTri);

@@ -18,7 +18,7 @@ TEST(Test_vector_util, Print_hash_key) {
 
     UniformRand rand;
     std::vector<float> v;
-    for (int i = 0; i < 100; ++i) { v.push_back(rand()); }
+    for (int i = 0; i < 100; ++i) { v.push_back(static_cast<float>(rand())); }
 
     auto const* const vdata = v.data();
     for (int i = 0; i < 100; ++i) { fmt::print("{}\n", vdata[i]); }

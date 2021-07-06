@@ -33,6 +33,9 @@
 
 #define EMLD_USE_CXX11 1
 
+#pragma warning(push)
+#pragma warning( disable : 4244 4100 4456 )
+
 #include <emerald/util/foundation.h>
 
 #include <Alembic/AbcGeom/All.h>
@@ -198,4 +201,8 @@ using namespace emerald::util;
 // }  // End namespace Imath
 // #endif
 
+
+#pragma warning(pop)
+
 #endif
+

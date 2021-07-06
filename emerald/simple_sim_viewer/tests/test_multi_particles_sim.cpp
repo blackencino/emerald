@@ -12,11 +12,11 @@
 using namespace emerald::simple_sim_viewer;
 using namespace emerald::util;
 
-static float wrap_angle(float const rad) {
-    static constexpr float pi2 = M_PI * 2.0f;
-    float const ret = std::fmod(rad, pi2);
-    return (ret < 0.0f) ? ret + pi2 : ret;
-}
+// static float wrap_angle(float const rad) {
+//     static constexpr float pi2 = static_cast<float>(M_PI * 2.0f);
+//     float const ret = std::fmod(rad, pi2);
+//     return (ret < 0.0f) ? ret + pi2 : ret;
+// }
 
 struct Single_scale_particles {
     std::vector<V2f> centers;
@@ -29,8 +29,7 @@ struct Single_scale_particles {
                            size_t const count,
                            float const _radius)
       : radius(_radius) {
-        std::uniform_real_distribution<float> angle_dist{0.0f,
-                                                         radians(360.0f)};
+        std::uniform_real_distribution<float> angle_dist{0.0f, radians(360.0f)};
         std::uniform_int_distribution<int> color_dist{64, 255};
 
         centers.reserve(count);
@@ -39,20 +38,22 @@ struct Single_scale_particles {
         for (size_t i = 0; i < count; ++i) {
             centers.push_back({center_dist(gen), center_dist(gen)});
             angles.push_back(angle_dist(gen));
-            rgbas.push_back(
-                {static_cast<uint8_t>(color_dist(gen)), 
-                    static_cast<uint8_t>(color_dist(gen)), 
-                    static_cast<uint8_t>(color_dist(gen)), 255});
+            rgbas.push_back({static_cast<uint8_t>(color_dist(gen)),
+                             static_cast<uint8_t>(color_dist(gen)),
+                             static_cast<uint8_t>(color_dist(gen)),
+                             255});
         }
     }
 
     void step() {
         tbb::parallel_for(size_t{0}, centers.size(), [this](auto const i) {
-            auto const angle = angles[i];//auto const angle = wrap_angle(angles[i] + radians(0.1f));
+            auto const angle =
+              angles[i];  // auto const angle = wrap_angle(angles[i] +
+                          // radians(0.1f));
             auto const ca = std::cos(angle);
             auto const sa = std::sin(angle);
             centers[i] += 0.005f * radius * V2f{ca, sa};
-            //angles[i] = angle;
+            // angles[i] = angle;
         });
     }
 };
@@ -64,10 +65,10 @@ protected:
         Sim3D::init_draw(w, h);
 
         m_multi_scale_draw =
-            std::make_unique<Multi_scale_draw>(m_scales.size(), 2048);
+          std::make_unique<Multi_scale_draw>(m_scales.size(), 2048);
         for (size_t i = 0; i < m_scales.size(); ++i) {
             auto const& scale = m_scales[i];
-            m_multi_scale_draw->update_scale(i,
+            m_multi_scale_draw->update_scale(static_cast<int>(i),
                                              scale.radius,
                                              scale.centers.size(),
                                              scale.centers.data(),
@@ -86,13 +87,13 @@ public:
         m_scales.reserve(scale_count);
         for (int i = 0; i < scale_count; ++i) {
             float const range =
-                std::pow(2.0f, static_cast<float>((scale_count - 1) - i));
+              std::pow(2.0f, static_cast<float>((scale_count - 1) - i));
 
             m_scales.emplace_back(
-                gen,
-                std::uniform_real_distribution<float>{-range, range},
-                1500,
-                range * 0.01f);
+              gen,
+              std::uniform_real_distribution<float>{-range, range},
+              1500,
+              range * 0.01f);
         }
 
         m_modelview.makeIdentity();
@@ -107,7 +108,7 @@ public:
         for (size_t i = 0; i < m_scales.size(); ++i) {
             auto& scale = m_scales[i];
             scale.step();
-            m_multi_scale_draw->update_scale(i,
+            m_multi_scale_draw->update_scale(static_cast<int>(i),
                                              scale.radius,
                                              scale.centers.size(),
                                              scale.centers.data(),
@@ -131,7 +132,7 @@ public:
         m_updated = false;
     }
 
-    void character(unsigned int i_char, int x, int y) override {
+    void character(unsigned int i_char, int /*x*/, int /*y*/) override {
         int new_zoom_out = m_zoom_out;
         if (i_char == 45) {
             new_zoom_out = std::clamp(m_zoom_out + 1, 0, 255);
@@ -160,7 +161,7 @@ protected:
 };
 
 //-*****************************************************************************
-int main(int argc, char* argv[]) {
+int main(int /*argc*/, char* /*argv*/[]) {
     SimPtr sptr = std::make_shared<Multi_particles_sim>();
     SimpleViewSim(sptr, true);
     return 0;

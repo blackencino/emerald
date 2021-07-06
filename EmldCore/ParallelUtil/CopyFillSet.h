@@ -198,7 +198,7 @@ void VectorSetOrderedIndices(VECTOR& o_indices) {
 
     SetOrderedIndicesFunctor<index_type> F;
     F.Indices = vector_data(o_indices);
-    F.execute(N);
+    F.execute(static_cast<index_type>(N));
 }
 
 }  // End namespace ParallelUtil

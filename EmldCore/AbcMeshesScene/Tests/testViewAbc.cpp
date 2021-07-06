@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,61 +28,51 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-*****************************************************************************
 
-#include "TestViewScene.h"
 #include <EmldCore/AbcMeshesScene/All.h>
 #include <emerald/simple_sim_viewer/all.h>
-#include <iostream>
-#include <exception>
-#include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include <exception>
+#include <iostream>
+#include <string>
+#include "TestViewScene.h"
 
 using namespace EmldCore;
 
-int main( int argc, char* argv[] )
-{
-    if ( argc != 3 )
-    {
-        std::cerr << "USAGE: " << argv[0]
-                  << " <file.abc> <ticksPerSecond> " << std::endl;
-        exit( -1 );
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        std::cerr << "USAGE: " << argv[0] << " <file.abc> <ticksPerSecond> "
+                  << std::endl;
+        exit(-1);
     }
 
     std::string abcFileName = argv[1];
-    float ticksPerSecond = atof( argv[2] );
-    if ( ticksPerSecond == 0.0f )
-    {
+    float ticksPerSecond = static_cast<float>(atof(argv[2]));
+    if (ticksPerSecond == 0.0f) {
         std::cerr << "Can't have a zero ticks per second." << std::endl;
-        exit( -1 );
+        exit(-1);
     }
 
     double increment = 1.0 / ticksPerSecond;
 
-    try
-    {
+    try {
         AbcMeshesScene::FileInfoVec files;
-        files.push_back( AbcMeshesScene::FileInfo( abcFileName ) );
+        files.push_back(AbcMeshesScene::FileInfo(abcFileName));
 
-        AbcMeshesScene::SceneSptr sptr(
-            new AbcMeshesScene::Scene( files ) );
-        std::cout << "Created scene from file: " << abcFileName
-                  << std::endl;
+        AbcMeshesScene::SceneSptr sptr(new AbcMeshesScene::Scene(files));
+        std::cout << "Created scene from file: " << abcFileName << std::endl;
 
         emerald::simple_sim_viewer::SimPtr vptr(
-            new AbcmTest::ViewScene( sptr, increment ) );
+          new AbcmTest::ViewScene(sptr, increment));
         std::cout << "Created view scene." << std::endl;
 
-        emerald::simple_sim_viewer::SimpleViewSim( vptr );
-    }
-    catch ( std::exception& exc )
-    {
+        emerald::simple_sim_viewer::SimpleViewSim(vptr);
+    } catch (std::exception& exc) {
         std::cerr << "EXCEPTION: " << exc.what() << std::endl;
-        exit( -1 );
-    }
-    catch ( ... )
-    {
+        exit(-1);
+    } catch (...) {
         std::cerr << "UNKNOWN EXCEPTION" << std::endl;
-        exit( -1 );
+        exit(-1);
     }
 
     return 0;
