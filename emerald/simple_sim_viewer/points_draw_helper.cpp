@@ -179,7 +179,7 @@ void PointsDrawHelper::draw(const GLCamera& i_cam) const {
     util_gl::CheckErrors("glBindVertexArray draw");
 
     // Draw the arrays
-    glDrawArrays(GL_POINTS, 0, m_numPoints);
+    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(m_numPoints));
     util_gl::CheckErrors("glDrawArrays");
 
     // Unbind the vertex array

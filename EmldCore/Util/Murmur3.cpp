@@ -109,7 +109,7 @@ void MurmurHash3_x86_32(const void* i_bytes,
     const uint32_t* blocks = data + (nblocks * 4);
 
     for (std::ptrdiff_t i = -std::ptrdiff_t(nblocks); i; ++i) {
-        uint32_t k1 = getblock32(blocks, i);
+        uint32_t k1 = getblock32(blocks, static_cast<int>(i));
 
         k1 *= c1;
         k1 = ROTL32(k1, 15);
@@ -174,10 +174,10 @@ void MurmurHash3_x86_128(const void* i_bytes,
       reinterpret_cast<const uint32_t*>(data + (nblocks * 16));
 
     for (std::ptrdiff_t i = -std::ptrdiff_t(nblocks); i; ++i) {
-        uint32_t k1 = getblock32(blocks, i * 4 + 0);
-        uint32_t k2 = getblock32(blocks, i * 4 + 1);
-        uint32_t k3 = getblock32(blocks, i * 4 + 2);
-        uint32_t k4 = getblock32(blocks, i * 4 + 3);
+        uint32_t k1 = getblock32(blocks, static_cast<int>(i * 4 + 0));
+        uint32_t k2 = getblock32(blocks, static_cast<int>(i * 4 + 1));
+        uint32_t k3 = getblock32(blocks, static_cast<int>(i * 4 + 2));
+        uint32_t k4 = getblock32(blocks, static_cast<int>(i * 4 + 3));
 
         k1 *= c1;
         k1 = ROTL32(k1, 15);
@@ -321,8 +321,8 @@ void MurmurHash3_x64_128(const void* i_bytes,
     const uint64_t* blocks = reinterpret_cast<const uint64_t*>(data);
 
     for (std::size_t i = 0; i < nblocks; ++i) {
-        uint64_t k1 = getblock64(blocks, i * 2 + 0);
-        uint64_t k2 = getblock64(blocks, i * 2 + 1);
+        uint64_t k1 = getblock64(blocks, static_cast<int>(i * 2 + 0));
+        uint64_t k2 = getblock64(blocks, static_cast<int>(i * 2 + 1));
 
         k1 *= c1;
         k1 = ROTL64(k1, 31);

@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     std::vector<int> values(N);
     UniformRand urand(0.0, 100.1);
     for (int i = 0; i < values.size(); ++i) {
-        values[i] = (int)floorf(urand());
+        values[i] = (int)floor(urand());
     }
     std::cout << "Created base set of values." << std::endl;
 

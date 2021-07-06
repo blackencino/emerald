@@ -95,13 +95,13 @@ TEST(Safe_divide_test, test_doubles) {
     double const denom5 = -4.0;
     EXPECT_TRUE(is_safe_divide(numer5, denom5));
     ASSERT_TRUE(safe_divide(numer5, denom5).has_value());
-    EXPECT_FLOAT_EQ(4.0, safe_divide(numer5, denom5).value());
+    EXPECT_DOUBLE_EQ(4.0, safe_divide(numer5, denom5).value());
 
     double const numer6 = 1.0;
     double const denom6 = -10.0;
     EXPECT_TRUE(is_safe_divide(numer6, denom6));
     ASSERT_TRUE(safe_divide(numer6, denom6).has_value());
-    EXPECT_FLOAT_EQ(-0.1, safe_divide(numer6, denom6).value());
+    EXPECT_DOUBLE_EQ(-0.1, safe_divide(numer6, denom6).value());
 }
 
 TEST(Safe_divide_test, test_V2i) {

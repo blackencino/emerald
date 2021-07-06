@@ -147,10 +147,10 @@ void Simulation_old::GetInputSourceVelocity() {
         float SimVelY = GridVelY * DXY;
 
         for (int j = 0; j < GY; ++j) {
-            float cellMidPointY = 1.0f * (0.5 + (float)j);
+            float cellMidPointY = 1.0f * (0.5f + (float)j);
 
             for (int i = 0; i < GX; ++i) {
-                float cellMidPointX = 1.0f * (0.5 + (float)i);
+                float cellMidPointX = 1.0f * (0.5f + (float)i);
 
                 float r = std::hypot(sqr(float(InputIndexX) - cellMidPointX),
                                      sqr(float(InputIndexY) - cellMidPointY));

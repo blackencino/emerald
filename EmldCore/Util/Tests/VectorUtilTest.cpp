@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,31 +32,24 @@
 
 #include <vector>
 
-#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 
 namespace hu = EmldCore::Util;
 
-int main( int argc, char *argv[] )
-{
+int main(int argc, char* argv[]) {
     hu::V3d g;
-    hu::set_zero( g );
+    hu::set_zero(g);
 
     hu::UniformRand rand;
     std::vector<float> v;
-    for ( int i = 0; i < 100; ++i )
-    {
-        v.push_back( rand() );
-    }
+    for (int i = 0; i < 100; ++i) { v.push_back(static_cast<float>(rand())); }
 
-    const float* vdata = hu::vector_cdata( v );
-    for ( int i = 0; i < 100; ++i )
-    {
-        std::cout << vdata[i] << std::endl;
-    }
+    const float* vdata = hu::vector_cdata(v);
+    for (int i = 0; i < 100; ++i) { std::cout << vdata[i] << std::endl; }
 
-    hu::VectorHashKey vkey = hu::ComputeVectorHashKey( v );
+    hu::VectorHashKey vkey = hu::ComputeVectorHashKey(v);
     std::cout << "Vector hash key: " << vkey << std::endl;
 
     return 0;

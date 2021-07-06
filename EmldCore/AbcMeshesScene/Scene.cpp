@@ -80,19 +80,19 @@ Scene::Scene(const FileInfoVec& i_fileInfo,
         loadMeshesFromFile((*miter), i_topologyMask, i_cachePtr);
     }
 
-    std::cout << "Num mesh handles after load from file: " 
-        << m_meshHandles.size() << std::endl;
+    std::cout << "Num mesh handles after load from file: "
+              << m_meshHandles.size() << std::endl;
 
     // Get bounds and time range.
     m_simBounds.makeEmpty();
-    
+
     for (std::vector<MeshHandleSptr>::iterator miter = m_meshHandles.begin();
          miter != m_meshHandles.end();
          ++miter) {
         const Object& mobj = (*miter)->mesh().enclosingObject();
         m_simBounds.extendBy(mobj.simBounds());
     }
-    
+
     m_minTime = FLT_MAX;
     m_maxTime = -FLT_MAX;
     for (auto& obj : m_topObjects) {
@@ -138,7 +138,7 @@ void Scene::setTime(chrono_t i_time) {
 //-*****************************************************************************
 void Scene::addMeshHandle(Mesh& iMesh) {
     MeshHandleSptr cptr(new MeshHandle(iMesh));
-    iMesh.setMeshId(m_meshHandles.size());
+    iMesh.setMeshId(static_cast<int>(m_meshHandles.size()));
     m_meshHandles.push_back(cptr);
 }
 

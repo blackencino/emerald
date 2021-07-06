@@ -31,7 +31,7 @@ public:
       , m_width(width)
       , m_height(height) {
         util_gl::CheckErrors(
-            "shallow weaver slab draw helper init before anything");
+          "shallow weaver slab draw helper init before anything");
 
         // Create and bind VAO
         glGenVertexArrays(1, &m_vertexArrayObject);
@@ -190,9 +190,9 @@ public:
         (*m_program)(Uniform{"water_min", m_water_min, Uniform::kRequireError});
         (*m_program)(Uniform{"water_max", m_water_max, Uniform::kRequireError});
         (*m_program)(
-            Uniform{"terrain_min", m_terrain_min, Uniform::kRequireError});
+          Uniform{"terrain_min", m_terrain_min, Uniform::kRequireError});
         (*m_program)(
-            Uniform{"terrain_max", m_terrain_max, Uniform::kRequireError});
+          Uniform{"terrain_max", m_terrain_max, Uniform::kRequireError});
         m_program->setUniforms();
         m_program->unuse();
     }
@@ -261,9 +261,9 @@ public:
         m_terrain_max = tmax;
 
         (*m_program)(
-            Uniform{"terrain_min", m_terrain_min, Uniform::kRequireError});
+          Uniform{"terrain_min", m_terrain_min, Uniform::kRequireError});
         (*m_program)(
-            Uniform{"terrain_max", m_terrain_max, Uniform::kRequireError});
+          Uniform{"terrain_max", m_terrain_max, Uniform::kRequireError});
     }
 
     void draw() const {
@@ -331,17 +331,17 @@ public:
         m_water_max = 1.0f;
         for (int i = 0; i < water_array_size; ++i) {
             auto const d =
-                linstep(m_water_min, m_water_max, water_data_span[i]);
+              linstep(m_water_min, m_water_max, water_data_span[i]);
             m_water_image[i] = static_cast<uint8_t>(255.0f * d);
         }
 
         auto const terrain_data_span =
-            m_simulation.state().terrain_height.as_span();
+          m_simulation.state().terrain_height.as_span();
         int const terrain_array_size =
-            static_cast<int>(terrain_data_span.size());
+          static_cast<int>(terrain_data_span.size());
         EMLD_ASSERT(
-            terrain_array_size == static_cast<int>(m_terrain_image.size()),
-            "terrain image and data sizes must match");
+          terrain_array_size == static_cast<int>(m_terrain_image.size()),
+          "terrain image and data sizes must match");
         float tmin = std::numeric_limits<float>::max();
         float tmax = -std::numeric_limits<float>::max();
         for (int i = 0; i < terrain_array_size; ++i) {
@@ -355,7 +355,7 @@ public:
         m_terrain_max = tcen + 0.5f * trange;
         for (int i = 0; i < terrain_array_size; ++i) {
             auto const d =
-                linstep(m_terrain_min, m_terrain_max, terrain_data_span[i]);
+              linstep(m_terrain_min, m_terrain_max, terrain_data_span[i]);
             m_terrain_image[i] = static_cast<uint8_t>(255.0f * d);
         }
     }
@@ -372,14 +372,14 @@ public:
         SimSlab::init_draw(w, h);
 
         m_slab_draw = std::make_unique<Shallow_weaver_slab_draw>(
-            m_water_image.data(),
-            m_water_min,
-            m_water_max,
-            m_terrain_image.data(),
-            m_terrain_min,
-            m_terrain_max,
-            m_simulation.parameters().resolution,
-            m_simulation.parameters().resolution);
+          m_water_image.data(),
+          m_water_min,
+          m_water_max,
+          m_terrain_image.data(),
+          m_terrain_min,
+          m_terrain_max,
+          m_simulation.parameters().resolution,
+          m_simulation.parameters().resolution);
 
         m_updated = true;
     }
@@ -400,32 +400,32 @@ public:
         copy_state_to_images();
         if (m_slab_draw) {
             m_slab_draw->update_water(
-                m_water_image.data(), m_water_min, m_water_max);
+              m_water_image.data(), m_water_min, m_water_max);
             m_slab_draw->update_terrain(
-                m_terrain_image.data(), m_terrain_min, m_terrain_max);
+              m_terrain_image.data(), m_terrain_min, m_terrain_max);
             m_updated = true;
         }
     }
 
     void mouse(int i_button,
                int i_action,
-               int i_mods,
+               int /*i_mods*/,
                double x,
                double y,
-               double lastX,
-               double lastY) override {
+               double /*lastX*/,
+               double /*lastY*/) override {
         if (i_button != GLFW_MOUSE_BUTTON_LEFT) { return; }
 
         if (i_action == GLFW_PRESS) {
             V2f const ndc_mouse_pos{
-                std::clamp((static_cast<float>(x) + 0.5f) /
-                               static_cast<float>(m_width),
-                           0.0f,
-                           1.0f),
-                std::clamp(1.0f - (static_cast<float>(y) + 0.5f) /
-                                      static_cast<float>(m_height),
-                           0.0f,
-                           1.0f)};
+              std::clamp(
+                (static_cast<float>(x) + 0.5f) / static_cast<float>(m_width),
+                0.0f,
+                1.0f),
+              std::clamp(1.0f - (static_cast<float>(y) + 0.5f) /
+                                  static_cast<float>(m_height),
+                         0.0f,
+                         1.0f)};
 
             m_simulation.set_input(ndc_mouse_pos, 1.5f);
             m_mouse_down = true;
@@ -435,18 +435,21 @@ public:
         }
     }
 
-    void mouse_drag(double x, double y, double lastX, double lastY) override {
+    void mouse_drag(double x,
+                    double y,
+                    double /*lastX*/,
+                    double /*lastY*/) override {
         if (!m_mouse_down) { return; }
 
         V2f const ndc_mouse_pos{
-            std::clamp(
-                (static_cast<float>(x) + 0.5f) / static_cast<float>(m_width),
-                0.0f,
-                1.0f),
-            std::clamp(1.0f - (static_cast<float>(y) + 0.5f) /
-                                  static_cast<float>(m_height),
-                       0.0f,
-                       1.0f)};
+          std::clamp(
+            (static_cast<float>(x) + 0.5f) / static_cast<float>(m_width),
+            0.0f,
+            1.0f),
+          std::clamp(1.0f - (static_cast<float>(y) + 0.5f) /
+                              static_cast<float>(m_height),
+                     0.0f,
+                     1.0f)};
 
         m_simulation.set_input(ndc_mouse_pos, 1.5f);
         m_mouse_down = true;
@@ -470,7 +473,7 @@ private:
 //-*****************************************************************************
 int main(int argc, char* argv[]) {
     SimPtr sptr =
-        std::make_shared<Shallow_weaver_sim>(parse_parameters(argc, argv));
+      std::make_shared<Shallow_weaver_sim>(parse_parameters(argc, argv));
     SimpleViewSim(sptr, true);
     return 0;
 }

@@ -5,6 +5,9 @@
 #include <emerald/util/assert.h>
 #include <emerald/util/foundation.h>
 
+#pragma warning(push)
+#pragma warning( disable : 4244 4100 4456 4005 )
+
 #include <Alembic/Util/All.h>
 
 #include <OpenEXR/ImathBox.h>
@@ -29,3 +32,6 @@ typedef Imath::Vec3<unsigned int> V3ui;
 
 }  // End namespace simple_sim_viewer
 }  // End namespace emerald
+
+
+#pragma warning(pop)

@@ -19,7 +19,8 @@ Z_index_2::Z_index_2() {
     m_single_axis_lut.resize(65536);
 
     for (size_t i = 0; i < 65536; ++i) {
-        m_single_axis_lut[i] = Single_axis_index<2, 15>::encode(i);
+        m_single_axis_lut[i] = static_cast<uint32_t>(
+          Single_axis_index<2, 15>::encode(static_cast<int>(i)));
     }
 }
 
@@ -30,15 +31,15 @@ uint64_t Z_index_2::single_axis_index_from_lut(uint32_t const i) const {
 
     constexpr uint64_t HIGH_16_BIT_MASK = LOW_16_BIT_MASK << 16;
     static_assert(
-        HIGH_16_BIT_MASK == 0b1111'1111'1111'1111'0000'0000'0000'0000ull,
-        "high 16 bits");
+      HIGH_16_BIT_MASK == 0b1111'1111'1111'1111'0000'0000'0000'0000ull,
+      "high 16 bits");
 
     // get the low mask...
     return static_cast<uint64_t>(m_single_axis_lut[i & LOW_16_BIT_MASK]) |
 
            // get the high mask...
            (static_cast<uint64_t>(
-                m_single_axis_lut[(i & HIGH_16_BIT_MASK) >> 16])
+              m_single_axis_lut[(i & HIGH_16_BIT_MASK) >> 16])
             << 32);
 }
 

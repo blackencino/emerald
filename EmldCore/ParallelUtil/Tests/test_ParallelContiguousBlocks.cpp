@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     typedef std::vector<SBI> SBIs;
     SBIs blocks;
     VectorContiguousBlockSetBeginEndSimple(bucketIndices, blocks);
-    int numBlocks = blocks.size();
+    auto numBlocks = static_cast<int>(blocks.size());
     std::cout << "Set block begin & end indices." << std::endl;
     for (int i = 0; i < numBlocks; ++i) {
         std::cout << (boost::format("Bucket %d goes from [%d to %d]") % i %
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
     PBIs pairBlocks;
     intPairSetBeginEnd ipsbe;
     VectorContiguousBlockSetBeginEnd(bucketIndices, pairBlocks, ipsbe);
-    numBlocks = pairBlocks.size();
+    numBlocks = static_cast<int>(pairBlocks.size());
     std::cout << "Set pair-block begin & end indices." << std::endl;
     for (int i = 0; i < numBlocks; ++i) {
         std::cout << (boost::format("Bucket %d goes from [%d to %d]") % i %

@@ -234,7 +234,7 @@ Uniform::Uniform(const std::string& i_name,
 
 // 3 ints
 Uniform::Uniform(
-    const std::string& i_name, int i_i0, int i_i1, int i_i2, Requirement i_req)
+  const std::string& i_name, int i_i0, int i_i1, int i_i2, Requirement i_req)
   : m_name(i_name)
   , m_type(kUniformInt)
   , m_required(i_req) {
@@ -478,9 +478,9 @@ Program::Program(const std::string& i_name,
 
     // Bind the vertex array object
     if (i_vertexArrayObject > 0) {
-
         auto const is_vao = glIsVertexArray(i_vertexArrayObject);
-        std::cout << "So... is it one? " << static_cast<int>(is_vao) << std::endl;
+        std::cout << "So... is it one? " << static_cast<int>(is_vao)
+                  << std::endl;
 
         glBindVertexArray(i_vertexArrayObject);
         util_gl::CheckErrors("glBindVertexArray in beginning of Program ctor");
@@ -514,7 +514,7 @@ Program::Program(const std::string& i_name,
         geomSources.push_back(i_geom);
         if (geomSources.size() > 0) {
             m_geomId = initShader(
-                m_name + "::geometry", GL_GEOMETRY_SHADER, geomSources);
+              m_name + "::geometry", GL_GEOMETRY_SHADER, geomSources);
             glAttachShader(m_progId, m_geomId);
         }
         std::cout << "Created GLSL geometry shader" << std::endl;
@@ -528,7 +528,7 @@ Program::Program(const std::string& i_name,
     frgSources.push_back(i_frg);
     if (frgSources.size() > 0) {
         m_frgId =
-            initShader(m_name + "::fragment", GL_FRAGMENT_SHADER, frgSources);
+          initShader(m_name + "::fragment", GL_FRAGMENT_SHADER, frgSources);
         glAttachShader(m_progId, m_frgId);
     }
     std::cout << "Created GLSL fragment shader" << std::endl;
@@ -540,7 +540,7 @@ Program::Program(const std::string& i_name,
          biter != i_vtxBindingsIn.end();
          ++biter) {
         glBindAttribLocation(
-            m_progId, (*biter).first, (const GLchar*)((*biter).second.c_str()));
+          m_progId, (*biter).first, (const GLchar*)((*biter).second.c_str()));
         util_gl::CheckErrors("glBindAttribLocation");
     }
 
@@ -551,7 +551,7 @@ Program::Program(const std::string& i_name,
          biter != i_frgBindingsOut.end();
          ++biter) {
         glBindFragDataLocation(
-            m_progId, (*biter).first, (const GLchar*)((*biter).second.c_str()));
+          m_progId, (*biter).first, (const GLchar*)((*biter).second.c_str()));
     }
 
     //-*************************************************************************
@@ -580,12 +580,12 @@ Program::Program(const std::string& i_name,
          biter != i_vtxBindingsIn.end();
          ++biter) {
         GLint result = glGetAttribLocation(
-            m_progId, (const GLchar*)((*biter).second.c_str()));
+          m_progId, (const GLchar*)((*biter).second.c_str()));
         util_gl::CheckErrors("glGetAttribLocation");
         EMLD_ASSERT(result == (*biter).first,
                     "Did not successfully bind attribute: "
-                        << (*biter).second << ", got result: " << result
-                        << ", but wanted: " << (*biter).first);
+                      << (*biter).second << ", got result: " << result
+                      << ", but wanted: " << (*biter).first);
     }
 
     if (i_vertexArrayObject > 0) {
@@ -678,7 +678,7 @@ GLuint Program::initShader(const std::string& i_shaderName,
     GLuint id = 0;
 
     const GLchar* shaderSources[32];
-    GLsizei numSources = i_sources.size();
+    GLsizei numSources = static_cast<GLsizei>(i_sources.size());
     EMLD_ASSERT(numSources > 0, "must have at least one shader source");
 
     if (numSources > 32) {

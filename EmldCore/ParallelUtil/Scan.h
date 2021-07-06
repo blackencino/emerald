@@ -163,7 +163,7 @@ typename SCAN_FUNCTOR::scan_value_type FunctorVectorScan(
         SCAN_FUNCTOR SF;
 
         VSA_type VSA(i_vfunc, SF, vector_data(o_scanVector));
-        VSA.execute(o_scanVector.size());
+        VSA.execute(static_cast<index_type>(o_scanVector.size()));
 
         return VSA.ScannedValue;
     }

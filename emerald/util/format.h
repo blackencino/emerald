@@ -2,7 +2,6 @@
 
 #include <emerald/util/foundation.h>
 
-#include <OpenEXR/ImathVec.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 

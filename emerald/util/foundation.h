@@ -1,5 +1,8 @@
 #pragma once
 
+#pragma warning(push, 1)
+#pragma warning(disable: 4244 4245 4100)
+
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/Util/All.h>
 
@@ -149,3 +152,5 @@ IMATH_INTERNAL_NAMESPACE_HEADER_EXIT
 #else
 }  // End namespace Imath
 #endif
+
+#pragma warning(pop)

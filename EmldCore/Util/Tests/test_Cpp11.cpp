@@ -14,7 +14,7 @@
 // 3. Neither the name of Christopher Jon Horvath nor the names of his
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,11 +28,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //-*****************************************************************************
 
-#include <iostream>
 #include <algorithm>
-#include <functional>
-#include <vector>
 #include <cmath>
+#include <functional>
+#include <iostream>
+#include <vector>
 
 //-*****************************************************************************
 //-*****************************************************************************
@@ -43,108 +43,114 @@
 #define SPH_USE_CXX11 1
 #define SPH_STATIC_CONSTEXPR static constexpr
 
-#include <random>
 #include <cstdint>
+#include <random>
 
 typedef uint64_t seed_type;
-typedef std::linear_congruential_engine<uint64_t, 
-    uint64_t(0xDEECE66DUL) | (uint64_t(0x5) << 32),
-    0xB, uint64_t(1)<<48>
-Rand48_Engine;
+typedef std::linear_congruential_engine<uint64_t,
+                                        uint64_t(0xDEECE66DUL) |
+                                          (uint64_t(0x5) << 32),
+                                        0xB,
+                                        uint64_t(1) << 48>
+  Rand48_Engine;
 #define SPH_UNIFORM_REAL_DISTRIBUTION std::uniform_real_distribution
 
 #if SPH_USE_CXX11
 
 //-*****************************************************************************
 // Let's see whether we can use fancy cmath stuff.
-void testFancyCmathStuff()
-{
+void testFancyCmathStuff() {
     // Gamma.
-    std::cout << "Gamma of 0.5 = " << std::tgamma( 0.5 ) << std::endl;
+    std::cout << "Gamma of 0.5 = " << std::tgamma(0.5) << std::endl;
 
     // Lround.
-    std::cout << "Long round of 191381.1356: " 
-              << std::lround( 191381.1356 ) << std::endl;
+    std::cout << "Long round of 191381.1356: " << std::lround(191381.1356)
+              << std::endl;
 
     // Erf & Erfc
-    std::cout << "Erf of 18.881: " << std::erf( 18.881 ) << std::endl
-              << "Erfc of 18.881: " << std::erfc( 18.881 ) << std::endl;
-    
+    std::cout << "Erf of 18.881: " << std::erf(18.881) << std::endl
+              << "Erfc of 18.881: " << std::erfc(18.881) << std::endl;
+
     // Random stuff
     Rand48_Engine rnd;
-    rnd.seed( 12345 );
-    SPH_UNIFORM_REAL_DISTRIBUTION<double> dist( 0.0, 1.0 );
-    std::cout << "First draw from Rand48: " << dist( rnd ) << std::endl;
+    rnd.seed(12345);
+    SPH_UNIFORM_REAL_DISTRIBUTION<double> dist(0.0, 1.0);
+    std::cout << "First draw from Rand48: " << dist(rnd) << std::endl;
 }
 
 //-*****************************************************************************
 template <typename ITER, typename F>
-void applyToAll( ITER i_begin, ITER i_end, F i_func )
-{
-    int N = i_end - i_begin;
+void applyToAll(ITER i_begin, ITER i_end, F i_func) {
+    int N = static_cast<int>(i_end - i_begin);
     int* ptr = &(*i_begin);
-    for ( int i = 0; i < N; ++i )
-    {
-        i_func( *(ptr+i), i );
-    }
+    for (int i = 0; i < N; ++i) { i_func(*(ptr + i), i); }
 }
 
 #endif
 
 //-*****************************************************************************
-struct Base
-{
-    Base() : a( 0.0f ) {}
+struct Base {
+    Base()
+      : a(0.0f) {
+    }
     float a;
 
-    float A() const { return a; }
+    float A() const {
+        return a;
+    }
 };
 
 //-*****************************************************************************
 template <typename T>
-struct Derived : public Base
-{
-    Derived() : Base(), b( T(0) ) {}
+struct Derived : public Base {
+    Derived()
+      : Base()
+      , b(T(0)) {
+    }
 
     T b;
-    //using Base::A;
-    T B() const { return b; }
-    T C() const { return b + A(); }
+    // using Base::A;
+    T B() const {
+        return b;
+    }
+    T C() const {
+        return b + A();
+    }
 };
 
 //-*****************************************************************************
 template <typename T>
-struct Derived2 : public Derived<T>
-{
-    Derived2() : Derived<T>(), c( T(0) ) {}
+struct Derived2 : public Derived<T> {
+    Derived2()
+      : Derived<T>()
+      , c(T(0)) {
+    }
 
     T c;
 
     // Valid in C++ before 11!!! (Thank god)
     using Derived<T>::C;
 
-    T C2() const { return c + C(); }
+    T C2() const {
+        return c + C();
+    }
 };
 
 //-*****************************************************************************
-int main( int argc, char *argv[] )
-{
-
+int main(int argc, char* argv[]) {
 #if SPH_USE_CXX11
-    std::vector<int> v( 17 );
+    std::vector<int> v(17);
 
-    applyToAll( v.begin(), v.end(), []( int& i, int j ){ i = j; } );
-    std::for_each( v.begin(), v.end(), 
-    [](int i){ std::cout<< i << std::endl;} );
+    applyToAll(v.begin(), v.end(), [](int& i, int j) { i = j; });
+    std::for_each(
+      v.begin(), v.end(), [](int i) { std::cout << i << std::endl; });
 
     testFancyCmathStuff();
-
 
 #endif
 
     Derived2<double> D;
-    std::cout << "A = " << D.A() << std::endl
-              << "C = " << D.C() << std::endl;
+    std::cout << "A = " << D.A() << std::endl << "C = " << D.C() << std::endl;
 
     return 0;
 }

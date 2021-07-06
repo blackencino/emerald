@@ -1,5 +1,8 @@
 #pragma once
 
+#pragma warning(push)
+#pragma warning(disable: 4244)
+
 #include <OpenEXR/ImathMath.h>
 #include <OpenEXR/ImathVec.h>
 #include <OpenEXR/ImathMatrix.h>
@@ -32,5 +35,7 @@ using namespace Imath;
 
 } // End namespace noise
 } // End namespace emerald
+
+#pragma warning(pop)
 
 

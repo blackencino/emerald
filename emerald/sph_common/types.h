@@ -1,5 +1,8 @@
 #pragma once
 
+#pragma warning(push)
+#pragma warning( disable : 4244 4100 4456 )
+
 #include <OpenEXR/ImathBox.h>
 #include <OpenEXR/ImathColor.h>
 #include <OpenEXR/ImathMatrix.h>
@@ -54,3 +57,5 @@ vec_cast(Imath::Vec3<S> const& v) {
 }
 
 }  // namespace emerald::sph_common
+
+#pragma warning(pop)

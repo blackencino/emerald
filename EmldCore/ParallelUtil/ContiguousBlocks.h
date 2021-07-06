@@ -210,7 +210,7 @@ void VectorContiguousBlockSetBeginEnd(
     typedef typename BLOCK_VECTOR::value_type block_type;
     typedef typename BLOCK_INDEX_VECTOR::value_type index_type;
 
-    const index_type N = i_blockIndices.size();
+    const auto N = static_cast<index_type>(i_blockIndices.size());
     if (N < 1) {
         o_blocks.clear();
         return;

@@ -44,7 +44,9 @@ using namespace EmldCore::ParallelUtil;
 int main(int argc, char* argv[]) {
     std::vector<float> values(4096);
     UniformRand urand(-100.0, 100.0);
-    for (std::size_t i = 0; i < values.size(); ++i) { values[i] = urand(); }
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        values[i] = static_cast<float>(urand());
+    }
     std::cout << "Created base set of values." << std::endl;
 
     std::vector<float> newValues(4096);

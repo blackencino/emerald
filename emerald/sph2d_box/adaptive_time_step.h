@@ -89,8 +89,8 @@ State std_adaptive_time_step(std::optional<std::string> const label,
             sub_time_step,
           "TIME DISCRETIZATION ERROR");
 
-        sub_step(to_seconds(time),
-                 to_seconds(sub_time_step),
+        sub_step(static_cast<float>(to_seconds(time)),
+                 static_cast<float>(to_seconds(sub_time_step)),
                  config,
                  state,
                  solid_state,
@@ -102,8 +102,12 @@ State std_adaptive_time_step(std::optional<std::string> const label,
         time += sub_time_step;
     }
 
-    compute_colors(
-      to_seconds(time), config, state, solid_state, temp, user_colors);
+    compute_colors(static_cast<float>(to_seconds(time)),
+                   config,
+                   state,
+                   solid_state,
+                   temp,
+                   user_colors);
 
     auto const end = std::chrono::high_resolution_clock::now();
 

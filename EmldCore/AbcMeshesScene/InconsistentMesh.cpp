@@ -119,7 +119,7 @@ void InconsistentMesh::evalTime( chrono_t i_time )
     else
     {
         // We have to advect points locally.
-        float dt = i_time - idx.second;
+        float dt = static_cast<float>(i_time - idx.second);
         m_advectedLocalPoints.resize( N );
         const V3f* localPos = m_floorSample.getPositions()->get();
         const V3f* localVel = m_velSamplePtr->get();

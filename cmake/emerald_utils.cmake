@@ -12,6 +12,10 @@ function(emerald_define_library libname)
         ${EMERALD_CURLIB_SOURCES})
 
     target_compile_features(${libname} PUBLIC cxx_std_17)
+    # target_compile_options(${libname} PRIVATE
+    #     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    #     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Werror>)
+
     set_target_properties(${libname} PROPERTIES 
         CXX_STANDARD_REQUIRED ON 
         CXX_EXTENSIONS OFF
@@ -56,6 +60,9 @@ function(emerald_define_executable binname)
         ${EMERALD_CURLIB_SOURCES})
 
     target_compile_features(${binname} PUBLIC cxx_std_17)
+    # target_compile_options(${binname} PRIVATE
+    #     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    #     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Werror>)
     set_target_properties(${binname} PROPERTIES 
         CXX_STANDARD_REQUIRED ON 
         CXX_EXTENSIONS OFF
@@ -94,6 +101,9 @@ function(emerald_define_gtest testname)
                               ${ARGN})
         add_executable(${testname} ${EMERALD_CURLIB_SOURCES})
         target_compile_features(${testname} PUBLIC cxx_std_17)
+        # target_compile_options(${testname} PRIVATE
+        #     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+        #     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Werror>)
         set_target_properties(${testname} PROPERTIES 
             CXX_STANDARD_REQUIRED ON 
             CXX_EXTENSIONS OFF
@@ -123,6 +133,9 @@ function(emerald_define_test testname)
                               ${ARGN})
         add_executable(${testname} ${EMERALD_CURLIB_SOURCES})
         target_compile_features(${testname} PUBLIC cxx_std_17)
+        # target_compile_options(${testname} PRIVATE
+        #     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+        #     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Werror>)
         set_target_properties(${testname} PROPERTIES 
             CXX_STANDARD_REQUIRED ON 
             CXX_EXTENSIONS OFF
@@ -157,6 +170,9 @@ function(emldcore_legacy_define_library input_libname)
         ${EMERALD_CURLIB_SOURCES})
 
     target_compile_features(${libname} PUBLIC cxx_std_17)
+    # target_compile_options(${libname} PRIVATE
+    #     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    #     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Werror>)
     set_target_properties(${libname} PROPERTIES 
         CXX_STANDARD_REQUIRED ON 
         CXX_EXTENSIONS OFF

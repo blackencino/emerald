@@ -136,18 +136,19 @@ void create_regular_neighborhoods(
   V2f const* const other_positions,
   std::pair<uint64_t, size_t> const* const other_sorted_index_pairs,
   Block_map const& other_block_map) {
-    create_neighborhoods(particle_count,
-                         max_distance,
-                         neighbor_counts,
-                         neighbor_indices,
-                         neighbor_distances,
-                         neighbor_vectors_to,
-                         self_positions,
-                         self_grid_coords,
-                         other_positions,
-                         other_sorted_index_pairs,
-                         other_block_map,
-                         [](auto const i, auto const j) { return true; });
+    create_neighborhoods(
+      particle_count,
+      max_distance,
+      neighbor_counts,
+      neighbor_indices,
+      neighbor_distances,
+      neighbor_vectors_to,
+      self_positions,
+      self_grid_coords,
+      other_positions,
+      other_sorted_index_pairs,
+      other_block_map,
+      [](auto const /*i*/, auto const /*j*/) { return true; });
 }
 
 void compute_neighbor_distances_and_vectors_to(
@@ -166,7 +167,8 @@ void compute_neighbor_distances_and_vectors_to(
         auto const& nbhd_indices = neighbor_indices[particle_index];
         for (uint8_t j = 0; j < neighbor_count; ++j) {
             auto const other_particle_index = nbhd_indices[j];
-            auto const delta_pos = other_positions[other_particle_index] - position;
+            auto const delta_pos =
+              other_positions[other_particle_index] - position;
             neighbor_vector_to[j] = delta_pos;
             neighbor_distance[j] = delta_pos.length();
         }

@@ -232,7 +232,10 @@ void MeshDrawHelper::draw(const GLCamera& i_cam) const {
     util_gl::CheckErrors("glBindVertexArray draw");
 
     // Draw the elements
-    glDrawElements(GL_TRIANGLES, 3 * m_numTriangles, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES,
+                   static_cast<GLsizei>(3 * m_numTriangles),
+                   GL_UNSIGNED_INT,
+                   0);
     util_gl::CheckErrors("glDrawElements");
 
     // Unbind the vertex array
@@ -247,7 +250,10 @@ void MeshDrawHelper::draw() const {
     util_gl::CheckErrors("glBindVertexArray draw");
 
     // Draw the elements
-    glDrawElements(GL_TRIANGLES, 3 * m_numTriangles, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES,
+                   static_cast<GLsizei>(3 * m_numTriangles),
+                   GL_UNSIGNED_INT,
+                   0);
     util_gl::CheckErrors("glDrawElements");
 
     // Unbind the vertex array

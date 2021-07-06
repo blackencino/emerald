@@ -64,169 +64,177 @@ void RasterizeBounds(const TRI::TriMesh& iTriMesh,
             if (NX > NZ) {
                 size_t HX = NX / 2;
 
-                RasterizeBounds(iTriMesh,
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(iRasterBounds.min,
-                                      V3i(iRasterBounds.min.x + HX,
-                                          iRasterBounds.max.y,
-                                          iRasterBounds.max.z)),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(iRasterBounds.min,
+                        V3i(static_cast<int>(iRasterBounds.min.x + HX),
+                            iRasterBounds.max.y,
+                            iRasterBounds.max.z)),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
-                RasterizeBounds(iTriMesh,
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(V3i(iRasterBounds.min.x + HX,
-                                          iRasterBounds.min.y,
-                                          iRasterBounds.min.z),
-                                      iRasterBounds.max),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(V3i(static_cast<int>(iRasterBounds.min.x + HX),
+                            iRasterBounds.min.y,
+                            iRasterBounds.min.z),
+                        iRasterBounds.max),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
             } else {
                 size_t HZ = NZ / 2;
 
-                RasterizeBounds(iTriMesh,
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(iRasterBounds.min,
-                                      V3i(iRasterBounds.max.x,
-                                          iRasterBounds.max.y,
-                                          iRasterBounds.min.z + HZ)),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(iRasterBounds.min,
+                        V3i(iRasterBounds.max.x,
+                            iRasterBounds.max.y,
+                            static_cast<int>(iRasterBounds.min.z + HZ))),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
-                RasterizeBounds(iTriMesh,
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(V3i(iRasterBounds.min.x,
-                                          iRasterBounds.min.y,
-                                          iRasterBounds.min.z + HZ),
-                                      iRasterBounds.max),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(V3i(iRasterBounds.min.x,
+                            iRasterBounds.min.y,
+                            static_cast<int>(iRasterBounds.min.z + HZ)),
+                        iRasterBounds.max),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
             }
         } else {
             if (NY > NZ) {
                 size_t HY = NY / 2;
 
-                RasterizeBounds(iTriMesh,
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(iRasterBounds.min,
-                                      V3i(iRasterBounds.max.x,
-                                          iRasterBounds.min.y + HY,
-                                          iRasterBounds.max.z)),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(iRasterBounds.min,
+                        V3i(iRasterBounds.max.x,
+                            static_cast<int>(iRasterBounds.min.y + HY),
+                            iRasterBounds.max.z)),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
-                RasterizeBounds(iTriMesh,
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(V3i(iRasterBounds.min.x,
-                                          iRasterBounds.min.y + HY,
-                                          iRasterBounds.min.z),
-                                      iRasterBounds.max),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(V3i(iRasterBounds.min.x,
+                            static_cast<int>(iRasterBounds.min.y + HY),
+                            iRasterBounds.min.z),
+                        iRasterBounds.max),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
             } else {
                 size_t HZ = NZ / 2;
 
-                RasterizeBounds(iTriMesh,
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(iRasterBounds.min,
-                                      V3i(iRasterBounds.max.x,
-                                          iRasterBounds.max.y,
-                                          iRasterBounds.min.z + HZ)),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(iRasterBounds.min,
+                        V3i(iRasterBounds.max.x,
+                            iRasterBounds.max.y,
+                            static_cast<int>(iRasterBounds.min.z + HZ))),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
-                RasterizeBounds(iTriMesh,
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
+                RasterizeBounds(
+                  iTriMesh,
 
-                                oPositions,
-                                oClosestPoints,
-                                oLevelSets,
-                                oNormals,
-                                oRadius,
-                                oMass,
+                  oPositions,
+                  oClosestPoints,
+                  oLevelSets,
+                  oNormals,
+                  oRadius,
+                  oMass,
 
-                                iRasterOrigin,
-                                iRasterRadius,
-                                iMass,
-                                Box3i(V3i(iRasterBounds.min.x,
-                                          iRasterBounds.min.y,
-                                          iRasterBounds.min.z + HZ),
-                                      iRasterBounds.max),
+                  iRasterOrigin,
+                  iRasterRadius,
+                  iMass,
+                  Box3i(V3i(iRasterBounds.min.x,
+                            iRasterBounds.min.y,
+                            static_cast<int>(iRasterBounds.min.z + HZ)),
+                        iRasterBounds.max),
 
-                                iMaxRasterPoints,
-                                iMaxSubDivs - 1);
+                  iMaxRasterPoints,
+                  iMaxSubDivs - 1);
             }
         }
         return;
@@ -465,10 +473,10 @@ int main(int argc, char* argv[]) {
 
     const char* inFileName = argv[1];
     const char* outFileName = argv[2];
-    float radius = atof(argv[3]);
+    float radius = static_cast<float>(atof(argv[3]));
 
-    float density = 1.0;
-    float volume = 8.0 * radius * radius * radius;
+    float density = 1.0f;
+    float volume = 8.0f * radius * radius * radius;
     float mass = density * volume;
 
     DoIt(inFileName, outFileName, radius, mass);

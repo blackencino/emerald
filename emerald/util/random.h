@@ -53,7 +53,8 @@ public:
 
     void reset(int64_t const i_seed0, V3f const& i_seed1) {
         auto const* const data = reinterpret_cast<uint32_t const*>(&i_seed1.x);
-        reset(HashGrid(i_seed0, data[0], data[1], data[2]));
+        reset(
+          HashGrid(static_cast<uint32_t>(i_seed0), data[0], data[1], data[2]));
     }
 
     double operator()() {
@@ -92,7 +93,8 @@ public:
 
     void reset(int64_t const i_seed0, V3f const& i_seed1) {
         auto const* const data = reinterpret_cast<uint32_t const*>(&i_seed1.x);
-        reset(HashGrid(i_seed0, data[0], data[1], data[2]));
+        reset(
+          HashGrid(static_cast<uint32_t>(i_seed0), data[0], data[1], data[2]));
     }
 
     double operator()() {

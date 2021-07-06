@@ -177,7 +177,7 @@ State pcisph_simulation_step(flicks const global_time,
     auto time = global_time;
     for (int sub_step_iter = 0; sub_step_iter < config.params.sub_steps;
          ++sub_step_iter) {
-        pcisph_sub_step(to_seconds(time),
+        pcisph_sub_step(static_cast<float>(to_seconds(time)),
                         config.seconds_per_sub_step,
                         config,
                         state,
@@ -187,8 +187,12 @@ State pcisph_simulation_step(flicks const global_time,
         time += flicks_per_sub_step;
     }
 
-    compute_colors(
-      to_seconds(time), config, state, solid_state, temp, user_colors);
+    compute_colors(static_cast<float>(to_seconds(time)),
+                   config,
+                   state,
+                   solid_state,
+                   temp,
+                   user_colors);
 
     auto const end = std::chrono::high_resolution_clock::now();
 
