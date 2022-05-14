@@ -69,7 +69,7 @@ inline V3f value_cast<int32_t, V3f>(const int32_t& i_v) {
 
 template <>
 inline std::string value_cast<int32_t, std::string>(const int32_t& i_v) {
-    return (boost::format("%d") % i_v).str();
+    return std::to_string(i_v);
 }
 
 //-*****************************************************************************
@@ -83,7 +83,7 @@ inline V3f value_cast<int64_t, V3f>(const int64_t& i_v) {
 
 template <>
 inline std::string value_cast<int64_t, std::string>(const int64_t& i_v) {
-    return (boost::format("%d") % i_v).str();
+    return std::to_string(i_v);
 }
 
 //-*****************************************************************************
@@ -97,7 +97,7 @@ inline V3f value_cast<float, V3f>(const float& i_v) {
 
 template <>
 inline std::string value_cast<float, std::string>(const float& i_v) {
-    return (boost::format("%f") % i_v).str();
+    return std::to_string(i_v);
 }
 
 //-*****************************************************************************
@@ -111,7 +111,7 @@ inline V3f value_cast<double, V3f>(const double& i_v) {
 
 template <>
 inline std::string value_cast<double, std::string>(const double& i_v) {
-    return (boost::format("%f") % i_v).str();
+    return std::to_string(i_v);
 }
 
 //-*****************************************************************************
@@ -135,7 +135,7 @@ inline float value_cast<V3f, float>(const V3f&) {
 
 template <>
 inline std::string value_cast<V3f, std::string>(const V3f& i_v) {
-    return (boost::format("(%f,%f,%f)") % i_v.x % i_v.y % i_v.z).str();
+    return fmt::format("({},{},{})", i_v.x, i_v.y, i_v.z);
 }
 
 //-*****************************************************************************
@@ -164,7 +164,7 @@ inline V3f value_cast<V3d, V3f>(const V3d& i_v) {
 
 template <>
 inline std::string value_cast<V3d, std::string>(const V3d& i_v) {
-    return (boost::format("(%f,%f,%f)") % i_v.x % i_v.y % i_v.z).str();
+    return fmt::format("({},{},{})", i_v.x, i_v.y, i_v.z);
 }
 
 //-*****************************************************************************
@@ -193,7 +193,7 @@ inline V3f value_cast<C3f, V3f>(const C3f& i_v) {
 
 template <>
 inline std::string value_cast<C3f, std::string>(const C3f& i_v) {
-    return (boost::format("(%f,%f,%f)") % i_v.x % i_v.y % i_v.z).str();
+    return fmt::format("({},{},{})", i_v.x, i_v.y, i_v.z);
 }
 
 //-*****************************************************************************
