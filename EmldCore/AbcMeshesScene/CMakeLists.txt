@@ -32,5 +32,6 @@ emldcore_legacy_define_library(AbcMeshesScene
     Alembic::Alembic
     OpenEXR::OpenEXR
     Boost::Boost
+    fmt::fmt
   )
 add_subdirectory(Tests)

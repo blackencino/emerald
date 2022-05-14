@@ -4,7 +4,7 @@
 #define ABCM_USE_CXX11 1
 
 #pragma warning(push)
-#pragma warning( disable : 4244 4100 4456 )
+#pragma warning(disable : 4244 4100 4456)
 
 #include <EmldCore/ParallelUtil/All.h>
 #include <EmldCore/TriMesh/All.h>
@@ -29,8 +29,9 @@
 
 #include <boost/algorithm/string/erase.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
+
+#include <fmt/format.h>
 
 #include <chrono>
 #include <memory>
@@ -171,7 +172,6 @@ inline Box3d toBox3d(const Box3f& i_b) {
 
 }  // End namespace AbcMeshesScene
 }  // End namespace EmldCore
-
 
 #pragma warning(pop)
 

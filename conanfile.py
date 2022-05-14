@@ -12,16 +12,17 @@ class EmeraldConan(ConanFile):
     }
 
     requires = (
-        "fmt/7.1.3",
-        "boost/1.74.0",
-        "cxxopts/2.2.1",
-        "gsl-lite/0.37.0",
-        "openexr/2.5.3",
-        "alembic/1.7.16@blackencino/latest",
-        "outcome/2.1.5",
-        "spdlog/1.8.2",
-        "gtest/1.10.0",
-        "tbb/2020.0"
+        "fmt/[>=7.1.3]",
+        "boost/[>=1.74.0]",
+        "cxxopts/[>=2.2.1]",
+        "gsl-lite/[>=0.37.0]",
+        "openexr/[>=2.5.3 <3]",
+        "outcome/[>=2.1.5]",
+        "spdlog/[>=1.8.2]",
+        "gtest/[>=1.10.0]",
+        "tbb/[>=2020.0]",
+        "zlib/[>=1.2.11]",
+        "alembic/1.7.16@blackencino/latest"
     )
 
     generators = "cmake_paths", "cmake_find_package"
@@ -32,9 +33,9 @@ class EmeraldConan(ConanFile):
         self.options["tbb"].shared = False
 
         if self.options.enable_guis:
-            self.requires.add("glfw/3.3.2")
-            self.requires.add("imgui/1.79")
-            self.requires.add("glad/0.1.34")
+            self.requires.add("glfw/[>=3.3.2]")
+            self.requires.add("imgui/[>=1.79]")
+            self.requires.add("glad/[>=0.1.34]")
 
             #self.options["glfw"].fPIC = True
             #self.options["imgui"].fPIC = True
