@@ -1,16 +1,17 @@
 # CMakeLists files in this project can
 # refer to the root source directory of the project as ${FURY_SOURCE_DIR} and
 # to the root binary directory of the project as ${FURY_BINARY_DIR}.
-cmake_minimum_required(VERSION 3.11.2)
+cmake_minimum_required(VERSION 3.15)
 
 cmake_policy(SET CMP0042 NEW)
 
 project(emerald 
         LANGUAGES CXX
-        VERSION 0.0.6)
+        VERSION 0.0.7)
 
 option(EMERALD_BUILD_GUIS "Build Emerald Graphical UIs" ON)
 option(EMERALD_DO_TESTS "Do unit tests" ON)
+option(EMERALD_ENABLE_RPATH "Build with RPATH information" ON)
 
 if (${EMERALD_BUILD_GUIS})
     add_definitions( "-DGL_SILENCE_DEPRECATION=1" )
@@ -18,6 +19,20 @@ if (${EMERALD_BUILD_GUIS})
 else()
     set(EMLD_CONAN_OPTIONS "enable_guis=False")
 endif()
+
+mark_as_advanced(EMERALD_ENABLE_RPATH)
+
+
+if(EMERALD_ENABLE_RPATH)
+  # Configure rpath for installation base on the following:
+  # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  # @todo make relocatable?
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+
 
 message(STATUS "DO TESTS?: ${EMERALD_DO_TESTS}")
 

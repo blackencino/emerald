@@ -27,7 +27,7 @@ emerald_define_library(multi_scale_draw
     multi_scale_draw.h
   DEPENDENCIES
     emerald::simple_sim_viewer
-    TBB::TBB
+    TBB::tbb
   )
 
 emerald_define_executable(test_multi_particles_sim

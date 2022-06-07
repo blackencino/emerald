@@ -23,7 +23,7 @@ emerald_define_library(sph_common
     emerald::util
     emerald::z_index
     OpenEXR::OpenEXR
-    TBB::TBB
+    TBB::tbb
     fmt::fmt
   )
 

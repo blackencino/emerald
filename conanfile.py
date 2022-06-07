@@ -20,7 +20,7 @@ class EmeraldConan(ConanFile):
         "outcome/[>=2.1.5]",
         "spdlog/[>=1.8.2]",
         "gtest/[>=1.10.0]",
-        "tbb/[>=2020.0]",
+        "onetbb/2020.3",
         "zlib/[>=1.2.11]",
         "alembic/1.7.16@blackencino/latest"
     )
@@ -28,9 +28,7 @@ class EmeraldConan(ConanFile):
     generators = "cmake_paths", "cmake_find_package"
 
     def requirements(self):
-        self.options["tbb"].tbbmalloc = True
-        self.options["tbb"].tbbproxy = False
-        self.options["tbb"].shared = False
+        self.options["onetbb"].shared = False
 
         if self.options.enable_guis:
             self.requires.add("glfw/[>=3.3.2]")
