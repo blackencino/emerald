@@ -43,7 +43,7 @@ emerald_define_library(sph2d_box
     emerald::util
     emerald::z_index
     OpenEXR::OpenEXR
-    TBB::TBB
+    TBB::tbb
     fmt::fmt
     cxxopts::cxxopts
   )

@@ -12,7 +12,7 @@ emerald_define_library(wisp
     emerald::util 
     emerald::noise 
     gsl-lite::gsl-lite 
-    TBB::TBB
+    TBB::tbb
   )
 
 add_subdirectory(bin)
